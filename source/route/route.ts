@@ -245,7 +245,26 @@ let pres = 0.5, hard = false // hard: other nets' copper is an obstacle, not a p
 const isGoal = new Uint32Array(NL * NN)
 let goalStamp = 1
 /** cheapest path from any source node to any goal node (or, with goalVia, to any cell that can take a via) */
+// Strict (endgame) searches look inside the terminals' bounding box grown by BOX mm, then a box twice as large: a
+// net re-placed around a conflict stays near it, and a search that cannot succeed fails after a small area instead
+// of the whole grid.
+let bx0 = 0, bx1 = 0, by0 = 0, by1 = 0
 function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number, gy0: number, goalVia: boolean): number[] | null {
+  let i0 = 1e9, i1 = -1e9, j0 = 1e9, j1 = -1e9
+  const add = (id: number) => { const c = id % NN, i = c % NX, j = (c / NX) | 0; if (i < i0) i0 = i; if (i > i1) i1 = i; if (j < j0) j0 = j; if (j > j1) j1 = j }
+  for (const s of sources) add(s)
+  if (goals) for (const g of goals) add(g); else add(gy(gy0) * NX + gx(gx0))
+  const M = Math.round(+(process.env.BOX ?? 3) / P)
+  // priced (negotiation) searches keep the whole board, so a net can still take a long detour around congestion
+  for (const m of hard ? [M, 2 * M] : [1e6]) {
+    bx0 = Math.max(0, i0 - m); bx1 = Math.min(NX - 1, i1 + m); by0 = Math.max(0, j0 - m); by1 = Math.min(NY - 1, j1 + m)
+    const p = searchIn(n, sources, goals, gx0, gy0, goalVia)
+    if (p) return p
+    if (bx0 === 0 && by0 === 0 && bx1 === NX - 1 && by1 === NY - 1) break
+  }
+  return null
+}
+function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: number, gy0: number, goalVia: boolean): number[] | null {
   stamp++; goalStamp++
   heapK.length = 0; heapV.length = 0
   if (goals) for (const g of goals) isGoal[g] = goalStamp
@@ -274,7 +293,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
     for (let d = 0; d < 8; d++) {
       const di = d < 4 ? [1, -1, 0, 0][d] : [1, 1, -1, -1][d - 4], dj = d < 4 ? [0, 0, 1, -1][d] : [1, -1, 1, -1][d - 4]
       const ii = i + di, jj = j + dj
-      if (ii < 0 || jj < 0 || ii >= NX || jj >= NY) continue
+      if (ii < bx0 || jj < by0 || ii > bx1 || jj > by1) continue
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
