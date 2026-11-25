@@ -56,6 +56,17 @@ ht = STRtree(hp); hole_v = 0
 for i, g in enumerate(hp):
     for j in ht.query(g.buffer(HOLE_GAP)):
         if j > i and g.distance(hp[j]) < HOLE_GAP - 1e-4 and allvias[i]["net"] != allvias[j]["net"]: hole_v += 1
+# JLCPCB SMD pad to pad, different nets: 0.15 mm (BGA balls are covered by the 0.1 mm pad-to-track rule above)
+PAD_GAP = 0.15
+pg = [it for it in items if it[3] == "pad"]
+pad_v = 0
+for l in LAYERS:
+    its = [it for it in pg if it[0] == l]
+    if not its: continue
+    tr = STRtree([it[2] for it in its])
+    for i, it in enumerate(its):
+        for j in tr.query(it[2].buffer(PAD_GAP)):
+            if j > i and (it[1] is None or it[1] != its[j][1]) and it[2].distance(its[j][2]) < PAD_GAP - 1e-4: pad_v += 1
 # ---------- connectivity ----------
 parent = list(range(len(items)))
 def find(a):
@@ -83,9 +94,9 @@ for n, ks in pad_items.items():
         groups = defaultdict(list)
         for k in ks: groups[find(k)].append(items[k][4])
         open_nets.append((n, len(roots), [g[:3] for g in groups.values()][:4]))
-print(f"DRC: {len(viol)} clearance violations (< {GAP} mm), {len(edge_v)} copper too close to edge/holes, {len(pour_edge)} pours near edge, {hole_v} via-hole spacing issues")
+print(f"DRC: {len(viol)} clearance violations (< {GAP} mm), {len(edge_v)} copper too close to edge/holes, {len(pour_edge)} pours near edge, {hole_v} via-hole spacing issues, {pad_v} pad pairs < {PAD_GAP} mm")
 for v in viol[:25]: print("  ", v)
 for v in edge_v[:5]: print("   edge", v)
 print(f"Connectivity: {len(pad_items) - len(open_nets)}/{len(pad_items)} nets complete")
 for o in open_nets[:40]: print("   open", o)
-sys.exit(1 if viol or edge_v or open_nets or hole_v else 0)
+sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v else 0)
