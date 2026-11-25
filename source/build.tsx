@@ -1,53 +1,76 @@
-// Renders the RK3566 + LPDDR4 module board as it stands: tscircuit renders the board and the two BGAs; the routed and
-// verified DDR block (source/route/ddr.lane.routed.json) and the power-ball fanout (source/route/power.fanout.json)
-// are then added to the circuit JSON as plain PCB traces and vias. Output: index.circuit.json
+// Renders the module: the board, every part at its placement (design/placement.json) with its nets
+// (design/netlist.json), then adds the copper made outside tscircuit as plain PCB elements: the routed DDR
+// block, the power-ball fanout, the routed signals (route/routes.json) and the planes (route/planes.json).
+// MODE=pads writes design/pads.json (every pad with its net) for the router instead of the full board.
 import { Circuit } from "@tscircuit/core"
-import { RK3566 } from "../imports/RK3566"
-import { H9HCNNNBKUMLXR_NEE } from "../imports/H9HCNNNBKUMLXR_NEE"
+import { makePart } from "./parts"
+import netlist from "./design/netlist.json"
+import placement from "./design/placement.json"
 const dir = import.meta.dir
-const ddr = await Bun.file(dir + "/route/ddr.lane.routed.json").json()
-const power: any[] = await Bun.file(dir + "/route/power.fanout.json").json()
-const meta = await Bun.file(dir + "/route/power.meta.json").json()
-const input = await Bun.file(dir + "/route/ddr.input.json").json()
-const railOf: Record<string, string> = Object.fromEntries(meta.powerConnections.map((c: any) => [c.name, c.netConnectionName]))
-// placement the routing was done with (fitted to every one of the 765 pads)
-const U1 = { x: 0, y: 0 }, U2 = { x: -4, y: 16.6 }
-// board outline: the copper and both packages with a 1.5 mm margin (provisional; the module outline is not designed yet)
-const xs: number[] = [], ys: number[] = []
-for (const o of input.obstacles) { xs.push(o.center.x - o.width / 2, o.center.x + o.width / 2); ys.push(o.center.y - o.height / 2, o.center.y + o.height / 2) }
-for (const t of [...ddr.traces, ...power]) for (const p of t.route) { xs.push(p.x); ys.push(p.y) }
-const M = 1.5, x0 = Math.min(...xs) - M, x1 = Math.max(...xs) + M, y0 = Math.min(...ys) - M, y1 = Math.max(...ys) + M
-const CX = (x0 + x1) / 2, CY = (y0 + y1) / 2
+const RK = { x: 15.2, y: -19.0 }
+const BOARD = { x0: -3.5, x1: 36.5, y0: -51.5, y1: 3.5 }
+const CX = (BOARD.x0 + BOARD.x1) / 2, CY = (BOARD.y0 + BOARD.y1) / 2
+const comps = netlist.components as any[]
+const place = placement as any
 const circuit = new Circuit()
 circuit.add(
-  <board width={+(x1 - x0).toFixed(2)} height={+(y1 - y0).toFixed(2)} layers={6} thickness={1.6} routingDisabled schAutoLayoutEnabled={false}
+  <board width={BOARD.x1 - BOARD.x0} height={BOARD.y1 - BOARD.y0} layers={6} thickness={1.6} routingDisabled schAutoLayoutEnabled={false}
     minTraceWidth={0.1} minTraceToPadEdgeClearance={0.1} minViaHoleDiameter={0.15} minViaPadDiameter={0.25} isViaInPadAllowed={true}
-    title="RK3566 + LPDDR4 module (DDR block routed)">
-    <RK3566 name="U1" pcbX={U1.x - CX} pcbY={U1.y - CY} />
-    <H9HCNNNBKUMLXR_NEE name="U2" pcbX={U2.x - CX} pcbY={U2.y - CY} />
+    title="RK3566 + LPDDR4 compute module (CM4 form factor)">
+    <group pcbX={-CX} pcbY={-CY}>
+      {comps.map((c) => makePart(c, place[c.ref]))}
+      {[[0, 0], [33, 0], [0, -48], [33, -48]].map(([x, y], i) => <hole key={i} name={"H" + (i + 1)} pcbX={x} pcbY={y} diameter={2.7} />)}
+    </group>
   </board>,
 )
 await circuit.renderUntilSettled()
-// the module's netlist is not written yet, so every ball still reads as floating: drop those placeholder errors
-const cj: any[] = circuit.getCircuitJson().filter((e: any) => e.type !== "source_pin_must_be_connected_error")
+const raw: any[] = circuit.getCircuitJson()
+// the netlist lives in design/netlist.json; tscircuit sees no traces, so its "floating pin" notices are dropped
+const cj: any[] = raw.filter((e) => e.type !== "source_pin_must_be_connected_error")
+// ---------- pads with their nets ----------
+const srcName = Object.fromEntries(cj.filter((e) => e.type === "source_component").map((e) => [e.source_component_id, e.name]))
+const pcbComp = Object.fromEntries(cj.filter((e) => e.type === "pcb_component").map((e) => [e.pcb_component_id, srcName[e.source_component_id]]))
+const sport = Object.fromEntries(cj.filter((e) => e.type === "source_port").map((e) => [e.source_port_id, e]))
+const pport = Object.fromEntries(cj.filter((e) => e.type === "pcb_port").map((e) => [e.pcb_port_id, e]))
+const byRef = Object.fromEntries(comps.map((c) => [c.ref, c]))
+// a netlist pin name matches a port by name/hint, or covers numbered ports ("VCC" -> VCC1..VCC4, "GND" -> GND1..)
+function netOf(ref: string, names: string[]): string | null {
+  const c = byRef[ref]
+  if (!c) return null
+  for (const n of names) if (n in c.pins) return c.pins[n]
+  for (const n of names) {
+    const base = n.replace(/\d+$/, "")
+    if (base !== n && base in c.pins && !/^pin$/.test(base)) return c.pins[base]
+  }
+  for (const n of names) { const m = /^pin(\d+)$/.exec(n); if (m && m[1] in c.pins) return c.pins[m[1]] }
+  return null
+}
+const pads: any[] = []
+for (const p of cj.filter((e) => e.type === "pcb_smtpad")) {
+  const ref = pcbComp[p.pcb_component_id], sp = sport[pport[p.pcb_port_id]?.source_port_id]
+  const names = [...new Set([sp?.name, ...(sp?.port_hints ?? [])].filter(Boolean))] as string[]
+  pads.push({ ref, names, net: netOf(ref, names), x: +(p.x + CX).toFixed(4), y: +(p.y + CY).toFixed(4), w: p.width ?? p.radius * 2, h: p.height ?? p.radius * 2, shape: p.shape, layer: p.layer, rot: p.ccw_rotation ?? 0 })
+}
+const vias = cj.filter((e) => e.type === "pcb_via").map((v) => ({ x: v.x + CX, y: v.y + CY, d: v.outer_diameter, hole: v.hole_diameter, ref: pcbComp[v.pcb_component_id] }))
+if (process.env.MODE === "pads") {
+  await Bun.write(dir + "/design/pads.json", JSON.stringify({ pads, footprintVias: vias, board: BOARD, rk: RK }))
+  const unnamed = pads.filter((p) => p.net === null && !["U1", "U2", "U6"].includes(p.ref) && !/^NC/.test(p.names[0] ?? ""))
+  console.log(`pads ${pads.length}, footprint vias ${vias.length}; pads without a net: ${unnamed.length}`, unnamed.slice(0, 12).map((p) => `${p.ref}.${p.names[0]}`).join(" "))
+  const errs = cj.filter((e) => e.type.includes("error")); console.log("errors", errs.length, errs.slice(0, 3).map((e) => e.message?.slice(0, 120)))
+  process.exit(0)
+}
+// ---------- copper made outside tscircuit ----------
 const ALL = ["top", "inner1", "inner2", "inner3", "inner4", "bottom"]
 let n = 0
-const via = (p: any, net: string) => cj.push({ type: "pcb_via", pcb_via_id: `r_via_${n++}`, x: p.x - CX, y: p.y - CY, hole_diameter: p.via_hole_diameter ?? 0.15, outer_diameter: p.via_diameter ?? 0.25, layers: ALL, from_layer: "top", to_layer: "bottom", net_name: net })
-const trace = (pts: any[], layer: string, net: string) => cj.push({ type: "pcb_trace", pcb_trace_id: `r_trace_${n++}`, net_name: net, route: pts.map((p) => ({ route_type: "wire", x: p.x - CX, y: p.y - CY, width: p.width ?? 0.11, layer })) })
-const add = (t: any, net: string) => {
-  let cur: any[] = [], layer = t.route[0].layer
-  const flush = () => { if (cur.length > 1) trace(cur, layer, net); cur = [] }
-  for (const p of t.route) {
-    if (p.route_type === "via") { flush(); via(p, net); layer = p.to_layer; cur = []; continue }
-    if (p.layer !== layer) { flush(); layer = p.layer }
-    cur.push(p)
-  }
-  flush()
-}
-for (const t of ddr.traces) add(t, t.connection_name)
-for (const t of power) add(t, railOf[t.connection_name] ?? t.connection_name)
+const via = (x: number, y: number, d: number, hole: number, net: string) => cj.push({ type: "pcb_via", pcb_via_id: `r_via_${n++}`, x: x - CX, y: y - CY, hole_diameter: hole, outer_diameter: d, layers: ALL, from_layer: "top", to_layer: "bottom", net_name: net })
+const trace = (pts: any[], layer: string, w: number, net: string) => cj.push({ type: "pcb_trace", pcb_trace_id: `r_trace_${n++}`, net_name: net, route: pts.map((p) => ({ route_type: "wire", x: p.x - CX, y: p.y - CY, width: w, layer })) })
+const copper = await Bun.file(dir + "/route/copper.json").json()
+for (const t of copper.traces) trace(t.pts, t.layer, t.w, t.net)
+for (const v of copper.vias) via(v.x, v.y, v.d, v.hole, v.net)
+const planes = (await Bun.file(dir + "/route/planes.json").exists()) ? await Bun.file(dir + "/route/planes.json").json() : []
+for (const p of [...planes].sort((a: any, b: any) => b.area - a.area))
+  cj.push({ type: "pcb_copper_pour", pcb_copper_pour_id: `r_pour_${n++}`, shape: "brep", layer: p.layer, net_name: p.net, covered_with_solder_mask: true,
+    brep_shape: { outer_ring: { vertices: p.outer.map((q: any) => ({ x: q.x - CX, y: q.y - CY })) }, inner_rings: p.holes.map((h: any[]) => ({ vertices: h.map((q) => ({ x: q.x - CX, y: q.y - CY })) })) } })
 await Bun.write(dir + "/../index.circuit.json", JSON.stringify(cj))
 const count = (k: string) => cj.filter((e) => e.type === k).length
-const errs = cj.filter((e) => e.type.includes("error"))
-console.log(`board ${(x1 - x0).toFixed(2)} x ${(y1 - y0).toFixed(2)} mm; components ${count("pcb_component")}, pads ${count("pcb_smtpad")}, traces ${count("pcb_trace")}, vias ${count("pcb_via")}, errors ${errs.length}`)
-for (const e of errs.slice(0, 5)) console.log("  ", e.type, (e.message ?? "").slice(0, 160))
+console.log(`components ${count("pcb_component")}, pads ${count("pcb_smtpad")}, traces ${count("pcb_trace")}, vias ${count("pcb_via")}, pours ${count("pcb_copper_pour")}`)

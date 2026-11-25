@@ -1,0 +1,1002 @@
+[
+{
+"pin": 1,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 2,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 3,
+"cm4": "Ethernet_Pair3_P",
+"soquartz": "PHY0_MDI_3+"
+},
+{
+"pin": 4,
+"cm4": "Ethernet_Pair1_P",
+"soquartz": "PHY0_MDI_1+"
+},
+{
+"pin": 5,
+"cm4": "Ethernet_Pair3_N",
+"soquartz": "PHY0_MDI_3-"
+},
+{
+"pin": 6,
+"cm4": "Ethernet_Pair1_N",
+"soquartz": "PHY0_MDI_1-"
+},
+{
+"pin": 7,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 8,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 9,
+"cm4": "Ethernet_Pair2_N",
+"soquartz": "PHY0_MDI_2-"
+},
+{
+"pin": 10,
+"cm4": "Ethernet_Pair0_N",
+"soquartz": "PHY0_MDI_0-"
+},
+{
+"pin": 11,
+"cm4": "Ethernet_Pair2_P",
+"soquartz": "PHY0_MDI_2+"
+},
+{
+"pin": 12,
+"cm4": "Ethernet_Pair0_P",
+"soquartz": "PHY0_MDI_0+"
+},
+{
+"pin": 13,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 14,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 15,
+"cm4": "Ethernet_nLED3",
+"soquartz": "PHY0_LED2/CFG_LDO1"
+},
+{
+"pin": 16,
+"cm4": "Ethernet_SYNC_IN",
+"soquartz": ""
+},
+{
+"pin": 17,
+"cm4": "Ethernet_nLED2",
+"soquartz": "PHY0_LED1/CFG_LDO0"
+},
+{
+"pin": 18,
+"cm4": "Ethernet_SYNC_OUT",
+"soquartz": ""
+},
+{
+"pin": 19,
+"cm4": "Ethernet_nLED1",
+"soquartz": "PHY0_LED0/CFG_EXT"
+},
+{
+"pin": 20,
+"cm4": "EEPROM_nWP",
+"soquartz": "R4303"
+},
+{
+"pin": 21,
+"cm4": "Pi_nLED_Activity",
+"soquartz": "DIY_LED"
+},
+{
+"pin": 22,
+"cm4": "GND",
+"soquartz": "R0201"
+},
+{
+"pin": 23,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 24,
+"cm4": "GPIO26",
+"soquartz": "GPIO3_D3"
+},
+{
+"pin": 25,
+"cm4": "GPIO21",
+"soquartz": "GPIO3_D1"
+},
+{
+"pin": 26,
+"cm4": "GPIO19",
+"soquartz": "GPIO3_D0"
+},
+{
+"pin": 27,
+"cm4": "GPIO20",
+"soquartz": "GPIO3_D2"
+},
+{
+"pin": 28,
+"cm4": "GPIO13",
+"soquartz": "GPIO3_D7"
+},
+{
+"pin": 29,
+"cm4": "GPIO16",
+"soquartz": "GPIO3_D5"
+},
+{
+"pin": 30,
+"cm4": "GPIO6",
+"soquartz": "GPIO3_D4"
+},
+{
+"pin": 31,
+"cm4": "GPIO12",
+"soquartz": "GPIO3_D6"
+},
+{
+"pin": 32,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 33,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 34,
+"cm4": "GPIO5",
+"soquartz": "GPIO4_A5"
+},
+{
+"pin": 35,
+"cm4": "ID_SC",
+"soquartz": "GPIO1_A1"
+},
+{
+"pin": 36,
+"cm4": "ID_SD",
+"soquartz": "GPIO1_A0"
+},
+{
+"pin": 37,
+"cm4": "GPIO7",
+"soquartz": "GPIO4_A7"
+},
+{
+"pin": 38,
+"cm4": "GPIO11",
+"soquartz": "GPIO4_B3"
+},
+{
+"pin": 39,
+"cm4": "GPIO8",
+"soquartz": "GPIO4_A6"
+},
+{
+"pin": 40,
+"cm4": "GPIO9",
+"soquartz": "GPIO4_B0"
+},
+{
+"pin": 41,
+"cm4": "GPIO25",
+"soquartz": "GPIO4_B1"
+},
+{
+"pin": 42,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 43,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 44,
+"cm4": "GPIO10",
+"soquartz": "GPIO4_B2"
+},
+{
+"pin": 45,
+"cm4": "GPIO24",
+"soquartz": "GPIO4_A1"
+},
+{
+"pin": 46,
+"cm4": "GPIO22",
+"soquartz": "GPIO4_A2"
+},
+{
+"pin": 47,
+"cm4": "GPIO23",
+"soquartz": "GPIO4_A3"
+},
+{
+"pin": 48,
+"cm4": "GPIO27",
+"soquartz": "GPIO4_A0"
+},
+{
+"pin": 49,
+"cm4": "GPIO18",
+"soquartz": "GPIO3_C7"
+},
+{
+"pin": 50,
+"cm4": "GPIO17",
+"soquartz": "GPIO3_C6"
+},
+{
+"pin": 51,
+"cm4": "GPIO15",
+"soquartz": "GPIO0_D0"
+},
+{
+"pin": 52,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 53,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 54,
+"cm4": "GPIO4",
+"soquartz": "GPIO4_A4"
+},
+{
+"pin": 55,
+"cm4": "GPIO14",
+"soquartz": "GPIO0_D1"
+},
+{
+"pin": 56,
+"cm4": "GPIO3",
+"soquartz": "GPIO4_B5"
+},
+{
+"pin": 57,
+"cm4": "SD_CLK",
+"soquartz": "SDMMC0_CLK"
+},
+{
+"pin": 58,
+"cm4": "GPIO2",
+"soquartz": "GPIO4_B4"
+},
+{
+"pin": 59,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 60,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 61,
+"cm4": "SD_DAT3",
+"soquartz": "SDMMC0_D3"
+},
+{
+"pin": 62,
+"cm4": "SD_CMD",
+"soquartz": "SDMMC0_CMD"
+},
+{
+"pin": 63,
+"cm4": "SD_DAT0",
+"soquartz": "SDMMC0_D0"
+},
+{
+"pin": 64,
+"cm4": "SD_DAT5",
+"soquartz": ""
+},
+{
+"pin": 65,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 66,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 67,
+"cm4": "SD_DAT1",
+"soquartz": "SDMMC0_D1"
+},
+{
+"pin": 68,
+"cm4": "SD_DAT4",
+"soquartz": ""
+},
+{
+"pin": 69,
+"cm4": "SD_DAT2",
+"soquartz": "SDMMC0_D2"
+},
+{
+"pin": 70,
+"cm4": "SD_DAT7",
+"soquartz": ""
+},
+{
+"pin": 71,
+"cm4": "GND",
+"soquartz": "T2"
+},
+{
+"pin": 72,
+"cm4": "SD_DAT6",
+"soquartz": ""
+},
+{
+"pin": 73,
+"cm4": "SD_VDD_OVERRIDE",
+"soquartz": "VCC3V3_SD"
+},
+{
+"pin": 74,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 75,
+"cm4": "SD_PWR_ON",
+"soquartz": "SDMMC_PWR"
+},
+{
+"pin": 76,
+"cm4": "Reserved",
+"soquartz": ""
+},
+{
+"pin": 77,
+"cm4": "+5V (Input)",
+"soquartz": "VBUS"
+},
+{
+"pin": 78,
+"cm4": "GPIO_VREF",
+"soquartz": "VCCIO6"
+},
+{
+"pin": 79,
+"cm4": "+5V (Input)",
+"soquartz": ""
+},
+{
+"pin": 80,
+"cm4": "SCL0",
+"soquartz": "I2C1_SCL_M0"
+},
+{
+"pin": 81,
+"cm4": "+5V (Input)",
+"soquartz": ""
+},
+{
+"pin": 82,
+"cm4": "SDA0",
+"soquartz": "I2C1_SDA_M0"
+},
+{
+"pin": 83,
+"cm4": "+5V (Input)",
+"soquartz": "T1"
+},
+{
+"pin": 84,
+"cm4": "CM4_3.3V (Output)",
+"soquartz": "VCC_3V3"
+},
+{
+"pin": 85,
+"cm4": "+5V (Input)",
+"soquartz": ""
+},
+{
+"pin": 86,
+"cm4": "CM4_3.3V (Output)",
+"soquartz": ""
+},
+{
+"pin": 87,
+"cm4": "+5V (Input)",
+"soquartz": ""
+},
+{
+"pin": 88,
+"cm4": "CM4_1.8V (Output)",
+"soquartz": "VCC_1V8"
+},
+{
+"pin": 89,
+"cm4": "WL_nDisable",
+"soquartz": "WIFI_REG_ON_H_GPIO2_C2"
+},
+{
+"pin": 90,
+"cm4": "CM4_1.8V (Output)",
+"soquartz": ""
+},
+{
+"pin": 91,
+"cm4": "BT_nDisable",
+"soquartz": "WIFI_WAKE_HOST_H_GPIO2_C3"
+},
+{
+"pin": 92,
+"cm4": "RUN_PG",
+"soquartz": "RESETn"
+},
+{
+"pin": 93,
+"cm4": "nRPIBOOT",
+"soquartz": "nRPIBOOT/eMMC_CLK"
+},
+{
+"pin": 94,
+"cm4": "AnalogIP1",
+"soquartz": "SARADC_VIN3"
+},
+{
+"pin": 95,
+"cm4": "PI_LED_nPWR",
+"soquartz": "WORK_LED"
+},
+{
+"pin": 96,
+"cm4": "AnalogIP0",
+"soquartz": "SARADC_VIN2"
+},
+{
+"pin": 97,
+"cm4": "Camera_GPIO",
+"soquartz": "CAMERA_PDN_L"
+},
+{
+"pin": 98,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 99,
+"cm4": "GLOBAL_EN",
+"soquartz": "PMIC_PWRON"
+},
+{
+"pin": 100,
+"cm4": "nEXTRST",
+"soquartz": "nEXTRST"
+},
+{
+"pin": 101,
+"cm4": "USB_OTG_ID",
+"soquartz": "USB_OTG0_ID"
+},
+{
+"pin": 102,
+"cm4": "PCIe_CLK_nREQ",
+"soquartz": "PCIE20_CLKREQn_3V3_L"
+},
+{
+"pin": 103,
+"cm4": "USB_N",
+"soquartz": "USB_OTG0_DM"
+},
+{
+"pin": 104,
+"cm4": "Reserved",
+"soquartz": ""
+},
+{
+"pin": 105,
+"cm4": "USB_P",
+"soquartz": "USB_OTG0_DP"
+},
+{
+"pin": 106,
+"cm4": "Reserved",
+"soquartz": ""
+},
+{
+"pin": 107,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 108,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 109,
+"cm4": "PCIe_nRST",
+"soquartz": "PCIE20_PERSTn_3V3_L"
+},
+{
+"pin": 110,
+"cm4": "PCIe_CLK_P",
+"soquartz": "PCIE20_REFCLKP_P"
+},
+{
+"pin": 111,
+"cm4": "VDAC_COMP",
+"soquartz": ""
+},
+{
+"pin": 112,
+"cm4": "PCIe_CLK_N",
+"soquartz": "PCIE20_REFCLKP_N"
+},
+{
+"pin": 113,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 114,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 115,
+"cm4": "CAM1_D0_N",
+"soquartz": "MIPI_CSI_RX_D2N"
+},
+{
+"pin": 116,
+"cm4": "PCIe_RX_P",
+"soquartz": "PCIE20_RXP"
+},
+{
+"pin": 117,
+"cm4": "CAM1_D0_P",
+"soquartz": "MIPI_CSI_RX_D2P"
+},
+{
+"pin": 118,
+"cm4": "PCIe_RX_N",
+"soquartz": "PCIE20_RXN"
+},
+{
+"pin": 119,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 120,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 121,
+"cm4": "CAM1_D1_N",
+"soquartz": "MIPI_CSI_RX_D3N"
+},
+{
+"pin": 122,
+"cm4": "PCIe_TX_P",
+"soquartz": "PCIE20_TXP"
+},
+{
+"pin": 123,
+"cm4": "CAM1_D1_P",
+"soquartz": "MIPI_CSI_RX_D3P"
+},
+{
+"pin": 124,
+"cm4": "PCIe_TX_N",
+"soquartz": "PCIE20_TXN"
+},
+{
+"pin": 125,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 126,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 127,
+"cm4": "CAM1_C_N",
+"soquartz": "MIPI_CSI_RX_CLK1N"
+},
+{
+"pin": 128,
+"cm4": "CAM0_D0_N",
+"soquartz": "MIPI_CSI_RX_D0N"
+},
+{
+"pin": 129,
+"cm4": "CAM1_C_P",
+"soquartz": "MIPI_CSI_RX_CLK1P"
+},
+{
+"pin": 130,
+"cm4": "CAM0_D0_P",
+"soquartz": "MIPI_CSI_RX_D0P"
+},
+{
+"pin": 131,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 132,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 133,
+"cm4": "CAM1_D2_N",
+"soquartz": ""
+},
+{
+"pin": 134,
+"cm4": "CAM0_D1_N",
+"soquartz": "MIPI_CSI_RX_D1N"
+},
+{
+"pin": 135,
+"cm4": "CAM1_D2_P",
+"soquartz": ""
+},
+{
+"pin": 136,
+"cm4": "CAM0_D1_P",
+"soquartz": "MIPI_CSI_RX_D1P"
+},
+{
+"pin": 137,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 138,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 139,
+"cm4": "CAM1_D3_N",
+"soquartz": ""
+},
+{
+"pin": 140,
+"cm4": "CAM0_C_N",
+"soquartz": "MIPI_CSI_RX_CLK0N"
+},
+{
+"pin": 141,
+"cm4": "CAM1_D3_P",
+"soquartz": ""
+},
+{
+"pin": 142,
+"cm4": "CAM0_C_P",
+"soquartz": "MIPI_CSI_RX_CLK0P"
+},
+{
+"pin": 143,
+"cm4": "HDMI1_HOTPLUG",
+"soquartz": "EDP_TX_D3P"
+},
+{
+"pin": 144,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 145,
+"cm4": "HDMI1_SDA",
+"soquartz": "EDP_SDA"
+},
+{
+"pin": 146,
+"cm4": "HDMI1_TX2_P",
+"soquartz": "EDP_TX_D2P"
+},
+{
+"pin": 147,
+"cm4": "HDMI1_SCL",
+"soquartz": "EDP_SCL"
+},
+{
+"pin": 148,
+"cm4": "HDMI1_TX2_N",
+"soquartz": "EDP_TX_D2N"
+},
+{
+"pin": 149,
+"cm4": "HDMI1_CEC",
+"soquartz": "EDP_TX_D3N"
+},
+{
+"pin": 150,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 151,
+"cm4": "HDMI0_CEC",
+"soquartz": "HDMI_CEC_PORT"
+},
+{
+"pin": 152,
+"cm4": "HDMI1_TX1_P",
+"soquartz": "EDP_TX_D1P"
+},
+{
+"pin": 153,
+"cm4": "HDMI0_HOTPLUG",
+"soquartz": "HDMI_TX_HPD_PORT"
+},
+{
+"pin": 154,
+"cm4": "HDMI1_TX1_N",
+"soquartz": "EDP_TX_D1N"
+},
+{
+"pin": 155,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 156,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 157,
+"cm4": "DSI0_D0_N",
+"soquartz": "MIPI_DSI_TX0_D0N"
+},
+{
+"pin": 158,
+"cm4": "HDMI1_TX0_P",
+"soquartz": "EDP_TX_D0P"
+},
+{
+"pin": 159,
+"cm4": "DSI0_D0_P",
+"soquartz": "MIPI_DSI_TX0_D0P"
+},
+{
+"pin": 160,
+"cm4": "HDMI1_TX0_N",
+"soquartz": "EDP_TX_D0N"
+},
+{
+"pin": 161,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 162,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 163,
+"cm4": "DSI0_D1_N",
+"soquartz": "MIPI_DSI_TX0_D1N"
+},
+{
+"pin": 164,
+"cm4": "HDMI1_CLK_P",
+"soquartz": "EDP_TX_AUXP"
+},
+{
+"pin": 165,
+"cm4": "DSI0_D1_P",
+"soquartz": "MIPI_DSI_TX0_D1P"
+},
+{
+"pin": 166,
+"cm4": "HDMI1_CLK_N",
+"soquartz": "EDP_TX_AUXN"
+},
+{
+"pin": 167,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 168,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 169,
+"cm4": "DSI0_C_N",
+"soquartz": "MIPI_DSI_TX0_CLKN"
+},
+{
+"pin": 170,
+"cm4": "HDMI0_TX2_P",
+"soquartz": "HDMI_TX2P_PORT"
+},
+{
+"pin": 171,
+"cm4": "DSI0_C_P",
+"soquartz": "MIPI_DSI_TX0_CLKP"
+},
+{
+"pin": 172,
+"cm4": "HDMI0_TX2_N",
+"soquartz": "HDMI_TX2N_PORT"
+},
+{
+"pin": 173,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 174,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 175,
+"cm4": "DSI1_D0_N",
+"soquartz": "MIPI_DSI_TX1_D0N"
+},
+{
+"pin": 176,
+"cm4": "HDMI0_TX1_P",
+"soquartz": "HDMI_TX1P_PORT"
+},
+{
+"pin": 177,
+"cm4": "DSI1_D0_P",
+"soquartz": "MIPI_DSI_TX1_D0P"
+},
+{
+"pin": 178,
+"cm4": "HDMI0_TX1_N",
+"soquartz": "HDMI_TX1N_PORT"
+},
+{
+"pin": 179,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 180,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 181,
+"cm4": "DSI1_D1_N",
+"soquartz": "MIPI_DSI_TX1_D1N"
+},
+{
+"pin": 182,
+"cm4": "HDMI0_TX0_P",
+"soquartz": "HDMI_TX0P_PORT"
+},
+{
+"pin": 183,
+"cm4": "DSI1_D1_P",
+"soquartz": "MIPI_DSI_TX1_D1P"
+},
+{
+"pin": 184,
+"cm4": "HDMI0_TX0_N",
+"soquartz": "HDMI_TX0N_PORT"
+},
+{
+"pin": 185,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 186,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 187,
+"cm4": "DSI1_C_N",
+"soquartz": "MIPI_DSI_TX1_CLKN"
+},
+{
+"pin": 188,
+"cm4": "HDMI0_CLK_P",
+"soquartz": "HDMI_TXCLKP_PORT"
+},
+{
+"pin": 189,
+"cm4": "DSI1_C_P",
+"soquartz": "MIPI_DSI_TX1_CLKP"
+},
+{
+"pin": 190,
+"cm4": "HDMI0_CLK_N",
+"soquartz": "HDMI_TXCLKN_PORT"
+},
+{
+"pin": 191,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 192,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 193,
+"cm4": "DSI1_D2_N",
+"soquartz": "MIPI_DSI_TX1_D2N"
+},
+{
+"pin": 194,
+"cm4": "DSI1_D3_N",
+"soquartz": "MIPI_DSI_TX1_D3N"
+},
+{
+"pin": 195,
+"cm4": "DSI1_D2_P",
+"soquartz": "MIPI_DSI_TX1_D2P"
+},
+{
+"pin": 196,
+"cm4": "DSI1_D3_P",
+"soquartz": "MIPI_DSI_TX1_D3P"
+},
+{
+"pin": 197,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 198,
+"cm4": "GND",
+"soquartz": ""
+},
+{
+"pin": 199,
+"cm4": "HDMI0_SDA",
+"soquartz": "HDMI_TXDDC_SDA_PORT"
+},
+{
+"pin": 200,
+"cm4": "HDMI0_SCL",
+"soquartz": "HDMI_TXDDC_SCL_PORT"
+}
+]

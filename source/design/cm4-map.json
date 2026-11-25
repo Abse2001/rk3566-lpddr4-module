@@ -1,0 +1,1202 @@
+{
+ "1": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "2": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "3": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair3_P"
+ },
+ "4": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair1_P"
+ },
+ "5": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair3_N"
+ },
+ "6": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair1_N"
+ },
+ "7": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "8": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "9": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair2_N"
+ },
+ "10": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair0_N"
+ },
+ "11": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair2_P"
+ },
+ "12": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_Pair0_P"
+ },
+ "13": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "14": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "15": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_nLED3"
+ },
+ "16": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_SYNC_IN"
+ },
+ "17": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_nLED2"
+ },
+ "18": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_SYNC_OUT"
+ },
+ "19": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Ethernet_nLED1"
+ },
+ "20": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "EEPROM_nWP"
+ },
+ "21": {
+  "net": "CM4_Pi_nLED_Activity",
+  "ball": "1R18",
+  "note": "GPIO0_C1",
+  "cm4": "Pi_nLED_Activity"
+ },
+ "22": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "23": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "24": {
+  "net": "CM4_GPIO26",
+  "ball": "AM1",
+  "note": "GPIO3_D3",
+  "cm4": "GPIO26"
+ },
+ "25": {
+  "net": "CM4_GPIO21",
+  "ball": "AN2",
+  "note": "GPIO3_D1",
+  "cm4": "GPIO21"
+ },
+ "26": {
+  "net": "CM4_GPIO19",
+  "ball": "AP1",
+  "note": "GPIO3_D0",
+  "cm4": "GPIO19"
+ },
+ "27": {
+  "net": "CM4_GPIO20",
+  "ball": "AM2",
+  "note": "GPIO3_D2",
+  "cm4": "GPIO20"
+ },
+ "28": {
+  "net": "CM4_GPIO13",
+  "ball": "AL1",
+  "note": "GPIO3_D7",
+  "cm4": "GPIO13"
+ },
+ "29": {
+  "net": "CM4_GPIO16",
+  "ball": "1T1",
+  "note": "GPIO3_D5",
+  "cm4": "GPIO16"
+ },
+ "30": {
+  "net": "CM4_GPIO6",
+  "ball": "1R2",
+  "note": "GPIO3_D4",
+  "cm4": "GPIO6"
+ },
+ "31": {
+  "net": "CM4_GPIO12",
+  "ball": "AL2",
+  "note": "GPIO3_D6",
+  "cm4": "GPIO12"
+ },
+ "32": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "33": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "34": {
+  "net": "CM4_GPIO5",
+  "ball": "AJ1",
+  "note": "GPIO4_A5",
+  "cm4": "GPIO5"
+ },
+ "35": {
+  "net": "CM4_ID_SC",
+  "ball": "B22",
+  "note": "GPIO1_A1",
+  "cm4": "ID_SC"
+ },
+ "36": {
+  "net": "CM4_ID_SD",
+  "ball": "A22",
+  "note": "GPIO1_A0",
+  "cm4": "ID_SD"
+ },
+ "37": {
+  "net": "CM4_GPIO7",
+  "ball": "1N1",
+  "note": "GPIO4_A7",
+  "cm4": "GPIO7"
+ },
+ "38": {
+  "net": "CM4_GPIO11",
+  "ball": "AE2",
+  "note": "GPIO4_B3",
+  "cm4": "GPIO11"
+ },
+ "39": {
+  "net": "CM4_GPIO8",
+  "ball": "AH2",
+  "note": "GPIO4_A6",
+  "cm4": "GPIO8"
+ },
+ "40": {
+  "net": "CM4_GPIO9",
+  "ball": "1L2",
+  "note": "GPIO4_B0",
+  "cm4": "GPIO9"
+ },
+ "41": {
+  "net": "CM4_GPIO25",
+  "ball": "AG2",
+  "note": "GPIO4_B1",
+  "cm4": "GPIO25"
+ },
+ "42": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "43": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "44": {
+  "net": "CM4_GPIO10",
+  "ball": "AF2",
+  "note": "GPIO4_B2",
+  "cm4": "GPIO10"
+ },
+ "45": {
+  "net": "CM4_GPIO24",
+  "ball": "1P2",
+  "note": "GPIO4_A1",
+  "cm4": "GPIO24"
+ },
+ "46": {
+  "net": "CM4_GPIO22",
+  "ball": "1R1",
+  "note": "GPIO4_A2",
+  "cm4": "GPIO22"
+ },
+ "47": {
+  "net": "CM4_GPIO23",
+  "ball": "AJ2",
+  "note": "GPIO4_A3",
+  "cm4": "GPIO23"
+ },
+ "48": {
+  "net": "CM4_GPIO27",
+  "ball": "AK2",
+  "note": "GPIO4_A0",
+  "cm4": "GPIO27"
+ },
+ "49": {
+  "net": "CM4_GPIO18",
+  "ball": "1U1",
+  "note": "GPIO3_C7",
+  "cm4": "GPIO18"
+ },
+ "50": {
+  "net": "CM4_GPIO17",
+  "ball": "1T2",
+  "note": "GPIO3_C6",
+  "cm4": "GPIO17"
+ },
+ "51": {
+  "net": "CM4_GPIO15",
+  "ball": "1V19",
+  "note": "GPIO0_D0",
+  "cm4": "GPIO15"
+ },
+ "52": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "53": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "54": {
+  "net": "CM4_GPIO4",
+  "ball": "1N2",
+  "note": "GPIO4_A4",
+  "cm4": "GPIO4"
+ },
+ "55": {
+  "net": "CM4_GPIO14",
+  "ball": "1U18",
+  "note": "GPIO0_D1",
+  "cm4": "GPIO14"
+ },
+ "56": {
+  "net": "CM4_GPIO3",
+  "ball": "AD1",
+  "note": "GPIO4_B5",
+  "cm4": "GPIO3"
+ },
+ "57": {
+  "net": "CM4_SD_CLK",
+  "ball": "G38",
+  "note": "GPIO2_A2",
+  "cm4": "SD_CLK"
+ },
+ "58": {
+  "net": "CM4_GPIO2",
+  "ball": "AF1",
+  "note": "GPIO4_B4",
+  "cm4": "GPIO2"
+ },
+ "59": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "60": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "61": {
+  "net": "CM4_SD_DAT3",
+  "ball": "1F18",
+  "note": "GPIO2_A0",
+  "cm4": "SD_DAT3"
+ },
+ "62": {
+  "net": "CM4_SD_CMD",
+  "ball": "1E19",
+  "note": "GPIO2_A1",
+  "cm4": "SD_CMD"
+ },
+ "63": {
+  "net": "CM4_SD_DAT0",
+  "ball": "1E20",
+  "note": "GPIO1_D5",
+  "cm4": "SD_DAT0"
+ },
+ "64": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "SD_DAT5"
+ },
+ "65": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "66": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "67": {
+  "net": "CM4_SD_DAT1",
+  "ball": "1F19",
+  "note": "GPIO1_D6",
+  "cm4": "SD_DAT1"
+ },
+ "68": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "SD_DAT4"
+ },
+ "69": {
+  "net": "CM4_SD_DAT2",
+  "ball": "1D20",
+  "note": "GPIO1_D7",
+  "cm4": "SD_DAT2"
+ },
+ "70": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "SD_DAT7"
+ },
+ "71": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "72": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "SD_DAT6"
+ },
+ "73": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "SD_VDD_OVERRIDE"
+ },
+ "74": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "75": {
+  "net": "SD_PWR_ON",
+  "ball": null,
+  "note": "10 kOhm pull-up to VCC_3V3 (SD power always requested)",
+  "cm4": "SD_PWR_ON"
+ },
+ "76": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Reserved"
+ },
+ "77": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "78": {
+  "net": "VCCIO6",
+  "ball": null,
+  "note": "GPIO bank voltage supplied by the carrier (RK3566 VCCIO6)",
+  "cm4": "GPIO_VREF"
+ },
+ "79": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "80": {
+  "net": "CM4_SCL0",
+  "ball": "AK37",
+  "note": "GPIO0_B3",
+  "cm4": "SCL0"
+ },
+ "81": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "82": {
+  "net": "CM4_SDA0",
+  "ball": "AM38",
+  "note": "GPIO0_B4",
+  "cm4": "SDA0"
+ },
+ "83": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "84": {
+  "net": "VCC_3V3",
+  "ball": null,
+  "note": "",
+  "cm4": "CM4_3.3V (Output)"
+ },
+ "85": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "86": {
+  "net": "VCC_3V3",
+  "ball": null,
+  "note": "",
+  "cm4": "CM4_3.3V (Output)"
+ },
+ "87": {
+  "net": "VCC5V0_SYS",
+  "ball": null,
+  "note": "",
+  "cm4": "+5V (Input)"
+ },
+ "88": {
+  "net": "VCC_1V8",
+  "ball": null,
+  "note": "",
+  "cm4": "CM4_1.8V (Output)"
+ },
+ "89": {
+  "net": "CM4_WL_nDisable",
+  "ball": "C37",
+  "note": "GPIO2_C2",
+  "cm4": "WL_nDisable"
+ },
+ "90": {
+  "net": "VCC_1V8",
+  "ball": null,
+  "note": "",
+  "cm4": "CM4_1.8V (Output)"
+ },
+ "91": {
+  "net": "CM4_BT_nDisable",
+  "ball": "1D19",
+  "note": "GPIO2_C3",
+  "cm4": "BT_nDisable"
+ },
+ "92": {
+  "net": "RESETn",
+  "ball": null,
+  "note": "RK809 RESETB, RK3566 nPOR",
+  "cm4": "RUN_PG"
+ },
+ "93": {
+  "net": "EMMC_CLK",
+  "ball": "A29",
+  "note": "nRPIBOOT: the carrier may hold the eMMC clock low to force maskrom/USB boot",
+  "cm4": "nRPIBOOT"
+ },
+ "94": {
+  "net": "SARADC_VIN3",
+  "ball": "1A19",
+  "note": "",
+  "cm4": "AnalogIP1"
+ },
+ "95": {
+  "net": "CM4_PI_LED_nPWR",
+  "ball": "1T19",
+  "note": "GPIO0_C0",
+  "cm4": "PI_LED_nPWR"
+ },
+ "96": {
+  "net": "SARADC_VIN2",
+  "ball": "1B18",
+  "note": "",
+  "cm4": "AnalogIP0"
+ },
+ "97": {
+  "net": "CM4_Camera_GPIO",
+  "ball": "B38",
+  "note": "GPIO2_C6",
+  "cm4": "Camera_GPIO"
+ },
+ "98": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "99": {
+  "net": "PMIC_PWRON",
+  "ball": null,
+  "note": "RK809 PWRON",
+  "cm4": "GLOBAL_EN"
+ },
+ "100": {
+  "net": "CM4_nEXTRST",
+  "ball": "AG37",
+  "note": "GPIO0_A5",
+  "cm4": "nEXTRST"
+ },
+ "101": {
+  "net": "USB_OTG0_ID",
+  "ball": "T37",
+  "note": "",
+  "cm4": "USB_OTG_ID"
+ },
+ "102": {
+  "net": "CM4_PCIe_CLK_nREQ",
+  "ball": "1B13",
+  "note": "GPIO1_B0",
+  "cm4": "PCIe_CLK_nREQ"
+ },
+ "103": {
+  "net": "USB_OTG0_DM",
+  "ball": "R38",
+  "note": "",
+  "cm4": "USB_N"
+ },
+ "104": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Reserved"
+ },
+ "105": {
+  "net": "USB_OTG0_DP",
+  "ball": "R37",
+  "note": "",
+  "cm4": "USB_P"
+ },
+ "106": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "Reserved"
+ },
+ "107": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "108": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "109": {
+  "net": "CM4_PCIe_nRST",
+  "ball": "B26",
+  "note": "GPIO1_B2",
+  "cm4": "PCIe_nRST"
+ },
+ "110": {
+  "net": "PCIE20_REFCLKP",
+  "ball": "1K19",
+  "note": "",
+  "cm4": "PCIe_CLK_P"
+ },
+ "111": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "VDAC_COMP"
+ },
+ "112": {
+  "net": "PCIE20_REFCLKN",
+  "ball": "1K20",
+  "note": "",
+  "cm4": "PCIe_CLK_N"
+ },
+ "113": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "114": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "115": {
+  "net": "MIPI_CSI_RX_D2N",
+  "ball": "AR15",
+  "note": "",
+  "cm4": "CAM1_D0_N"
+ },
+ "116": {
+  "net": "PCIE20_RXP",
+  "ball": "AB37",
+  "note": "",
+  "cm4": "PCIe_RX_P"
+ },
+ "117": {
+  "net": "MIPI_CSI_RX_D2P",
+  "ball": "AP15",
+  "note": "",
+  "cm4": "CAM1_D0_P"
+ },
+ "118": {
+  "net": "PCIE20_RXN",
+  "ball": "AB38",
+  "note": "",
+  "cm4": "PCIe_RX_N"
+ },
+ "119": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "120": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "121": {
+  "net": "MIPI_CSI_RX_D3N",
+  "ball": "AP14",
+  "note": "",
+  "cm4": "CAM1_D1_N"
+ },
+ "122": {
+  "net": "PCIE20_TXP_C",
+  "ball": null,
+  "note": "100 nF AC coupling from PCIE20_TXP (AA37)",
+  "cm4": "PCIe_TX_P"
+ },
+ "123": {
+  "net": "MIPI_CSI_RX_D3P",
+  "ball": "AR14",
+  "note": "",
+  "cm4": "CAM1_D1_P"
+ },
+ "124": {
+  "net": "PCIE20_TXN_C",
+  "ball": null,
+  "note": "100 nF AC coupling from PCIE20_TXN (AA38)",
+  "cm4": "PCIe_TX_N"
+ },
+ "125": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "126": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "127": {
+  "net": "MIPI_CSI_RX_CLK1N",
+  "ball": "1U8",
+  "note": "",
+  "cm4": "CAM1_C_N"
+ },
+ "128": {
+  "net": "MIPI_CSI_RX_D0N",
+  "ball": "AR18",
+  "note": "",
+  "cm4": "CAM0_D0_N"
+ },
+ "129": {
+  "net": "MIPI_CSI_RX_CLK1P",
+  "ball": "1V8",
+  "note": "",
+  "cm4": "CAM1_C_P"
+ },
+ "130": {
+  "net": "MIPI_CSI_RX_D0P",
+  "ball": "AP18",
+  "note": "",
+  "cm4": "CAM0_D0_P"
+ },
+ "131": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "132": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "133": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "CAM1_D2_N"
+ },
+ "134": {
+  "net": "MIPI_CSI_RX_D1N",
+  "ball": "AP17",
+  "note": "",
+  "cm4": "CAM0_D1_N"
+ },
+ "135": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "CAM1_D2_P"
+ },
+ "136": {
+  "net": "MIPI_CSI_RX_D1P",
+  "ball": "AR17",
+  "note": "",
+  "cm4": "CAM0_D1_P"
+ },
+ "137": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "138": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "139": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "CAM1_D3_N"
+ },
+ "140": {
+  "net": "MIPI_CSI_RX_CLK0N",
+  "ball": "1U9",
+  "note": "",
+  "cm4": "CAM0_C_N"
+ },
+ "141": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "CAM1_D3_P"
+ },
+ "142": {
+  "net": "MIPI_CSI_RX_CLK0P",
+  "ball": "1V9",
+  "note": "",
+  "cm4": "CAM0_C_P"
+ },
+ "143": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_HOTPLUG"
+ },
+ "144": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "145": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_SDA"
+ },
+ "146": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX2_P"
+ },
+ "147": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_SCL"
+ },
+ "148": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX2_N"
+ },
+ "149": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_CEC"
+ },
+ "150": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "151": {
+  "net": "HDMI_CEC",
+  "ball": "1V5",
+  "note": "HDMITX_CEC_M0",
+  "cm4": "HDMI0_CEC"
+ },
+ "152": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX1_P"
+ },
+ "153": {
+  "net": "HDMI_HPD_PORT",
+  "ball": null,
+  "note": "1 kOhm to HDMI_TX_HPDIN (1V17)",
+  "cm4": "HDMI0_HOTPLUG"
+ },
+ "154": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX1_N"
+ },
+ "155": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "156": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "157": {
+  "net": "MIPI_DSI_TX0_D0N",
+  "ball": "AR30",
+  "note": "",
+  "cm4": "DSI0_D0_N"
+ },
+ "158": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX0_P"
+ },
+ "159": {
+  "net": "MIPI_DSI_TX0_D0P",
+  "ball": "AP30",
+  "note": "",
+  "cm4": "DSI0_D0_P"
+ },
+ "160": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_TX0_N"
+ },
+ "161": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "162": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "163": {
+  "net": "MIPI_DSI_TX0_D1N",
+  "ball": "AP29",
+  "note": "",
+  "cm4": "DSI0_D1_N"
+ },
+ "164": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_CLK_P"
+ },
+ "165": {
+  "net": "MIPI_DSI_TX0_D1P",
+  "ball": "AR29",
+  "note": "",
+  "cm4": "DSI0_D1_P"
+ },
+ "166": {
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
+  "cm4": "HDMI1_CLK_N"
+ },
+ "167": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "168": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "169": {
+  "net": "MIPI_DSI_TX0_CLKN",
+  "ball": "1V15",
+  "note": "",
+  "cm4": "DSI0_C_N"
+ },
+ "170": {
+  "net": "HDMI_TX_D2P",
+  "ball": "AP36",
+  "note": "",
+  "cm4": "HDMI0_TX2_P"
+ },
+ "171": {
+  "net": "MIPI_DSI_TX0_CLKP",
+  "ball": "1V16",
+  "note": "",
+  "cm4": "DSI0_C_P"
+ },
+ "172": {
+  "net": "HDMI_TX_D2N",
+  "ball": "AR36",
+  "note": "",
+  "cm4": "HDMI0_TX2_N"
+ },
+ "173": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "174": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "175": {
+  "net": "MIPI_DSI_TX1_D0N",
+  "ball": "AR24",
+  "note": "",
+  "cm4": "DSI1_D0_N"
+ },
+ "176": {
+  "net": "HDMI_TX_D1P",
+  "ball": "AR35",
+  "note": "",
+  "cm4": "HDMI0_TX1_P"
+ },
+ "177": {
+  "net": "MIPI_DSI_TX1_D0P",
+  "ball": "AP24",
+  "note": "",
+  "cm4": "DSI1_D0_P"
+ },
+ "178": {
+  "net": "HDMI_TX_D1N",
+  "ball": "AP35",
+  "note": "",
+  "cm4": "HDMI0_TX1_N"
+ },
+ "179": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "180": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "181": {
+  "net": "MIPI_DSI_TX1_D1N",
+  "ball": "AP23",
+  "note": "",
+  "cm4": "DSI1_D1_N"
+ },
+ "182": {
+  "net": "HDMI_TX_D0P",
+  "ball": "AP33",
+  "note": "",
+  "cm4": "HDMI0_TX0_P"
+ },
+ "183": {
+  "net": "MIPI_DSI_TX1_D1P",
+  "ball": "AR23",
+  "note": "",
+  "cm4": "DSI1_D1_P"
+ },
+ "184": {
+  "net": "HDMI_TX_D0N",
+  "ball": "AR33",
+  "note": "",
+  "cm4": "HDMI0_TX0_N"
+ },
+ "185": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "186": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "187": {
+  "net": "MIPI_DSI_TX1_CLKN",
+  "ball": "1U11",
+  "note": "",
+  "cm4": "DSI1_C_N"
+ },
+ "188": {
+  "net": "HDMI_TX_CLKP",
+  "ball": "AR32",
+  "note": "",
+  "cm4": "HDMI0_CLK_P"
+ },
+ "189": {
+  "net": "MIPI_DSI_TX1_CLKP",
+  "ball": "1V11",
+  "note": "",
+  "cm4": "DSI1_C_P"
+ },
+ "190": {
+  "net": "HDMI_TX_CLKN",
+  "ball": "AP32",
+  "note": "",
+  "cm4": "HDMI0_CLK_N"
+ },
+ "191": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "192": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "193": {
+  "net": "MIPI_DSI_TX1_D2N",
+  "ball": "AR21",
+  "note": "",
+  "cm4": "DSI1_D2_N"
+ },
+ "194": {
+  "net": "MIPI_DSI_TX1_D3N",
+  "ball": "AP20",
+  "note": "",
+  "cm4": "DSI1_D3_N"
+ },
+ "195": {
+  "net": "MIPI_DSI_TX1_D2P",
+  "ball": "AP21",
+  "note": "",
+  "cm4": "DSI1_D2_P"
+ },
+ "196": {
+  "net": "MIPI_DSI_TX1_D3P",
+  "ball": "AR20",
+  "note": "",
+  "cm4": "DSI1_D3_P"
+ },
+ "197": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "198": {
+  "net": "GND",
+  "ball": null,
+  "note": "",
+  "cm4": "GND"
+ },
+ "199": {
+  "net": "HDMI_SDA_PORT",
+  "ball": null,
+  "note": "MOSFET level shifter to HDMITX_SDA (AP11)",
+  "cm4": "HDMI0_SDA"
+ },
+ "200": {
+  "net": "HDMI_SCL_PORT",
+  "ball": null,
+  "note": "MOSFET level shifter to HDMITX_SCL (AR12)",
+  "cm4": "HDMI0_SCL"
+ }
+}
