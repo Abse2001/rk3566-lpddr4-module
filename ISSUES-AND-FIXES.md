@@ -1,0 +1,59 @@
+# RK3566 module: issues found and fixes made
+
+A running log of every problem found while finishing the module and what was done about it. Rules for every
+fix: general (no special cases for one net or one spot), no relaxed design rules (JLCPCB 6-layer: 0.1/0.1 mm,
+0.15/0.25 mm vias, via-in-pad filled and capped; Rockchip LPDDR4 rules), and the routed DDR block is never
+changed. All routing-tool fixes are kept local (no pushes, no PRs) until the user says otherwise.
+
+Status legend: **fixed** (done and verified), **in progress**, **open**.
+
+## Placement (`source/design/place.py`)
+
+| # | Issue | Root cause | Fix | Status |
+|---|---|---|---|---|
+| P1 | The 18 HDMI/MIPI pairs and the PMIC/GPIO nets fought over the strip south-east of the SoC (routing stalled at ~650-2000 conflicts) | The VDD_CPU buck (U4) and its inductor (L6) sat in that corner, right in the pairs' path to J2, with an inner2 island feed running up the east side | U4/L6 moved to the free north-east corner; the VDD_CPU island is fed along the band between the eMMC and the SoC (route.ts island boxes updated) | fixed |
+| P2 | U4's 5 V input capacitors were 20 mm away, next to U5 | `pin_xy` matched only exact pin names; U4's pins are VIN1..VIN4, so the anchor fell through to the next IC with VCC5V0_SYS | Pin lookup also matches numbered pads (VIN -> VIN1..4); anchors prefer an IC of the part's own group | fixed |
+| P3 | eMMC decoupling caps and CMD/RST/D0 pull-ups were placed near the PMIC, ~30 mm from the eMMC | Same pin-name bug (VCC -> VCC1..) | Same fix as P2 | fixed |
+| P4 | tscircuit reported U4 courtyard overlaps | The imported WLCSP-20 footprint carries a 5.2 x 4.9 mm courtyard for a 1.8 x 1.4 mm chip | U4 gets its own footprint (same pads, same nets, verified) with a body + 0.25 mm courtyard | fixed |
+| P5 | C97 (VCC_DDR bulk) landed on top-layer DDR traces (DQS1) - a short | Top-side placement did not avoid the routed DDR copper (only the bottom side did) | Top-side parts keep 0.5 mm from DDR top traces and 0.6 mm from its vias | fixed |
+| P6 | EMMC_D3 could not route | R8 (pull-up) was placed on the bottom under the eMMC ball field, blocking the via-in-pad an inner 0.5 mm-pitch ball needs | No bottom-side parts under the eMMC ball field | fixed |
+| P7 | VCC3V3_SYS could not route | A rule letting capacitors use the other side when >= 2 mm closer put C11 under the RK809, inside the island corridors where no via may go | Rule removed (parts stay on their preferred side unless there is no room); the two VDD_CPU 22 uF output caps are placed deliberately under L6 | fixed |
+
+## Pin map (`source/design/make-cm4-map.py`)
+
+| # | Issue | Root cause | Fix | Status |
+|---|---|---|---|---|
+| M1 | CM4 pins 89 (WL_nDisable), 91 (BT_nDisable), 97 (Camera_GPIO) wired to GPIO2_C2/C3/C6 in the 1.8 V VCCIO4 bank, while a CM4 carrier drives them at 3.3 V (over-voltage risk) | Copied from the SOQuartz mapping, which has on-module wireless | 89/91 not connected (no wireless on this module); 97 moved to a 3.3 V ball | fixed |
+| M2 | LED_nACT (21), LED_nPWR (95), nEXTRST (100) crossed the whole SoC from east-edge GPIO0 balls to J1 on the west | SOQuartz ball choice | Moved to free 3.3 V balls on the west edge next to J1 (device tree needs the new GPIO numbers; UART/I2C/etc. unchanged) | fixed |
+
+## Checker (`source/check.py`)
+
+| # | Issue | Fix | Status |
+|---|---|---|---|
+| C1 | JLCPCB's SMD pad-to-pad rule (0.15 mm, different nets) was not checked | Added; all current pads pass | fixed |
+
+## Router (`source/route/route.ts`, local)
+
+| # | Issue | Root cause | Fix | Status |
+|---|---|---|---|---|
+| R1 | Runs diverged after reaching their best (e.g. 465 -> 653 -> 1402 conflicts) | Present price capped at its maximum makes contested nets jump back and forth | Keep the best routing seen; after STALL passes without progress go back to it | fixed |
+| R2 | The endgame gave up on everything ("no order fits") | It re-placed one huge group of nets at once | Endgame runs separately on each spatial cluster of conflicts | fixed |
+| R3 | An endgame round could raise the total (465 -> 560) | In strict mode a 0.2/0.4 mm trace only checked the keep-outs other nets stamp for a 0.1 mm trace, so it could land inside a thin neighbour's clearance | Strict mode also checks the wide trace's extra half-width | fixed |
+| R4 | One endgame round took 30+ minutes | Each failed strict search expanded up to 12 M nodes, 24 orders per cluster | Strict searches capped (EG_CAP, 1.5 M); big clusters get fewer orders | fixed |
+| R5 | Most clusters still failed | A cluster only counted if every net fitted with zero conflicts | Each order places nets strictly where possible and priced otherwise; the order with the fewest conflicts is kept if it beats the current routes, so a round can only lower the count | fixed |
+| R6 | After an endgame the next pass scattered the cleaned-up routing (434 -> 1710) | Negotiation continued at the capped maximum price | Endgame rounds repeat while they lower the total; afterwards the negotiation restarts at a low price (history kept) | in progress (run 26) |
+| R7 | Slow nets had no room south of the SoC | All of inner2 there was reserved for the power islands | INNER2_OPEN: the islands keep only their feed corridors (>= 1.5 mm wide) there; slow nets may use the rest of inner2; fast nets never use inner2 | fixed (in use) |
+
+## Other solvers tried
+
+| # | Solver | Result | Notes |
+|---|---|---|---|
+| S1 | @tscircuit/fanout-solver (RK3566 breakout) | 35 of 116 non-DDR signal nets escaped | Bugs: boundary route leaves `sharedBoundary` and re-enters; one failed corner normalization discards the whole result; no signal via-in-pad (inner-grid balls cannot escape). Repro inputs in `source/route/fanout_rk.ts`. Not fixed here. |
+| S2 | @tscircuit/capacity-autorouter Pipeline 9 (non-DDR nets) | Never completed: aborts in the high-density stage on a different net each run, no partial output | Being investigated and improved locally in `/home/user/tscircuit-autorouter` (see its `NOTES-dense-bga.md`) |
+
+## Remaining before ordering
+
+1. Routing at 0 conflicts, every net connected (`check.py`: 0 clearance violations, all nets complete).
+2. Pair P/N matching within 0.13 mm (0.25 mm USB) (`tune_pairs.py`, `pairs.py`).
+3. Final planes, full-board build, Gerbers / BOM / CPL, README.
+4. Verify: eMMC VDDI cap value, 240R 1% stock, 32 kHz crystal load caps, JLCPCB CPL rotations (incl. the rotated SYR837 WLCSP), GPIO bank voltages of the moved CM4 pins.
