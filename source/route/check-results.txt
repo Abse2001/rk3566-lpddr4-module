@@ -1,0 +1,21 @@
+PASS  connectivity: 67/67 connections, 0 issues
+PASS  copper DRC at 0.10 mm (JLCPCB 6-layer min 0.09): 0 issues
+PASS  CK_a P/N mismatch 0.0 mil (< 12)
+PASS  CA_a to CLK worst mismatch 200 mil (< 500)
+PASS  DQS0_a P/N mismatch 0.0 mil (< 12)
+PASS  BYTE0_a DQ/DM to DQS worst mismatch 485 mil (< 600)
+PASS  DQS0_a to CLK_a mismatch 27 mil (< 1200)
+PASS  DQS1_a P/N mismatch 0.0 mil (< 12)
+PASS  BYTE1_a DQ/DM to DQS worst mismatch 390 mil (< 600)
+PASS  DQS1_a to CLK_a mismatch 329 mil (< 1200)
+PASS  CK_b P/N mismatch 0.0 mil (< 12)
+PASS  CA_b to CLK worst mismatch 278 mil (< 500)
+PASS  DQS0_b P/N mismatch 0.8 mil (< 12)
+PASS  BYTE0_b DQ/DM to DQS worst mismatch 322 mil (< 600)
+PASS  DQS0_b to CLK_b mismatch 70 mil (< 1200)
+PASS  DQS1_b P/N mismatch 0.8 mil (< 12)
+PASS  BYTE1_b DQ/DM to DQS worst mismatch 378 mil (< 600)
+PASS  DQS1_b to CLK_b mismatch 297 mil (< 1200)
+INFO  spacing: 55.5% of 1102 mm DDR copper is closer than 2W (0.22 mm edge) to another DDR net (BGA breakouts included); CK/DQS below 3W: 140.0 mm
+INFO  vias per net: 0..4, total 133
+RESULT: PASS

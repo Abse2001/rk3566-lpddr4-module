@@ -1,0 +1,7 @@
+{
+  "name": "rk3566-lpddr4-module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RK3566 + 2 GB LPDDR4 compute module, 6 layers (work in progress: DDR block routed and verified)",
+  "main": "dist/index.js"
+}
