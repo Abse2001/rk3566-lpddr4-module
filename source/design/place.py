@@ -23,7 +23,8 @@ FIXED = {
     "J2": dict(x=33.46, y=-21.5, rot=0, layer="bottom", oddSide=1),
     "U3": dict(x=15.0, y=-37.5, rot=270, layer="top"),           # RK809 turned so BUCK1/2 face the SoC, BUCK4/5 face right, BUCK3 left
     "U5": dict(x=4.6, y=-46.6, rot=0, layer="top"),             # SY8113B 5 V -> 3.3 V
-    "U4": dict(x=26.5, y=-30.6, rot=0, layer="top"),            # SYR837 VDD_CPU
+    "U4": dict(x=33.7, y=-8.6, rot=0, layer="top"),             # SYR837 VDD_CPU in the free north-east corner, clear of
+                                                                 # the HDMI/MIPI pairs that leave the SoC bottom for J2
     "Y1": dict(x=25.6, y=-21.4, rot=0, layer="top"),            # 24 MHz next to XIN24M/XOUT24M (RK right edge, y -21.4)
     "Y2": dict(x=18.2, y=-42.9, rot=0, layer="top"),            # 32.768 kHz next to RK809 XIN/XOUT (bottom side after the turn)
     "Q1": dict(x=24.0, y=-45.0, rot=0, layer="top"),
@@ -38,7 +39,7 @@ FIXED.update({
     "IND_SW4": dict(x=PM["x"] + 6.4, y=PM["y"] + 2.4, rot=0, layer="top"),
     "IND_SW5": dict(x=PM["x"] + 6.4, y=PM["y"] - 1.6, rot=0, layer="top"),
     "IND_SW3": dict(x=PM["x"] - 6.3, y=PM["y"] + 0.4, rot=90, layer="top"),
-    "IND_SW_CPU": dict(x=26.5, y=-26.6, rot=0, layer="top"),
+    "IND_SW_CPU": dict(x=33.7, y=-4.7, rot=90, layer="top"),
     "IND_SW_3V3": dict(x=4.0, y=-41.6, rot=0, layer="top"),
 })
 ind_by_net = {}
@@ -53,7 +54,7 @@ def outline(ref, pl):
     role = comps[ref]["role"]
     bx = fp[role]["padBox"]
     body = {"RK3566": (7.8, 7.25), "LPDDR4": (7.5, 5.0), "EMMC": (5.75, 6.5), "RK809": (3.6, 3.6)}.get(role)
-    cy = fp[role].get("court") or [bx[0] - 0.15, bx[1] - 0.15, bx[2] + 0.15, bx[3] + 0.15]
+    cy = {"BUCK_CPU": [-1.25, -1.05, 1.25, 1.05]}.get(role) or fp[role].get("court") or [bx[0] - 0.15, bx[1] - 0.15, bx[2] + 0.15, bx[3] + 0.15]
     g = box(min(cy[0], bx[0] - 0.1), min(cy[1], bx[1] - 0.1), max(cy[2], bx[2] + 0.1), max(cy[3], bx[3] + 0.1))
     if body: g = g.union(box(-body[0], -body[1], body[0], body[1])).envelope
     g = srot(g, pl.get("rot", 0), origin=(0, 0))
@@ -91,8 +92,8 @@ bottom_block = unary_union(bot + [box(RK[0] - 7.6, RK[1] - 7.0, RK[0] + 7.6, RK[
 def pin_xy(ref, pinname):
     """board position of a named pin of a placed part"""
     pl = place[ref]; role = comps[ref]["role"]
-    for p in fp[role]["pads"]:
-        if pinname in p["names"]:
+    for p in sorted(fp[role]["pads"], key=lambda p: pinname not in p["names"]):
+        if pinname in p["names"] or any(n.rstrip("0123456789") == pinname and n != pinname and n[len(pinname):].isdigit() for n in p["names"]):
             x, y = p["x"], p["y"]
             if pl["layer"] == "bottom": x = -x
             a = math.radians(pl.get("rot", 0))
@@ -107,7 +108,7 @@ for b, n in comps["U1"]["pins"].items():
 
 # bulk decoupling of the core rails: just outside the SoC edge their regulator feed comes in from
 FEED_EDGE = {"VDD_LOGIC": (13.2, -27.6), "VDD_GPU": (14.8, -27.6), "VDD_NPU": (18.5, -27.6),
-             "VDD_CPU": (24.4, -17.0), "VCC_DDR": (6.6, -16.5)}
+             "VDD_CPU": (20.6, -11.3), "VCC_DDR": (6.6, -16.5)}
 def anchor(c):
     """where a passive wants to be, and on which side"""
     nets = [n for n in c["pins"].values() if n and n != "GND"]
@@ -116,7 +117,8 @@ def anchor(c):
         return FEED_EDGE[nets[0]], "bottom"
     # prefer the IC pin that shares a net with this part
     # regulator output capacitors belong at their inductor's output pad
-    for ref in [k for k in comps if k.startswith("L")] + ["U3", "U4", "U5", "U6", "Y1", "Y2", "Q1", "U2"]:
+    refs = [k for k in comps if k.startswith("L")] + ["U3", "U4", "U5", "U6", "Y1", "Y2", "Q1", "U2"]
+    for ref in sorted(refs, key=lambda r: comps[r]["group"] != g):
         for n in nets:
             for pn, pnet in comps[ref]["pins"].items():
                 if pnet == n and ref != "U1":
@@ -193,8 +195,11 @@ order = sorted([c for c in net["components"] if c["ref"] not in place], key=lamb
 failed = []
 for c in order:
     (ax, ay), side = anchor(c)
-    best = None
+    # nearest free spot on each side; the preferred side wins unless the other one is at least 2 mm closer (capacitors
+    # only: a regulator's input/output capacitor under its inductor beats one several millimetres away)
+    found = {}
     for s in (side, "top" if side == "bottom" else "bottom"):
+        if found and not c["ref"].startswith("C"): break
         for rad in [i * 0.25 for i in range(0, 80)]:
             n = max(1, int(2 * math.pi * rad / 0.3))
             for k in range(n):
@@ -205,10 +210,13 @@ for c in order:
                     if not BOARD.contains(o) or o.intersects(keep): continue
                     if s == "bottom" and o.intersects(bottom_block): continue
                     if any(o.buffer(0.02).intersects(q) for q in occ[s]): continue
-                    best = pl; break
-                if best: break
-            if best: break
-        if best: break
+                    found[s] = (rad, pl); break
+                if s in found: break
+            if s in found: break
+    best = None
+    if found:
+        pref = found.get(side); other = [v for k, v in found.items() if k != side]
+        best = (other[0] if other and (not pref or other[0][0] < pref[0] - 2.0) else pref)[1]
     if not best:
         failed.append(c["ref"]); continue
     place[c["ref"]] = best

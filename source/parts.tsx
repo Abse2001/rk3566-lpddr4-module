@@ -33,6 +33,17 @@ export function cm4HeaderFootprint(oddSide: 1 | -1) {
   return <footprint>{pads}<courtyardoutline outline={[{ x: -1.93, y: -11.01 }, { x: 1.93, y: -11.01 }, { x: 1.93, y: 11.01 }, { x: -1.93, y: 11.01 }, { x: -1.93, y: -11.01 }]} /></footprint>
 }
 
+/** SYR837 WLCSP-20, 0.4 mm pitch, the same pads as the imported footprint (pin n in column (n-1)/4, row (n-1)%4)
+ *  with an IPC courtyard: body 2.0 x 1.6 mm + 0.25 mm (the imported one is 5.2 x 4.9 mm). */
+export function wlcsp20Footprint() {
+  const pads: any[] = []
+  for (let n = 1; n <= 20; n++) {
+    const x = -0.8 + 0.4 * Math.floor((n - 1) / 4), y = -0.6 + 0.4 * ((n - 1) % 4)
+    pads.push(<smtpad key={n} portHints={[`pin${n}`]} pcbX={`${x}mm`} pcbY={`${y}mm`} radius="0.104mm" shape="circle" />)
+  }
+  return <footprint>{pads}<courtyardoutline outline={[{ x: -1.25, y: -1.05 }, { x: 1.25, y: -1.05 }, { x: 1.25, y: 1.05 }, { x: -1.25, y: 1.05 }, { x: -1.25, y: -1.05 }]} /></footprint>
+}
+
 export function makePart(c: { ref: string; role: string; value: string }, place: any) {
   const r: any = (roles as any)[c.role]
   const common: any = { name: c.ref, schX: place.schX ?? 0, schY: place.schY ?? 0, pcbX: place.x, pcbY: place.y, pcbRotation: place.rot ?? 0, layer: place.layer ?? "top", supplierPartNumbers: { jlcpcb: [r.lcsc] } }
@@ -40,7 +51,7 @@ export function makePart(c: { ref: string; role: string; value: string }, place:
     return <chip key={c.ref} {...common} manufacturerPartNumber="DF40C-100DP-0.4V(51)" footprint={cm4HeaderFootprint(place.oddSide ?? -1)} pinLabels={Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`pin${i + 1}`, [String(i + 1)]]))} />
   if (r.import) {
     const C = IMPORTS[r.import]
-    const extra: any = c.role === "XTAL_24M" ? { loadCapacitance: "12pF" } : c.role === "XTAL_32K" ? { loadCapacitance: "12.5pF" } : {}
+    const extra: any = c.role === "XTAL_24M" ? { loadCapacitance: "12pF" } : c.role === "XTAL_32K" ? { loadCapacitance: "12.5pF" } : c.role === "BUCK_CPU" ? { footprint: wlcsp20Footprint() } : {}
     return <C key={c.ref} {...common} {...extra} />
   }
   if (r.kind === "C") return <capacitor key={c.ref} {...common} capacitance={c.value} footprint={r.fp} />

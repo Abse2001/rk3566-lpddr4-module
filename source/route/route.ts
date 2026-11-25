@@ -102,7 +102,9 @@ const neck = new Uint8Array(NN)
 // (except in the DDR corner, where the supplied fanout drops some small rails onto inner2)
 {
   const inBox = (x: number, y: number, b: number[]) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]
-  const ISLANDS = [[8.5, -26.5, 23.5, -11.5], [7.5, -35.0, 23.5, -26.5], [22.5, -32.5, 28.5, -13.0]]
+  // SoC field; LOGIC/GPU/NPU feeds from the RK809 below; the VDD_CPU feed from the north-east corner (U4/L6) along
+  // the band between the eMMC and the SoC
+  const ISLANDS = [[8.5, -26.5, 23.5, -11.5], [7.5, -35.0, 23.5, -26.5], [20.0, -11.8, 31.5, -9.0], [31.0, -11.0, 36.5, -2.5]]
   const DDR_CORNER = [6.5, -20.0, 13.5, -10.5]
   for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
     const x = wx(i), y = wy(j)
@@ -168,7 +170,10 @@ for (const [name, ps] of padsByNet) {
   const fv = fixedViasByNet.get(name) ?? []
   if (fv.length) for (const v of fv) terms.push(viaTerm(v))
   else if (ps.length !== open.length) { const p = ps.find((q) => padTouchesFixed(q)); terms.push(padTerm(p)) }
-  if (terms.length >= 2) nets.push({ name, w: widthOf(name), plane: false, inner2: /^(VCC|VDD)/.test(name), terms, drops: [], order: rand() })
+  // inner2 (L3) sits next to the L2 ground plane: supply traces and slow signals may use it where the supply
+  // islands do not; high-speed nets (HDMI, MIPI, PCIe, USB, eMMC, SD) stay on top / inner3 / bottom
+  const fast = /^(HDMI_TX_[CD]|MIPI_|PCIE20_|USB_OTG0_D|EMMC_|CM4_SD_)/.test(name)
+  if (terms.length >= 2) nets.push({ name, w: widthOf(name), plane: false, inner2: !fast, terms, drops: [], order: rand() })
 }
 // differential pairs: the negative net follows the positive one at the pair spacing
 {
