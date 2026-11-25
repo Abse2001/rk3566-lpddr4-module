@@ -48,6 +48,10 @@ for c in net["components"]:
         sw = c["pins"]["1"]
         ind_by_net[c["ref"]] = "IND_" + sw
         FIXED[c["ref"]] = FIXED.pop("IND_" + sw)
+# the VDD_CPU 22 uF output capacitors go under L6's output pad: the north-east corner has no room on top
+CPU_OUT_CAPS = [dict(x=33.7, y=-5.75, rot=0, layer="bottom"), dict(x=33.7, y=-4.25, rot=0, layer="bottom")]
+for c, pl in zip([c for c in net["components"] if c["role"] == "C_22U_0603" and set(c["pins"].values()) == {"VDD_CPU", "GND"}], CPU_OUT_CAPS):
+    FIXED[c["ref"]] = pl
 
 def outline(ref, pl):
     """courtyard of a placed part (pad box grown by 0.15 mm, or the package body for the big parts)"""
@@ -77,16 +81,20 @@ keep = unary_union([Point(h).buffer(2.6) for h in HOLES] + [BOARD.exterior.buffe
 # bottom: the routed DDR copper (traces/vias) and the RK/LPDDR4 ball fields' via fanout stay free of parts
 ddr = json.load(open(D + "/../route/ddr.lane.routed.json"))
 pwr = json.load(open(D + "/../route/power.fanout.json"))
-bot = []
+bot, top, vias_ddr = [], [], []
 for t in ddr["traces"] + pwr:
     r = t["route"]
     for a, b in zip(r, r[1:]):
-        if a["route_type"] == "wire" and b["route_type"] == "wire" and a["layer"] == b["layer"] == "bottom":
-            bot.append(LineString([(a["x"] + RK[0], a["y"] + RK[1]), (b["x"] + RK[0], b["y"] + RK[1])]).buffer(0.5))
+        if a["route_type"] == "wire" and b["route_type"] == "wire" and a["layer"] == b["layer"] and a["layer"] in ("top", "bottom"):
+            (bot if a["layer"] == "bottom" else top).append(LineString([(a["x"] + RK[0], a["y"] + RK[1]), (b["x"] + RK[0], b["y"] + RK[1])]).buffer(0.5))
     for p in r:
         if p["route_type"] == "via":
-            bot.append(Point(p["x"] + RK[0], p["y"] + RK[1]).buffer(0.6))
-bottom_block = unary_union(bot + [box(RK[0] - 7.6, RK[1] - 7.0, RK[0] + 7.6, RK[1] + 7.0),
+            vias_ddr.append(Point(p["x"] + RK[0], p["y"] + RK[1]).buffer(0.6))
+# top: the same for the DDR traces on the top layer (vias are in bot, which covers both sides)
+top_block = unary_union(top + vias_ddr)
+# and under the eMMC (0.5 mm pitch: its inner balls escape only through vias in their pads)
+EM = FIXED["U6"]
+bottom_block = unary_union(bot + vias_ddr + [box(EM["x"] - 4.0, EM["y"] - 3.75, EM["x"] + 4.0, EM["y"] + 3.75), box(RK[0] - 7.6, RK[1] - 7.0, RK[0] + 7.6, RK[1] + 7.0),
                                    box(RK[0] - 4 - 7.0, RK[1] + 16.6 - 4.6, RK[0] - 4 + 7.0, RK[1] + 16.6 + 4.6)])
 
 def pin_xy(ref, pinname):
@@ -195,11 +203,9 @@ order = sorted([c for c in net["components"] if c["ref"] not in place], key=lamb
 failed = []
 for c in order:
     (ax, ay), side = anchor(c)
-    # nearest free spot on each side; the preferred side wins unless the other one is at least 2 mm closer (capacitors
-    # only: a regulator's input/output capacitor under its inductor beats one several millimetres away)
-    found = {}
+    # nearest free spot on the preferred side; the other side only if the preferred one has no room at all
+    best = None
     for s in (side, "top" if side == "bottom" else "bottom"):
-        if found and not c["ref"].startswith("C"): break
         for rad in [i * 0.25 for i in range(0, 80)]:
             n = max(1, int(2 * math.pi * rad / 0.3))
             for k in range(n):
@@ -209,14 +215,12 @@ for c in order:
                     o = outline(c["ref"], pl)
                     if not BOARD.contains(o) or o.intersects(keep): continue
                     if s == "bottom" and o.intersects(bottom_block): continue
+                    if s == "top" and o.intersects(top_block): continue
                     if any(o.buffer(0.02).intersects(q) for q in occ[s]): continue
-                    found[s] = (rad, pl); break
-                if s in found: break
-            if s in found: break
-    best = None
-    if found:
-        pref = found.get(side); other = [v for k, v in found.items() if k != side]
-        best = (other[0] if other and (not pref or other[0][0] < pref[0] - 2.0) else pref)[1]
+                    best = pl; break
+                if best: break
+            if best: break
+        if best: break
     if not best:
         failed.append(c["ref"]); continue
     place[c["ref"]] = best
