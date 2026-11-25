@@ -265,7 +265,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
   while (heapK.length) {
     const id = pop(), l = (id / NN) | 0, c = id - l * NN, g = gCost[id]
     if (lastKey > g + h(c) + 1e-4) continue // stale entry: this node was reached more cheaply since
-    if (++expanded > 1.2e7) { if (VERB) console.log("    search cap hit", expanded, "heap", heapK.length); return null }
+    if (++expanded > (hard ? +(process.env.EG_CAP ?? 1.5e6) : 1.2e7)) { if (VERB) console.log("    search cap hit", expanded, "heap", heapK.length); return null }
     if (goals && isGoal[id] === goalStamp) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
     const corrOk = (cc: number) => corr[cc] < 0 || corrName[corr[cc]] === n.name
     if (goalVia && !blockV[c] && !occV[c] && corrOk(c) && (!hard || !occT[l][c])) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
@@ -455,7 +455,8 @@ function endgameClusters(bad: Net[], tries: number): number {
   let fixed = 0
   for (const g of list) {
     const live = g.filter((n) => conflictsOf(n) > 0)
-    if (live.length && endgame(live, tries)) fixed++
+    // a big cluster gets fewer orders: each failed order costs a full search per net
+    if (live.length && endgame(live, live.length > 6 ? Math.max(4, tries >> 2) : tries)) fixed++
   }
   console.log(`  endgame: ${fixed} of ${list.length} conflict clusters re-placed`)
   return fixed
