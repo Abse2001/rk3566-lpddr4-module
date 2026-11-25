@@ -12,9 +12,11 @@ const dir = import.meta.dir
 const padsIn = await Bun.file(dir + "/../design/pads.json").json()
 const netlist = await Bun.file(dir + "/../design/netlist.json").json()
 const fixed = await Bun.file(dir + "/fixed.json").json()
+// via-in-pad on the SoC/eMMC supply and ground balls (fanout_bga.py): fixed copper too
+if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await Bun.file(dir + "/bga_vias.json").json()))
 
 // ---------------- rules ----------------
-const P = 0.05, GAP = 0.1, W_SIG = 0.1, W_PWR = 0.2, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
+const P = 0.05, GAP = 0.1, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
 // inner2 is the power plane layer; small supply rails may also run there as traces (the plane islands avoid them)
 const LAYERS = ["top", "inner3", "bottom", "inner2"] as const, NL = 4
 const B = padsIn.board, X0 = B.x0, Y0 = B.y0
@@ -23,9 +25,9 @@ const gx = (x: number) => Math.round((x - X0) / P), gy = (y: number) => Math.rou
 const wx = (i: number) => X0 + i * P, wy = (j: number) => Y0 + j * P
 const HOLES = [[0, 0], [33, 0], [0, -48], [33, -48]], HOLE_R = 1.35
 const PLANE_GND = new Set(["GND"])
-const PLANE_PWR = new Set(["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC3V3_SYS", "VCC5V0_SYS"])
+const PLANE_PWR = new Set(["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"])
 const isPlane = (n: string) => PLANE_GND.has(n) || PLANE_PWR.has(n)
-const widthOf = (n: string) => (!isPlane(n) && /^(VCC|VDD)/.test(n) ? W_PWR : W_SIG)
+const widthOf = (n: string) => (["VCC3V3_SYS", "VCC5V0_SYS"].includes(n) ? W_BIG : !isPlane(n) && /^(VCC|VDD)/.test(n) ? W_PWR : W_SIG)
 const SEED = +(process.env.SEED ?? 1), MAXIT = +(process.env.MAXIT ?? 60), VERB = !!process.env.VERB
 let rng = SEED * 2654435761 % 4294967296
 const rand = () => ((rng = (rng * 1664525 + 1013904223) % 4294967296) / 4294967296)
@@ -55,7 +57,7 @@ function cellsWithin(s: Shape, reach: number): number[] {
 // ---------------- static copper ----------------
 // Each object: net, layers (indices into LAYERS; through vias: all), shape. Its "trace" stamp marks cells where a
 // trace centre of another net may not go, its "via" stamp cells where another net's via centre may not go.
-type Obj = { net: string | null; layers: number[]; shape: Shape; t?: Int32Array; tw?: Int32Array; v?: Int32Array; pad?: any }
+type Obj = { net: string | null; layers: number[]; shape: Shape; t?: Int32Array; tw?: Int32Array; tb?: Int32Array; v?: Int32Array; pad?: any }
 const objs: Obj[] = []
 const L_OF: Record<string, number> = { top: 0, inner3: 1, bottom: 2, inner2: 3 }
 for (const p of padsIn.pads) {
@@ -72,11 +74,11 @@ for (const t of fixed.traces) {
 }
 for (const v of fixed.vias) objs.push({ net: v.net, layers: [0, 1, 2, 3], shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
 
-const blockT = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockTW = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
-const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_V = GAP + VIA_D / 2
+const blockT = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockTW = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockTB = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
+const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_TB = GAP + W_BIG / 2, R_V = GAP + VIA_D / 2
 for (const o of objs) {
-  o.t = Int32Array.from(cellsWithin(o.shape, R_T)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW)); o.v = Int32Array.from(cellsWithin(o.shape, R_V))
-  for (const l of o.layers) { for (const c of o.t) blockT[l][c]++; for (const c of o.tw) blockTW[l][c]++ }
+  o.t = Int32Array.from(cellsWithin(o.shape, R_T)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW)); o.tb = Int32Array.from(cellsWithin(o.shape, R_TB)); o.v = Int32Array.from(cellsWithin(o.shape, R_V))
+  for (const l of o.layers) { for (const c of o.t) blockT[l][c]++; for (const c of o.tw) blockTW[l][c]++; for (const c of o.tb) blockTB[l][c]++ }
   for (const c of o.v) blockV[c]++
 }
 // board edge and mounting holes
@@ -86,20 +88,43 @@ for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
   const d = Math.min(de, dh)
   if (d < EDGE + W_SIG / 2) for (let l = 0; l < NL; l++) blockT[l][c] += 1000
   if (d < EDGE + W_PWR / 2) for (let l = 0; l < NL; l++) blockTW[l][c] += 1000
+  if (d < EDGE + W_BIG / 2) for (let l = 0; l < NL; l++) blockTB[l][c] += 1000
   if (d < EDGE + VIA_D / 2) blockV[c] += 1000
 }
 // neck-down zones: inside a BGA ball field a power trace narrows to signal width
 const neck = new Uint8Array(NN)
 {
   const bgas = new Map<string, number[]>()
-  for (const p of padsIn.pads) if (["U1", "U2", "U6"].includes(p.ref)) { const b = bgas.get(p.ref) ?? [1e9, 1e9, -1e9, -1e9]; bgas.set(p.ref, [Math.min(b[0], p.x), Math.min(b[1], p.y), Math.max(b[2], p.x), Math.max(b[3], p.y)]) }
+  for (const p of padsIn.pads) if (/^[UJQ]\d/.test(p.ref)) { const b = bgas.get(p.ref) ?? [1e9, 1e9, -1e9, -1e9]; bgas.set(p.ref, [Math.min(b[0], p.x), Math.min(b[1], p.y), Math.max(b[2], p.x), Math.max(b[3], p.y)]) }
   for (const [, b] of bgas) for (let j = gy(b[1] - 0.6); j <= gy(b[3] + 0.6); j++) for (let i = gx(b[0] - 0.6); i <= gx(b[2] + 0.6); i++) if (i >= 0 && j >= 0 && i < NX && j < NY) neck[j * NX + i] = 1
+}
+// inner2 belongs to the core-rail islands under the SoC and their feeds from the regulators: no traces there
+// (except in the DDR corner, where the supplied fanout drops some small rails onto inner2)
+{
+  const inBox = (x: number, y: number, b: number[]) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]
+  const ISLANDS = [[8.5, -26.5, 23.5, -11.5], [7.5, -35.0, 23.5, -26.5], [22.5, -32.5, 28.5, -13.0]]
+  const DDR_CORNER = [6.5, -20.0, 13.5, -10.5]
+  for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+    const x = wx(i), y = wy(j)
+    if (ISLANDS.some((b) => inBox(x, y, b)) && !inBox(x, y, DDR_CORNER)) { blockT[3][j * NX + i] += 1000; blockTW[3][j * NX + i] += 1000; blockTB[3][j * NX + i] += 1000 }
+  }
+}
+// inner2 corridors of the supply islands (planes.py, from a plane-drops-only run): another net's via there would
+// cut the island off from its regulator, so only the rail's own vias may go there (outside the BGA fields)
+const corr = new Int16Array(NN).fill(-1), corrName: string[] = []
+if (!process.env.PLANES_ONLY && (await Bun.file(dir + "/corridors.json").exists())) {
+  const cs = await Bun.file(dir + "/corridors.json").json()
+  for (const c of cs) {
+    const id = corrName.length; corrName.push(c.net)
+    for (const [x, y] of c.cells) { const i = gx(x), j = gy(y); if (i >= 0 && j >= 0 && i < NX && j < NY && !neck[j * NX + i] && corr[j * NX + i] < 0) corr[j * NX + i] = id }
+  }
+  console.log("corridors", cs.length, "cells", corr.reduce((s, v) => s + (v >= 0 ? 1 : 0), 0))
 }
 const objsByNet = new Map<string, Obj[]>()
 for (const o of objs) if (o.net) (objsByNet.get(o.net) ?? objsByNet.set(o.net, []).get(o.net)!).push(o)
 function lift(net: string, s: 1 | -1) {
   for (const o of objsByNet.get(net) ?? []) {
-    for (const l of o.layers) { for (const c of o.t!) blockT[l][c] += s; for (const c of o.tw!) blockTW[l][c] += s }
+    for (const l of o.layers) { for (const c of o.t!) blockT[l][c] += s; for (const c of o.tw!) blockTW[l][c] += s; for (const c of o.tb!) blockTB[l][c] += s }
     for (const c of o.v!) blockV[c] += s
   }
 }
@@ -107,7 +132,7 @@ function lift(net: string, s: 1 | -1) {
 // ---------------- nets and terminals ----------------
 // A terminal is a set of graph nodes (layer * NN + cell): a pad's cells on its layer, or a via's cell on all layers.
 type Term = { nodes: Int32Array; x: number; y: number; label: string }
-type Net = { name: string; w: number; plane: boolean; inner2?: boolean; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
+type Net = { name: string; w: number; plane: boolean; inner2?: boolean; partner?: Net; follows?: Net; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
 const padTerm = (p: any): Term => {
   const l = L_OF[p.layer]
   const shape: Shape = p.shape === "circle" ? { kind: "circle", x: p.x, y: p.y, r: p.w / 2 } : { kind: "rect", x: p.x, y: p.y, w: p.w, h: p.h }
@@ -145,11 +170,21 @@ for (const [name, ps] of padsByNet) {
   else if (ps.length !== open.length) { const p = ps.find((q) => padTouchesFixed(q)); terms.push(padTerm(p)) }
   if (terms.length >= 2) nets.push({ name, w: widthOf(name), plane: false, inner2: /^(VCC|VDD)/.test(name), terms, drops: [], order: rand() })
 }
+// differential pairs: the negative net follows the positive one at the pair spacing
+{
+  const byName = new Map(nets.map((n) => [n.name, n]))
+  for (const n of nets) {
+    const m = /^(.*?)(P|_P|DP)(_C)?$/.exec(n.name)
+    if (!m) continue
+    const neg = byName.get(m[1] + ({ P: "N", _P: "_N", DP: "DM" } as any)[m[2]] + (m[3] ?? ""))
+    if (neg && !neg.plane && !n.plane) { n.partner = neg; neg.follows = n }
+  }
+}
 // ---------------- occupancy (other nets' routed copper) ----------------
 const occT = [0, 1, 2, 3].map(() => new Uint16Array(NN)), occV = new Uint16Array(NN)
 const histT = [0, 1, 2, 3].map(() => new Float32Array(NN)), histV = new Float32Array(NN)
 const disk = (r: number) => { const o: number[] = []; const k = Math.ceil(r / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) if (Math.hypot(di, dj) * P < r - EPS) o.push(di, dj); return o }
-const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TV = disk(W_SIG / 2 + GAP + VIA_D / 2), D_VV = disk(VIA_D + GAP)
+const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TTB = disk(W_BIG / 2 + W_SIG / 2 + GAP), D_BTV = disk(W_BIG / 2 + GAP + VIA_D / 2), D_TV = disk(W_SIG / 2 + GAP + VIA_D / 2), D_VV = disk(VIA_D + GAP)
 const D_WTV = disk(W_PWR / 2 + GAP + VIA_D / 2)
 function stampDisk(arr: Uint16Array, c: number, offs: number[], s: number) {
   const i = c % NX, j = (c / NX) | 0
@@ -157,7 +192,7 @@ function stampDisk(arr: Uint16Array, c: number, offs: number[], s: number) {
 }
 function stampNet(n: Net, s: 1 | -1) {
   if (!n.path) return
-  const DT = n.w > W_SIG ? D_TTW : D_TT, DTV = n.w > W_SIG ? D_WTV : D_TV
+  const DT = n.w > W_PWR ? D_TTB : n.w > W_SIG ? D_TTW : D_TT, DTV = n.w > W_PWR ? D_BTV : n.w > W_SIG ? D_WTV : D_TV
   for (const p of n.path) for (let k = 0; k < p.length; k++) {
     const id = p[k], l = (id / NN) | 0, c = id - l * NN
     stampDisk(occT[l], c, DT, s); stampDisk(occV, c, DTV, s)
@@ -171,6 +206,20 @@ const heapK: number[] = [], heapV: number[] = []
 const push = (k: number, v: number) => { heapK.push(k); heapV.push(v); let i = heapK.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heapK[p] <= heapK[i]) break;[heapK[p], heapK[i]] = [heapK[i], heapK[p]];[heapV[p], heapV[i]] = [heapV[i], heapV[p]]; i = p } }
 let lastKey = 0
 const pop = () => { lastKey = heapK[0]; const v = heapV[0], lk = heapK.pop()!, lv = heapV.pop()!; if (heapK.length) { heapK[0] = lk; heapV[0] = lv; let i = 0; for (;;) { const a = 2 * i + 1, b = a + 1; let m = i; if (a < heapK.length && heapK[a] < heapK[m]) m = a; if (b < heapK.length && heapK[b] < heapK[m]) m = b; if (m === i) break;[heapK[m], heapK[i]] = [heapK[i], heapK[m]];[heapV[m], heapV[i]] = [heapV[i], heapV[m]]; i = m } } return v }
+// pair attraction: cells at the pair spacing beside the positive net's copper (same layer) cost less for its partner
+const PAIR_PITCH = 0.28, attract = [0, 1, 2, 3].map(() => new Uint8Array(NN)), attractV = new Uint8Array(NN)
+const ring = (r0: number, r1: number) => { const o: number[] = []; const k = Math.ceil(r1 / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) { const d = Math.hypot(di, dj) * P; if (d >= r0 && d <= r1) o.push(di, dj) } return o }
+const RING_T = ring(PAIR_PITCH - 0.06, PAIR_PITCH + 0.06), RING_V = ring(0.36, 0.55)
+let attractOn = false
+function setAttract(lead: Net | undefined, on: boolean) {
+  if (!lead?.path) { attractOn = false; return }
+  const v = on ? 1 : 0
+  for (const p of lead.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN, i = c % NX, j = (c / NX) | 0
+    for (let k = 0; k < RING_T.length; k += 2) { const ii = i + RING_T[k], jj = j + RING_T[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attract[l][jj * NX + ii] = v } }
+  for (const c of lead.vias ?? []) { const i = c % NX, j = (c / NX) | 0
+    for (let k = 0; k < RING_V.length; k += 2) { const ii = i + RING_V[k], jj = j + RING_V[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attractV[jj * NX + ii] = v } }
+  attractOn = on
+}
 const VIA_COST = 10, DIAG = Math.SQRT2, HW = +(process.env.HW ?? 1.3) // heuristic weight: > 1 trades a little path length for a much smaller search
 let pres = 0.5
 const isGoal = new Uint32Array(NL * NN)
@@ -180,7 +229,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
   stamp++; goalStamp++
   heapK.length = 0; heapV.length = 0
   if (goals) for (const g of goals) isGoal[g] = goalStamp
-  const wide = n.w > W_SIG, bT = wide ? blockTW : blockT
+  const wide = n.w > W_SIG, bT = n.w > W_PWR ? blockTB : wide ? blockTW : blockT
   const h = (c: number) => goalVia ? 0 : Math.hypot(wx(c % NX) - gx0, wy((c / NX) | 0) - gy0) / P * HW
   for (const s of sources) { gCost[s] = 0; from[s] = -1; seen[s] = stamp; push(h(s % NN), s) }
   let expanded = 0
@@ -189,7 +238,8 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
     if (lastKey > g + h(c) + 1e-4) continue // stale entry: this node was reached more cheaply since
     if (++expanded > 1.2e7) { if (VERB) console.log("    search cap hit", expanded, "heap", heapK.length); return null }
     if (goals && isGoal[id] === goalStamp) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
-    if (goalVia && !blockV[c] && !occV[c]) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
+    const corrOk = (cc: number) => corr[cc] < 0 || corrName[corr[cc]] === n.name
+    if (goalVia && !blockV[c] && !occV[c] && corrOk(c)) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
     const i = c % NX, j = (c / NX) | 0
     if (l === 3 && !n.inner2) continue
     for (let d = 0; d < 8; d++) {
@@ -198,15 +248,16 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
       if (ii < 0 || jj < 0 || ii >= NX || jj >= NY) continue
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
-      const cong = (1 + histT[l][cc]) * (1 + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)
+      if (l === 3 && !corrOk(cc)) continue
+      const cong = ((1 + histT[l][cc]) * (1 + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)) * (attractOn && attract[l][cc] ? 0.25 : 1)
       const ng = g + (d < 4 ? 1 : DIAG) * cong
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
-    if (!blockV[c]) for (let l2 = 0; l2 < NL; l2++) {
+    if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2)) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
-      const ng = g + VIA_COST * (1 + histV[c]) * (1 + pres * occV[c])
+      const ng = g + VIA_COST * (1 + histV[c]) * (1 + pres * occV[c]) * (attractOn && attractV[c] ? 0.3 : 1)
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(c), nid) }
     }
   }
@@ -214,6 +265,10 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
   return null
 }
 function routeNet(n: Net): boolean {
+  if (n.follows) setAttract(n.follows, true)
+  try { return routeNet0(n) } finally { if (n.follows) setAttract(n.follows, false) }
+}
+function routeNet0(n: Net): boolean {
   lift(n.name, -1)
   const paths: Int32Array[] = [], vias: number[] = []
   const collectVias = (p: number[]) => { for (let k = 1; k < p.length; k++) { const a = p[k - 1], b = p[k]; if ((a % NN) === (b % NN) && a !== b) vias.push(a % NN) } }
@@ -299,9 +354,12 @@ async function writeOut(routesPath: string, copperPath: string) {
   const copper = { traces: [...fixed.traces, ...Object.values(routes).flatMap((r: any) => r.segs)], vias: [...fixed.vias, ...Object.values(routes).flatMap((r: any) => r.vias)] }
   await Bun.write(copperPath, JSON.stringify(copper))
 }
+if (process.env.PLANES_ONLY) for (let k = nets.length - 1; k >= 0; k--) if (!nets[k].plane) nets.splice(k, 1)
 // ---------------- negotiation ----------------
 const t0 = performance.now()
 nets.sort((a, b) => (a.plane ? 1 : 0) - (b.plane ? 1 : 0) || a.order - b.order)
+// a follower right after its lead
+{ const followers = nets.filter((n) => n.follows); for (const f of followers) { nets.splice(nets.indexOf(f), 1); nets.splice(nets.indexOf(f.follows!) + 1, 0, f) } }
 console.log(`grid ${NX}x${NY}, ${nets.length} nets (${nets.filter((n) => n.plane).length} plane drop sets, ${nets.reduce((s, n) => s + n.terms.length + n.drops.length, 0)} terminals)`)
 let failed: string[] = []
 let dirty = nets
@@ -313,8 +371,10 @@ for (let it = 0; it < MAXIT; it++) {
   console.log(`iter ${it} [${((performance.now() - t0) / 1e3).toFixed(0)}s] pres=${pres.toFixed(2)} conflicts=${total} nets=${bad.length} ${bad.slice(0, 8).map((n) => n.name).join(",")} failed=${failed.length} ${failed.slice(0, 6).join(",")}`)
   if (!total && !failed.length) break
   if (it % 10 === 9) await writeOut(dir + "/routes.ckpt.json", dir + "/copper.ckpt.json")
-  dirty = bad.concat(nets.filter((n) => failed.includes(n.name) && !bad.includes(n)))
-  pres = Math.min(pres * 1.6, 200)
+  const want = new Set(bad.concat(nets.filter((n) => failed.includes(n.name))))
+  for (const n of [...want]) { if (n.partner) want.add(n.partner); if (n.follows) want.add(n.follows) }
+  dirty = nets.filter((n) => want.has(n))
+  pres = Math.min(pres * +(process.env.PG ?? 1.3), +(process.env.PMAX ?? 20))
 }
 // ---------------- output ----------------
 function geometry(n: Net) {

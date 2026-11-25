@@ -49,7 +49,10 @@ const pads: any[] = []
 for (const p of cj.filter((e) => e.type === "pcb_smtpad")) {
   const ref = pcbComp[p.pcb_component_id], sp = sport[pport[p.pcb_port_id]?.source_port_id]
   const names = [...new Set([sp?.name, ...(sp?.port_hints ?? [])].filter(Boolean))] as string[]
-  pads.push({ ref, names, net: netOf(ref, names), x: +(p.x + CX).toFixed(4), y: +(p.y + CY).toFixed(4), w: p.width ?? p.radius * 2, h: p.height ?? p.radius * 2, shape: p.shape, layer: p.layer, rot: p.ccw_rotation ?? 0 })
+  // rotated pads carry their unrotated size: at 90/270 degrees width and height swap (only right angles are used)
+  const rot = p.ccw_rotation ?? 0, quarter = Math.round(rot / 90) % 2 !== 0
+  const w0 = p.width ?? p.radius * 2, h0 = p.height ?? p.radius * 2
+  pads.push({ ref, names, net: netOf(ref, names), x: +(p.x + CX).toFixed(4), y: +(p.y + CY).toFixed(4), w: quarter ? h0 : w0, h: quarter ? w0 : h0, shape: p.shape === "circle" ? "circle" : "rect", layer: p.layer, rot })
 }
 const vias = cj.filter((e) => e.type === "pcb_via").map((v) => ({ x: v.x + CX, y: v.y + CY, d: v.outer_diameter, hole: v.hole_diameter, ref: pcbComp[v.pcb_component_id] }))
 if (process.env.MODE === "pads") {

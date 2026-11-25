@@ -10,11 +10,11 @@ import numpy as np
 from shapely.geometry import Point, LineString, box, Polygon, MultiPolygon
 from shapely.ops import unary_union
 D = os.path.dirname(os.path.abspath(__file__))
-cu = json.load(open(D + "/copper.json"))
+cu = json.load(open(os.environ.get("COPPER", D + "/copper.json")))
 BOARD = box(-3.5, -51.5, 36.5, 3.5)
 HOLES = [(0, 0), (33, 0), (0, -48), (33, -48)]
-CLR, EDGE, SPLIT = 0.2, 0.3, 0.25
-RAILS = ["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC3V3_SYS", "VCC5V0_SYS"]
+CLR, EDGE, SPLIT = 0.15, 0.3, 0.25  # CLR: plane to foreign via pad = 0.2 mm from its 0.15 mm hole (JLCPCB inner layers)
+RAILS = ["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"]
 outline = BOARD.buffer(-EDGE).difference(unary_union([Point(h).buffer(1.35 + EDGE) for h in HOLES]))
 
 def via_disc(v, extra):
@@ -66,6 +66,7 @@ for t in cu["traces"]:
     for a, b in zip(t["pts"], t["pts"][1:]):
         stamp_seg(owner, a, b, t["w"] / 2 + CLR, -1)
 for v in cu["vias"]:
+    # a little wider than the exact clearance, so a path on the grid is a path in the exact copper too
     if v["net"] not in rail_id: stamp_disc(owner, v["x"], v["y"], v["d"] / 2 + CLR, -1)
 seeds = {r: [] for r in RAILS}
 for v in cu["vias"]:
@@ -110,7 +111,17 @@ def dijkstra(k, src, dst_mask):
                 nd = d + (1.414 if dj and di else 1.0) * (0.6 if o == k else 1.0)
                 if nd < dist.get((jj, ii), 1e18): dist[(jj, ii)] = nd; heapq.heappush(pq, (nd, (jj, ii), c))
     return None
+if os.environ.get("DEBUG_OWNER"):
+    from PIL import Image
+    j0, j1, i0, i1 = int((-30 - Y0) / P), int((-14 - Y0) / P), int((9 - X0) / P), int((21 - X0) / P)
+    sub = owner[j0:j1, i0:i1][::-1]
+    pal = {-1: (40, 40, 40), -2: (255, 255, 255)}
+    cols = [(230, 80, 80), (80, 170, 80), (80, 80, 230), (220, 140, 0), (160, 80, 200)]
+    img = np.zeros(sub.shape + (3,), np.uint8)
+    for v, c in list(pal.items()) + list(enumerate(cols)): img[sub == v] = c
+    Image.fromarray(img).resize((sub.shape[1] * 3, sub.shape[0] * 3), 0).save(os.environ["DEBUG_OWNER"])
 unjoined = {}
+corridor_cells = {r: [] for r in RAILS}
 for r in sorted(RAILS, key=lambda r: len(seeds[r])):
     k = rail_id[r]
     comps = components(seeds[r])
@@ -121,15 +132,22 @@ for r in sorted(RAILS, key=lambda r: len(seeds[r])):
         for grp in rest:
             for c in grp: mask[c] = True
         path = dijkstra(k, list(joined), mask)
-        if not path: unjoined[r] = len(rest); break
+        if not path:
+            unjoined[r] = len(rest)
+            cen = lambda g: (round(X0 + sum(c[1] for c in g) / len(g) * P, 1), round(Y0 + sum(c[0] for c in g) / len(g) * P, 1))
+            print("  unjoined", r, "joined near", cen(list(joined)[:200]), "rest at", [cen(g) for g in rest][:6])
+            break
         hit = next(g for g in rest if any(mask[c] and c in set(g) for c in path[:1]))
         for (j, i) in path:  # claim a corridor around the path where still free
             x, y = X0 + i * P, Y0 + j * P
-            jr = int(CORR / P)
+            # thin inside the SoC ball field (rails sit side by side there), a full-width feed outside it
+            cw = 0.1 if (7.3 < x < 23.1 and -26.6 < y < -11.4) else CORR
+            jr = int(cw / P)
             sub = owner[max(0, j - jr):j + jr + 1, max(0, i - jr):i + jr + 1]
-            sel = (sub == -2) & (np.hypot(XX[max(0, j - jr):j + jr + 1, max(0, i - jr):i + jr + 1] - x, YY[max(0, j - jr):j + jr + 1, max(0, i - jr):i + jr + 1] - y) < CORR)
+            sel = (sub == -2) & (np.hypot(XX[max(0, j - jr):j + jr + 1, max(0, i - jr):i + jr + 1] - x, YY[max(0, j - jr):j + jr + 1, max(0, i - jr):i + jr + 1] - y) < cw)
             sub[sel] = k
             if owner[j, i] == -2: owner[j, i] = k
+            corridor_cells[r].append((round(x, 3), round(y, 3)))
         for c in hit: joined.add(c)
         rest.remove(hit)
         joined.update(path)
@@ -139,11 +157,22 @@ q = deque()
 for j, i in zip(*np.nonzero(owner >= 0)): q.append((j, i))
 while q:
     j, i = q.popleft(); k = owner[j, i]
-    for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+    for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
         jj, ii = j + dj, i + di
         if 0 <= jj < NY and 0 <= ii < NX and owner[jj, ii] == -2:
             owner[jj, ii] = k; q.append((jj, ii))
-# polygons per rail, separated, then exact clearances to foreign copper
+# separate the islands only where two rails meet: drop the cells within SPLIT/2 of another rail's cells
+from scipy.ndimage import distance_transform_edt
+claimed = owner >= 0
+sep = owner.copy()
+for r in RAILS:
+    k = rail_id[r]
+    other = claimed & (owner != k)
+    if not other.any(): continue
+    dist = distance_transform_edt(~other) * P
+    sep[(owner == k) & (dist < SPLIT / 2 + P / 2)] = -1
+owner = sep
+# polygons per rail, then exact clearances to foreign copper
 def raster_poly(mask):
     rects = []
     for j in range(NY):
@@ -157,7 +186,7 @@ inner2_traces = [(t, LineString([(p["x"], p["y"]) for p in t["pts"]])) for t in 
 report = {}
 for r in RAILS:
     k = rail_id[r]
-    g = raster_poly(owner == k).buffer(-SPLIT / 2, join_style=2).buffer(0)
+    g = raster_poly(owner == k).buffer(0)
     g = g.intersection(outline)
     g = g.difference(unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != r] +
                                   [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r]))
@@ -169,6 +198,20 @@ for r in RAILS:
     covered = sum(1 for v in vs if any(p.contains(v) for p in holding))
     report[r] = dict(vias=len(vs), covered=covered, pieces=len(holding), area=round(sum(p.area for p in holding), 1), unjoined=unjoined.get(r, 0))
     for p in holding: emit("inner2", r, p)
-json.dump(out, open(D + "/planes.json", "w"))
+json.dump(out, open(os.environ.get("PLANES_OUT", D + "/planes.json"), "w"))
+if os.environ.get("CORRIDORS_OUT"):
+    # corridor centre-lines widened to CORR: the router keeps other nets' vias and inner2 copper out of them
+    cs = []
+    for r, cells in corridor_cells.items():
+        if not cells: continue
+        S = set()
+        for (x, y) in cells:
+            i0, j0 = int(round((x - X0) / P)), int(round((y - Y0) / P)); w = int(CORR / P)
+            for dj in range(-w, w + 1):
+                for di in range(-w, w + 1):
+                    if di * di + dj * dj <= w * w: S.add((round(X0 + (i0 + di) * P, 3), round(Y0 + (j0 + dj) * P, 3)))
+        cs.append({"net": r, "cells": sorted(S)})
+    json.dump(cs, open(os.environ["CORRIDORS_OUT"], "w"))
+    print("corridors", [(c["net"], len(c["cells"])) for c in cs])
 for r, v in report.items(): print(r, v)
 print("pours", len(out))
