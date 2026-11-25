@@ -108,7 +108,7 @@ const neck = new Uint8Array(NN)
   const DDR_CORNER = [6.5, -20.0, 13.5, -10.5]
   for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
     const x = wx(i), y = wy(j)
-    if (ISLANDS.some((b) => inBox(x, y, b)) && !inBox(x, y, DDR_CORNER)) { blockT[3][j * NX + i] += 1000; blockTW[3][j * NX + i] += 1000; blockTB[3][j * NX + i] += 1000 }
+    if (ISLANDS.some((b, k) => inBox(x, y, b) && !(k === 1 && process.env.INNER2_OPEN)) && !inBox(x, y, DDR_CORNER)) { blockT[3][j * NX + i] += 1000; blockTW[3][j * NX + i] += 1000; blockTB[3][j * NX + i] += 1000 }
   }
 }
 // inner2 corridors of the supply islands (planes.py, from a plane-drops-only run): another net's via there would
@@ -121,6 +121,20 @@ if (!process.env.PLANES_ONLY && (await Bun.file(dir + "/corridors.json").exists(
     for (const [x, y] of c.cells) { const i = gx(x), j = gy(y); if (i >= 0 && j >= 0 && i < NX && j < NY && !neck[j * NX + i] && corr[j * NX + i] < 0) corr[j * NX + i] = id }
   }
   console.log("corridors", cs.length, "cells", corr.reduce((s, v) => s + (v >= 0 ? 1 : 0), 0))
+  // INNER2_OPEN: between the SoC and the RK809 the islands keep only their feed corridors (widened by KEEP on each
+  // side, so every feed stays >= CORR + 2 KEEP wide); slow signals may use the rest of inner2 there
+  if (process.env.INNER2_OPEN) {
+    const KEEP = Math.round(+(process.env.KEEP ?? 0.3) / P), SOUTH = [7.5, -35.0, 23.5, -26.5]
+    let n = 0
+    for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+      const x = wx(i), y = wy(j)
+      if (x < SOUTH[0] || x > SOUTH[2] || y < SOUTH[1] || y > SOUTH[3]) continue
+      let hit = false
+      for (let dj = -KEEP; dj <= KEEP && !hit; dj++) for (let di = -KEEP; di <= KEEP; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY && corr[jj * NX + ii] >= 0) { hit = true; break } }
+      if (hit) { const c = j * NX + i; blockT[3][c] += 1000; blockTW[3][c] += 1000; blockTB[3][c] += 1000; n++ }
+    }
+    console.log("inner2 open south of the SoC; feed corridors kept:", n, "cells")
+  }
 }
 const objsByNet = new Map<string, Obj[]>()
 for (const o of objs) if (o.net) (objsByNet.get(o.net) ?? objsByNet.set(o.net, []).get(o.net)!).push(o)
@@ -451,7 +465,7 @@ for (let it = 0; it < MAXIT; it++) {
   for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) { total += n.conflicts; bad.push(n) } }
   console.log(`iter ${it} [${((performance.now() - t0) / 1e3).toFixed(0)}s] pres=${pres.toFixed(2)} conflicts=${total} nets=${bad.length} ${bad.slice(0, 8).map((n) => n.name).join(",")} failed=${failed.length} ${failed.slice(0, 6).join(",")}`)
   if (!total && !failed.length) break
-  if (it % 10 === 9) await writeOut(dir + "/routes.ckpt.json", dir + "/copper.ckpt.json")
+  if (it % 10 === 9) await writeOut(dir + `/routes${process.env.OUT ?? ""}.ckpt.json`, dir + `/copper${process.env.OUT ?? ""}.ckpt.json`)
   if (total < best) { best = total; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }])) }
   if (it - bestAt >= +(process.env.STALL ?? 4) && bestSnap) {
     // no progress for a while (or diverging): go back to the best routing seen, then re-place its conflict clusters
@@ -495,6 +509,7 @@ function geometry(n: Net) {
   }
   return { segs, vias: vs }
 }
-await writeOut(dir + "/routes.json", dir + "/copper.json")
+const OUT = process.env.OUT ?? ""
+await writeOut(dir + `/routes${OUT}.json`, dir + `/copper${OUT}.json`)
 const ok = !failed.length && !nets.some((n) => n.conflicts)
 console.log(ok ? "SOLVED" : `NOT SOLVED: failed ${failed.length}, in conflict ${nets.filter((n) => n.conflicts).length}`, `${((performance.now() - t0) / 1e3).toFixed(0)}s`)
