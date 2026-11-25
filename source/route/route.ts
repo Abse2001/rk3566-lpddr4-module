@@ -16,7 +16,7 @@ const fixed = await Bun.file(dir + "/fixed.json").json()
 if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await Bun.file(dir + "/bga_vias.json").json()))
 
 // ---------------- rules ----------------
-const P = 0.05, GAP = 0.1, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
+const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
 // inner2 is the power plane layer; small supply rails may also run there as traces (the plane islands avoid them)
 const LAYERS = ["top", "inner3", "bottom", "inner2"] as const, NL = 4
 const B = padsIn.board, X0 = B.x0, Y0 = B.y0
@@ -157,7 +157,7 @@ function padTouchesFixed(p: any): boolean {
 }
 const nets: Net[] = []
 for (const [name, ps] of padsByNet) {
-  if (name.startsWith("DDR_")) continue // routed LPDDR4 block
+  if (name.startsWith("DDR_") && fixedNets.has(name)) continue // routed LPDDR4 block
   const open = ps.filter((p) => !padTouchesFixed(p))
   if (isPlane(name)) {
     if (open.length) nets.push({ name, w: W_SIG, plane: true, terms: [], drops: open.map(padTerm), order: rand() })
@@ -221,7 +221,7 @@ function setAttract(lead: Net | undefined, on: boolean) {
   attractOn = on
 }
 const VIA_COST = 10, DIAG = Math.SQRT2, HW = +(process.env.HW ?? 1.3) // heuristic weight: > 1 trades a little path length for a much smaller search
-let pres = 0.5
+let pres = 0.5, hard = false // hard: other nets' copper is an obstacle, not a price (endgame)
 const isGoal = new Uint32Array(NL * NN)
 let goalStamp = 1
 /** cheapest path from any source node to any goal node (or, with goalVia, to any cell that can take a via) */
@@ -239,7 +239,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
     if (++expanded > 1.2e7) { if (VERB) console.log("    search cap hit", expanded, "heap", heapK.length); return null }
     if (goals && isGoal[id] === goalStamp) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
     const corrOk = (cc: number) => corr[cc] < 0 || corrName[corr[cc]] === n.name
-    if (goalVia && !blockV[c] && !occV[c] && corrOk(c)) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
+    if (goalVia && !blockV[c] && !occV[c] && corrOk(c) && (!hard || !occT[l][c])) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
     const i = c % NX, j = (c / NX) | 0
     if (l === 3 && !n.inner2) continue
     for (let d = 0; d < 8; d++) {
@@ -249,12 +249,14 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
+      if (hard && occT[l][cc] && isGoal[nid] !== goalStamp) continue
       const cong = ((1 + histT[l][cc]) * (1 + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)) * (attractOn && attract[l][cc] ? 0.25 : 1)
       const ng = g + (d < 4 ? 1 : DIAG) * cong
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2)) continue
+      if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
       const ng = g + VIA_COST * (1 + histV[c]) * (1 + pres * occV[c]) * (attractOn && attractV[c] ? 0.3 : 1)
@@ -367,8 +369,45 @@ nets.sort((a, b) => (a.plane ? 1 : 0) - (b.plane ? 1 : 0) || a.order - b.order)
 // a follower right after its lead
 { const followers = nets.filter((n) => n.follows); for (const f of followers) { nets.splice(nets.indexOf(f), 1); nets.splice(nets.indexOf(f.follows!) + 1, 0, f) } }
 console.log(`grid ${NX}x${NY}, ${nets.length} nets (${nets.filter((n) => n.plane).length} plane drop sets, ${nets.reduce((s, n) => s + n.terms.length + n.drops.length, 0)} terminals)`)
+// ---------------- endgame ----------------
+// Negotiation stalls on a few deadlocks that need several nets to move together. Rip up the nets in conflict and
+// every net passing near a conflict, then place them back one at a time with everything else as hard obstacles,
+// trying several orders until one fits them all. On failure the previous routes are restored.
+function endgame(bad: Net[], tries: number): boolean {
+  const spots: number[] = []
+  for (const n of bad) { if (!n.path) continue; stampNet(n, -1); for (const p of n.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN; if (occT[l][c]) spots.push(c) } stampNet(n, 1) }
+  const R = Math.round(1.2 / P), near = new Uint8Array(NN)
+  for (const c of spots) { const i = c % NX, j = (c / NX) | 0; for (let dj = -R; dj <= R; dj += 2) for (let di = -R; di <= R; di += 2) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) near[jj * NX + ii] = 1 } }
+  const set = new Set<Net>(bad)
+  for (const n of nets) if (n.path && n.path.some((p) => p.some((id) => near[id % NN]))) set.add(n)
+  for (const n of [...set]) { if (n.partner) set.add(n.partner); if (n.follows) set.add(n.follows) }
+  const group = nets.filter((n) => set.has(n))
+  const saved = new Map(group.map((n) => [n, { path: n.path, vias: n.vias }]))
+  for (const n of group) stampNet(n, -1)
+  const span = (n: Net) => { const ts = [...n.terms, ...n.drops]; const xs = ts.map((t) => t.x), ys = ts.map((t) => t.y); return Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys) }
+  for (let a = 0; a < tries; a++) {
+    let order = a === 0 ? [...group].sort((x, y) => span(y) - span(x)) : [...group].sort(() => rand() - 0.5)
+    // keep each pair's lead right before its follower
+    order = order.filter((n) => !n.follows); for (const f of group.filter((n) => n.follows)) { const k = order.indexOf(f.follows!); order.splice(k < 0 ? order.length : k + 1, 0, f) }
+    hard = true
+    const placed: Net[] = []
+    let ok = true
+    for (const n of order) { if (!routeNet0Hard(n)) { ok = false; break } stampNet(n, 1); placed.push(n) }
+    hard = false
+    if (ok) { console.log(`  endgame: ${group.length} nets around ${bad.length} in conflict re-placed (order ${a})`); return true }
+    for (const n of placed) stampNet(n, -1)
+  }
+  for (const n of group) { const sv = saved.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
+  console.log(`  endgame: no order fits ${group.length} nets in ${tries} tries`)
+  return false
+}
+function routeNet0Hard(n: Net): boolean {
+  if (n.follows) setAttract(n.follows, true)
+  try { return routeNet0(n) } finally { if (n.follows) setAttract(n.follows, false) }
+}
 let failed: string[] = []
 let dirty = nets
+let best = Infinity, bestAt = 0
 for (let it = 0; it < MAXIT; it++) {
   failed = []
   for (const n of dirty) { stampNet(n, -1); if (!routeNet(n)) failed.push(n.name); stampNet(n, 1) }
@@ -377,6 +416,15 @@ for (let it = 0; it < MAXIT; it++) {
   console.log(`iter ${it} [${((performance.now() - t0) / 1e3).toFixed(0)}s] pres=${pres.toFixed(2)} conflicts=${total} nets=${bad.length} ${bad.slice(0, 8).map((n) => n.name).join(",")} failed=${failed.length} ${failed.slice(0, 6).join(",")}`)
   if (!total && !failed.length) break
   if (it % 10 === 9) await writeOut(dir + "/routes.ckpt.json", dir + "/copper.ckpt.json")
+  if (total < best) { best = total; bestAt = it }
+  if (total < +(process.env.EG_AT ?? 400) && it - bestAt >= 4) {
+    if (endgame(bad, +(process.env.EG_TRIES ?? 24))) {
+      let t2 = 0; for (const n of nets) { n.conflicts = conflictsOf(n); t2 += n.conflicts }
+      console.log(`  after endgame: conflicts=${t2}`)
+      if (!t2) { failed = []; break }
+      best = t2; bestAt = it
+    } else bestAt = it
+  }
   const want = new Set(bad.concat(nets.filter((n) => failed.includes(n.name))))
   for (const n of [...want]) { if (n.partner) want.add(n.partner); if (n.follows) want.add(n.follows) }
   dirty = nets.filter((n) => want.has(n))

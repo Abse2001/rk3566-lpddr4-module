@@ -12,8 +12,9 @@ from shapely.ops import unary_union
 D = os.path.dirname(os.path.abspath(__file__))
 pads = json.load(open(D + "/design/pads.json"))["pads"]
 fvias = json.load(open(D + "/design/pads.json"))["footprintVias"]
-cu = json.load(open(D + "/route/copper.json"))
-planes = json.load(open(D + "/route/planes.json")) if os.path.exists(D + "/route/planes.json") else []
+cu = json.load(open(os.environ.get("COPPER", D + "/route/copper.json")))
+PL = os.environ.get("PLANES", D + "/route/planes.json")
+planes = json.load(open(PL)) if os.path.exists(PL) else []
 net = json.load(open(D + "/design/netlist.json"))
 GAP, EDGE, HOLE_GAP = 0.1, 0.25, 0.2
 LAYERS = ["top", "inner1", "inner2", "inner3", "inner4", "bottom"]

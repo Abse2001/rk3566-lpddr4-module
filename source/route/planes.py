@@ -193,6 +193,22 @@ for r in RAILS:
     g = g.buffer(0)
     # the island must touch each of the rail's vias
     parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
+    # a piece the exact clearances split off: bridge it to the biggest piece where a 0.12 mm strip clears
+    # all foreign copper (vias, inner2 traces) by CLR
+    from shapely.ops import nearest_points
+    vs_r = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == r]
+    keep = [p for p in parts if any(p.contains(v) for v in vs_r)]
+    if len(keep) > 1:
+        foreign_g = unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != r] + [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r])
+        main = max(keep, key=lambda q: q.area)
+        for q in sorted(keep, key=lambda q: -q.area):
+            if q is main: continue
+            a_, b_ = nearest_points(q, main)
+            strip = LineString([a_, b_]).buffer(0.06, cap_style=2)
+            if strip.length < 3 and not strip.intersects(foreign_g.buffer(-1e-6)):
+                main = unary_union([main, q, strip]); keep = [main] + [k for k in keep if k is not q and k is not main]
+        g = unary_union([main] + [p for p in parts if p not in keep]).buffer(0)
+        parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
     vs = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == r]
     holding = [p for p in parts if any(p.contains(v) for v in vs)]
     covered = sum(1 for v in vs if any(p.contains(v) for p in holding))
