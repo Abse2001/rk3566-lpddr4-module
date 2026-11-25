@@ -26,6 +26,30 @@ Status legend: **fixed** (done and verified), **in progress**, **open**.
 | M1 | CM4 pins 89 (WL_nDisable), 91 (BT_nDisable), 97 (Camera_GPIO) wired to GPIO2_C2/C3/C6 in the 1.8 V VCCIO4 bank, while a CM4 carrier drives them at 3.3 V (over-voltage risk) | Copied from the SOQuartz mapping, which has on-module wireless | 89/91 not connected (no wireless on this module); 97 moved to a 3.3 V ball | fixed |
 | M2 | LED_nACT (21), LED_nPWR (95), nEXTRST (100) crossed the whole SoC from east-edge GPIO0 balls to J1 on the west | SOQuartz ball choice | Moved to free 3.3 V balls on the west edge next to J1 (device tree needs the new GPIO numbers; UART/I2C/etc. unchanged) | fixed |
 
+## CM4 carrier compatibility (audit against the CM4 datasheet and the CM4 IO board design)
+
+| # | Issue | Root cause | Fix | Status |
+|---|---|---|---|---|
+| K1 | **Connectors mirrored along their length**: pin 1 at the wrong end and the connectors 5 mm off, so the module could not mate with any CM4 carrier | The IO board's KiCad footprint coordinates (y down) were used as they were in tscircuit (y up) | J1/J2 at y = -26.5, pin 1/101 at -16.7 and 99/199 at -36.3 (checked against the IO board footprint: holes (0,0)/(33,+-48), pin 1 at (-2, 31.3) in KiCad's frame); outline, holes and odd-row side were already right | fixed |
+| K2 | DF40 land pattern differed from Hirose's (0.2 mm pads, fitting pads at +-10.265) | | 0.23 mm signal pads, 0.3 mm fitting pads at +-10.30 | fixed |
+| K3 | GLOBAL_EN (99) went to the RK809 PWRON key: a carrier holding it low did not keep the module off, a long low pulse could force a shutdown, and a 5 V carrier pull-up exceeded PWRON's rating | SOQuartz mapping | GLOBAL_EN drives the enable of the 5 V -> 3.3 V buck that feeds the RK809 (100 kOhm to 5 V, as on a CM4). Assumption to verify with the RK809 datasheet: the RK809 starts on its own when its supply comes up with VDC high | fixed (verify) |
+| K4 | No pull-ups on SCL0/SDA0 (80/82); the IO board's RTC and fan controller and the CAM1/DSI1 I2C rely on the CM4's 1.8 kOhm | Not in the SOQuartz-derived netlist | 1.8 kOhm to VCC3V3_PMU (the bank's supply) | fixed |
+| K5 | No pull-ups on GPIO2/GPIO3 (HAT I2C) | Same | 1.8 kOhm to VCCIO6 (GPIO_VREF) | fixed |
+| K6 | nRPIBOOT (93) wired straight to EMMC_CLK (1.8 V bank): a carrier driving it at 3.3 V fights the eMMC clock | SOQuartz mapping | 1 kOhm series resistor between the pin and EMMC_CLK | fixed |
+| K7 | VCCIO1 (ID_SD/ID_SC, PCIe CLKREQ/PERST) fed by RK809 LDO4, which is off by default, so carrier pull-ups back-power an unpowered bank | rails.py | VCCIO1 from VCC_3V3; 10 kOhm pull-up on CLK_nREQ | fixed |
+| K8 | HDMI HPD floats with no monitor; CEC has no pull-up | Not in the netlist | 100 kOhm HPD pull-down (port side); 27 kOhm CEC pull-up to 3.3 V (LCSC C25771) | fixed |
+| K9 | SD_PWR_ON (75) hard-wired high: the SD card can never be power-cycled (warm reboot after a UHS 1.8 V switch fails) | Pull-up only | Driven by GPIO3_A4 (3.3 V), pull-up kept so power is on by default | fixed |
+| K10 | nEXTRST (100) undefined at boot | No default | 100 kOhm pull-down: carrier devices held in reset until software releases them (as on a CM4) | fixed |
+| K11 | RUN_PG (92) also reaches TSADC_SHUT_M0: in push-pull GPIO mode it would fight a carrier pulling RUN_PG low | | Device tree: tshut in CRU mode or open-drain (documented) | open (software) |
+| K12 | 3.3 V rail comes up after 1.8 V (CM4 requires 3.3 V first, never below 1.8 V) | RK809-5 OTP power-up order | Needs a PMIC sequence change (OTP/registers) or documentation | open |
+| K13 | GPIO14/15 (UART), ID_SC/ID_SD, and the moved LED/camera/nEXTRST pins stay at 3.3 V or follow VCCIO6 differently from a CM4; a 1.8 V GPIO_VREF carrier is not supported | Bank voltages | Documented: 3.3 V GPIO_VREF carriers only | open (doc) |
+| K14 | No ESD parts on HDMI DDC/CEC/HPD (a CM4 has them; carriers may wire straight to the connector) | | Recommended addition | open |
+| K15 | PCIe refclk is DC-coupled (a CM4 AC-couples it on the module) | | Verify the RK3566 refclk-out mode and termination | open (verify) |
+| K16 | Board 1.6 mm vs CM4 1.2 mm +-10 % | Stackup choice | Consider a 1.2 mm 6-layer stackup (needs an impedance re-check) | open |
+| K17 | AnalogIP0/1 (94/96) go to 1.8 V SARADC inputs; a carrier may apply more | | Recommended series resistor / clamp | open |
+
+Correct as checked: all 200 pin names, all 51 GND pins, supply pins, outline and holes, bottom-side part heights (tallest about 0.9 mm under a 1.5 mm mated stack), every diff-pair polarity and lane order, the HDMI DDC level shifter, 40-pin alternate functions, the SD interface, and the maskrom path through the IO board's USB.
+
 ## Checker (`source/check.py`)
 
 | # | Issue | Fix | Status |

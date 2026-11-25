@@ -21,14 +21,17 @@ const IMPORTS: Record<string, any> = {
 
 /** Hirose DF40C-100DP-0.4V(51) header in the CM4 pin numbering: odd pins on one row, even on the other,
  *  pin n at 0.4 mm * floor((n-1)/2) along the connector, rows 2.71 mm apart, four hold-down pads at the ends.
- *  Local frame: length along +y from pin 1, odd row at -x when oddSide = -1. Pads are named "1".."100". */
+ *  Pin 1 is at the +y end (board y up): on a CM4, pin 1/101 sits 16.7 mm from the (0,0)/(33,0) hole row and pin
+ *  99/199 at 36.3 mm (CM4 IO board footprint, converted from KiCad's y-down frame). Pads follow Hirose's land
+ *  pattern: 0.23 x 0.66 mm signal pads, 0.3 mm fitting pads at +-10.30 mm.
+ *  Local frame: pin 1 at +y, length along -y, odd row at -x when oddSide = -1. Pads are named "1".."100". */
 export function cm4HeaderFootprint(oddSide: 1 | -1) {
   const pads: any[] = []
   for (let n = 1; n <= 100; n++) {
-    const k = (n - 1) >> 1, y = -9.8 + 0.4 * k, x = (n % 2 ? oddSide : -oddSide) * 1.355
-    pads.push(<smtpad key={n} portHints={[String(n)]} pcbX={`${x}mm`} pcbY={`${y}mm`} width="0.66mm" height="0.2mm" shape="rect" />)
+    const k = (n - 1) >> 1, y = 9.8 - 0.4 * k, x = (n % 2 ? oddSide : -oddSide) * 1.355
+    pads.push(<smtpad key={n} portHints={[String(n)]} pcbX={`${x}mm`} pcbY={`${y}mm`} width="0.66mm" height="0.23mm" shape="rect" />)
   }
-  for (const [i, [x, y]] of [[-1.355, -10.265], [1.355, -10.265], [-1.355, 10.265], [1.355, 10.265]].entries())
+  for (const [i, [x, y]] of [[-1.355, -10.3], [1.355, -10.3], [-1.355, 10.3], [1.355, 10.3]].entries())
     pads.push(<smtpad key={"m" + i} portHints={["MH" + (i + 1)]} pcbX={`${x}mm`} pcbY={`${y}mm`} width="0.66mm" height="0.3mm" shape="rect" />)
   return <footprint>{pads}<courtyardoutline outline={[{ x: -1.93, y: -11.01 }, { x: 1.93, y: -11.01 }, { x: 1.93, y: 11.01 }, { x: -1.93, y: 11.01 }, { x: -1.93, y: -11.01 }]} /></footprint>
 }

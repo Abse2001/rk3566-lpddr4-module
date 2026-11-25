@@ -196,6 +196,14 @@ comp("Q1", "NMOS_DUAL", {"G1": "VCC_3V3", "S1": "HDMITX_SCL", "D1": "HDMI_SCL_PO
 R("HDMITX_SCL", "VCC_3V3", "2.2k", "R_2K2", "io"); R("HDMITX_SDA", "VCC_3V3", "2.2k", "R_2K2", "io")
 R("HDMI_SCL_PORT", "VCC5V0_SYS", "1.8k", "R_1K8", "io"); R("HDMI_SDA_PORT", "VCC5V0_SYS", "1.8k", "R_1K8", "io")
 R("SD_PWR_ON", "VCC_3V3", "10k", "R_10K", "io")
+# CM4 carrier compatibility (what a CM4 provides on the module side of these pins)
+R("CM4_nRPIBOOT", "EMMC_CLK", "1k", "R_1K", "io")                                   # nRPIBOOT -> maskrom via the eMMC clock
+R("CM4_SCL0", "VCC3V3_PMU", "1.8k", "R_1K8", "io"); R("CM4_SDA0", "VCC3V3_PMU", "1.8k", "R_1K8", "io")  # I2C0 (camera/display, IO-board RTC/fan)
+R("CM4_GPIO2", "VCCIO6", "1.8k", "R_1K8", "io"); R("CM4_GPIO3", "VCCIO6", "1.8k", "R_1K8", "io")      # 40-pin I2C1 (HATs)
+R("CM4_PCIe_CLK_nREQ", "VCC_3V3", "10k", "R_10K", "io")                             # PCIe CLKREQ# idles high
+R("CM4_nEXTRST", "GND", "100k", "R_100K_1%", "io")                                  # carrier USB hub/devices held in reset until software releases them
+R("HDMI_HPD_PORT", "GND", "100k", "R_100K_1%", "io")                                # HPD reads low with no monitor
+R("HDMI_CEC", "VCC_3V3", "27k", "R_27K", "io")                                      # HDMI CEC bus pull-up
 R("USB_OTG0_VBUSDET", "VCC_3V3", "10k", "R_10K", "io")  # always report VBUS (CM4 has no VBUS sense pin)
 
 # ---------------- connectors (CM4 pinout, pins 1-100 on J1, 101-200 on J2) ----------------

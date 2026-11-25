@@ -445,8 +445,8 @@
  },
  "75": {
   "net": "SD_PWR_ON",
-  "ball": null,
-  "note": "10 kOhm pull-up to VCC_3V3 (SD power always requested)",
+  "ball": "AR9",
+  "note": "GPIO3_A4 (3.3 V) with 10 kOhm pull-up: SD power on by default, software can power-cycle the card",
   "cm4": "SD_PWR_ON"
  },
  "76": {
@@ -552,9 +552,9 @@
   "cm4": "RUN_PG"
  },
  "93": {
-  "net": "EMMC_CLK",
-  "ball": "A29",
-  "note": "nRPIBOOT: the carrier may hold the eMMC clock low to force maskrom/USB boot",
+  "net": "CM4_nRPIBOOT",
+  "ball": null,
+  "note": "1 kOhm to EMMC_CLK (GPIO1_C5, 1.8 V): grounding it forces maskrom/USB boot; the resistor limits the current if a carrier drives this pin at 3.3 V",
   "cm4": "nRPIBOOT"
  },
  "94": {
@@ -588,9 +588,9 @@
   "cm4": "GND"
  },
  "99": {
-  "net": "PMIC_PWRON",
+  "net": "EN_3V3",
   "ball": null,
-  "note": "RK809 PWRON",
+  "note": "GLOBAL_EN: enable of the 5 V -> 3.3 V buck that feeds the RK809 (100 kOhm pull-up to 5 V, as on a CM4); low keeps the module off",
   "cm4": "GLOBAL_EN"
  },
  "100": {

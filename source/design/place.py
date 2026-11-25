@@ -19,8 +19,9 @@ FIXED = {
     "U1": dict(x=RK[0], y=RK[1], rot=0, layer="top"),
     "U2": dict(x=RK[0] - 4, y=RK[1] + 16.6, rot=0, layer="top"),
     "U6": dict(x=25.6, y=-4.6, rot=0, layer="top"),
-    "J1": dict(x=-0.46, y=-21.5, rot=0, layer="bottom", oddSide=1),
-    "J2": dict(x=33.46, y=-21.5, rot=0, layer="bottom", oddSide=1),
+    # CM4 connectors: centred 26.5 mm from the (0,0)/(33,0) hole row (pins 1/101 at -16.7, 99/199 at -36.3)
+    "J1": dict(x=-0.46, y=-26.5, rot=0, layer="bottom", oddSide=1),
+    "J2": dict(x=33.46, y=-26.5, rot=0, layer="bottom", oddSide=1),
     "U3": dict(x=15.0, y=-37.5, rot=270, layer="top"),           # RK809 turned so BUCK1/2 face the SoC, BUCK4/5 face right, BUCK3 left
     "U5": dict(x=4.6, y=-46.6, rot=0, layer="top"),             # SY8113B 5 V -> 3.3 V
     "U4": dict(x=33.7, y=-8.6, rot=0, layer="top"),             # SYR837 VDD_CPU in the free north-east corner, clear of
