@@ -16,10 +16,14 @@ for p,c in cmname.items():
     elif c.startswith('+5V'): S(p,'VCC5V0_SYS')
     elif c.startswith('CM4_3.3V'): S(p,'VCC_3V3')
     elif c.startswith('CM4_1.8V'): S(p,'VCC_1V8')
-for p in [3,4,5,6,9,10,11,12,15,16,17,18,19,20,64,68,70,72,73,76,104,106,111,133,135,139,141,143,145,146,147,148,149,152,154,158,160,164,166]:
+# 89/91 (WL_nDisable/BT_nDisable) only steer on-module wireless, which this module does not have
+for p in [3,4,5,6,9,10,11,12,15,16,17,18,19,20,64,68,70,72,73,76,89,91,104,106,111,133,135,139,141,143,145,146,147,148,149,152,154,158,160,164,166]:
     S(p,None,note='not connected on this module')
 gp={24:'GPIO3_D3',25:'GPIO3_D1',26:'GPIO3_D0',27:'GPIO3_D2',28:'GPIO3_D7',29:'GPIO3_D5',30:'GPIO3_D4',31:'GPIO3_D6',34:'GPIO4_A5',35:'GPIO1_A1',36:'GPIO1_A0',37:'GPIO4_A7',38:'GPIO4_B3',39:'GPIO4_A6',40:'GPIO4_B0',41:'GPIO4_B1',44:'GPIO4_B2',45:'GPIO4_A1',46:'GPIO4_A2',47:'GPIO4_A3',48:'GPIO4_A0',49:'GPIO3_C7',50:'GPIO3_C6',51:'GPIO0_D0',54:'GPIO4_A4',55:'GPIO0_D1',56:'GPIO4_B5',58:'GPIO4_B4',
-    57:'GPIO2_A2',61:'GPIO2_A0',62:'GPIO2_A1',63:'GPIO1_D5',67:'GPIO1_D6',69:'GPIO1_D7',80:'GPIO0_B3',82:'GPIO0_B4',89:'GPIO2_C2',91:'GPIO2_C3',95:'GPIO0_C0',21:'GPIO0_C1',97:'GPIO2_C6',100:'GPIO0_A5',102:'GPIO1_B0',109:'GPIO1_B2'}
+    57:'GPIO2_A2',61:'GPIO2_A0',62:'GPIO2_A1',63:'GPIO1_D5',67:'GPIO1_D6',69:'GPIO1_D7',80:'GPIO0_B3',82:'GPIO0_B4',95:'GPIO4_C1',21:'GPIO3_B2',97:'GPIO4_C0',100:'GPIO4_B7',102:'GPIO1_B0',109:'GPIO1_B2'}
+# Departures from the SOQuartz assignment: 21 (LED_nACT), 95 (LED_nPWR), 97 (Camera_GPIO) and 100 (nEXTRST) are
+# plain GPIOs; they use free 3.3 V balls on the RK3566's west edge, next to J1, instead of GPIO0 balls on the east
+# edge (whose routes would cross the HDMI/MIPI breakout) or, for 97, a GPIO2_C ball in the 1.8 V VCCIO4 bank.
 for p,gn in gp.items(): S(p,'CM4_'+re.sub(r'[^A-Za-z0-9_]','_',cmname[p]),g(gn),gn)
 phy={94:'SARADC_VIN3',96:'SARADC_VIN2',101:'USB_OTG0_ID',103:'USB_OTG0_DM',105:'USB_OTG0_DP',116:'PCIE20_RXP',118:'PCIE20_RXN',110:'PCIE20_REFCLKP',112:'PCIE20_REFCLKN',
  115:'MIPI_CSI_RX_D2N',117:'MIPI_CSI_RX_D2P',121:'MIPI_CSI_RX_D3N',123:'MIPI_CSI_RX_D3P',127:'MIPI_CSI_RX_CLK1N',129:'MIPI_CSI_RX_CLK1P',128:'MIPI_CSI_RX_D0N',130:'MIPI_CSI_RX_D0P',134:'MIPI_CSI_RX_D1N',136:'MIPI_CSI_RX_D1P',140:'MIPI_CSI_RX_CLK0N',142:'MIPI_CSI_RX_CLK0P',

@@ -340,7 +340,7 @@
 "E2": "DDR_ODT_a",
 "A10": "DDR_ODT_b",
 "1C7": "DDR_RESET",
-"1R18": "CM4_Pi_nLED_Activity",
+"AR6": "CM4_Pi_nLED_Activity",
 "AM1": "CM4_GPIO26",
 "AN2": "CM4_GPIO21",
 "AP1": "CM4_GPIO19",
@@ -377,14 +377,12 @@
 "1D20": "CM4_SD_DAT2",
 "AK37": "CM4_SCL0",
 "AM38": "CM4_SDA0",
-"C37": "CM4_WL_nDisable",
-"1D19": "CM4_BT_nDisable",
 "A29": "EMMC_CLK",
 "1A19": "SARADC_VIN3",
-"1T19": "CM4_PI_LED_nPWR",
+"AB1": "CM4_PI_LED_nPWR",
 "1B18": "SARADC_VIN2",
-"B38": "CM4_Camera_GPIO",
-"AG37": "CM4_nEXTRST",
+"AB2": "CM4_Camera_GPIO",
+"AC2": "CM4_nEXTRST",
 "T37": "USB_OTG0_ID",
 "1B13": "CM4_PCIe_CLK_nREQ",
 "R38": "USB_OTG0_DM",
@@ -462,10 +460,13 @@
 "T38": "USB_OTG0_VBUSDET",
 "1P18": null,
 "AF37": null,
+"AG37": null,
 "AJ38": null,
 "1U20": null,
 "1R16": null,
 "1R17": null,
+"1T19": null,
+"1R18": null,
 "AM37": null,
 "AN38": null,
 "AN37": null,
@@ -500,8 +501,11 @@
 "D38": null,
 "A37": null,
 "B36": null,
+"C37": null,
+"1D19": null,
 "1B20": null,
 "D37": null,
+"B38": null,
 "1U5": null,
 "AR10": null,
 "AP10": null,
@@ -511,7 +515,6 @@
 "1V3": null,
 "AR7": null,
 "AP7": null,
-"AR6": null,
 "AP6": null,
 "1U3": null,
 "1T4": null,
@@ -524,9 +527,6 @@
 "1P3": null,
 "1P4": null,
 "1L1": null,
-"AC2": null,
-"AB2": null,
-"AB1": null,
 "1U7": null,
 "AP12": null,
 "1V6": null,
@@ -2930,9 +2930,9 @@
 "86": "VCC_3V3",
 "87": "VCC5V0_SYS",
 "88": "VCC_1V8",
-"89": "CM4_WL_nDisable",
+"89": null,
 "90": "VCC_1V8",
-"91": "CM4_BT_nDisable",
+"91": null,
 "92": "RESETn",
 "93": "EMMC_CLK",
 "94": "SARADC_VIN3",
@@ -4101,7 +4101,7 @@
 "U2.T11"
 ],
 "CM4_Pi_nLED_Activity": [
-"U1.1R18",
+"U1.AR6",
 "J1.21"
 ],
 "CM4_GPIO26": [
@@ -4248,14 +4248,6 @@
 "U1.AM38",
 "J1.82"
 ],
-"CM4_WL_nDisable": [
-"U1.C37",
-"J1.89"
-],
-"CM4_BT_nDisable": [
-"U1.1D19",
-"J1.91"
-],
 "EMMC_CLK": [
 "U1.A29",
 "U6.CLK",
@@ -4266,7 +4258,7 @@
 "J1.94"
 ],
 "CM4_PI_LED_nPWR": [
-"U1.1T19",
+"U1.AB1",
 "J1.95"
 ],
 "SARADC_VIN2": [
@@ -4274,11 +4266,11 @@
 "J1.96"
 ],
 "CM4_Camera_GPIO": [
-"U1.B38",
+"U1.AB2",
 "J1.97"
 ],
 "CM4_nEXTRST": [
-"U1.AG37",
+"U1.AC2",
 "J1.100"
 ],
 "USB_OTG0_ID": [

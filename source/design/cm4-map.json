@@ -121,8 +121,8 @@
  },
  "21": {
   "net": "CM4_Pi_nLED_Activity",
-  "ball": "1R18",
-  "note": "GPIO0_C1",
+  "ball": "AR6",
+  "note": "GPIO3_B2",
   "cm4": "Pi_nLED_Activity"
  },
  "22": {
@@ -528,9 +528,9 @@
   "cm4": "CM4_1.8V (Output)"
  },
  "89": {
-  "net": "CM4_WL_nDisable",
-  "ball": "C37",
-  "note": "GPIO2_C2",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "WL_nDisable"
  },
  "90": {
@@ -540,9 +540,9 @@
   "cm4": "CM4_1.8V (Output)"
  },
  "91": {
-  "net": "CM4_BT_nDisable",
-  "ball": "1D19",
-  "note": "GPIO2_C3",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "BT_nDisable"
  },
  "92": {
@@ -565,8 +565,8 @@
  },
  "95": {
   "net": "CM4_PI_LED_nPWR",
-  "ball": "1T19",
-  "note": "GPIO0_C0",
+  "ball": "AB1",
+  "note": "GPIO4_C1",
   "cm4": "PI_LED_nPWR"
  },
  "96": {
@@ -577,8 +577,8 @@
  },
  "97": {
   "net": "CM4_Camera_GPIO",
-  "ball": "B38",
-  "note": "GPIO2_C6",
+  "ball": "AB2",
+  "note": "GPIO4_C0",
   "cm4": "Camera_GPIO"
  },
  "98": {
@@ -595,8 +595,8 @@
  },
  "100": {
   "net": "CM4_nEXTRST",
-  "ball": "AG37",
-  "note": "GPIO0_A5",
+  "ball": "AC2",
+  "note": "GPIO4_B7",
   "cm4": "nEXTRST"
  },
  "101": {
