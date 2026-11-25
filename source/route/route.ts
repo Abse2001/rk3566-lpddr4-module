@@ -407,6 +407,35 @@ function endgame(bad: Net[], tries: number): boolean {
   console.log(`  endgame: no order fits ${group.length} nets in ${tries} tries`)
   return false
 }
+// the conflicts fall into separate places on the board; re-place each place's nets on their own, so one
+// crowded spot cannot sink the re-placement of the others
+function endgameClusters(bad: Net[], tries: number): number {
+  const B = Math.round(1.0 / P), key = (c: number) => (((c / NX) | 0) / B | 0) * 100000 + ((c % NX) / B | 0)
+  const parent = bad.map((_, i) => i), find = (a: number): number => (parent[a] === a ? a : (parent[a] = find(parent[a])))
+  const owner = new Map<number, number>()
+  bad.forEach((n, i) => {
+    if (!n.path) return
+    stampNet(n, -1)
+    for (const p of n.path) for (const id of p) {
+      const l = (id / NN) | 0, c = id - l * NN
+      if (!occT[l][c]) continue
+      const k0 = key(c)
+      for (const dk of [0, 1, -1, 100000, -100000, 100001, -100001, 99999, -99999]) { const o = owner.get(k0 + dk); if (o !== undefined) parent[find(o)] = find(i) }
+      owner.set(k0, i)
+    }
+    stampNet(n, 1)
+  })
+  const groups = new Map<number, Net[]>()
+  bad.forEach((n, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r)!.push(n) })
+  const list = [...groups.values()].sort((a, b) => a.length - b.length)
+  let fixed = 0
+  for (const g of list) {
+    const live = g.filter((n) => conflictsOf(n) > 0)
+    if (live.length && endgame(live, tries)) fixed++
+  }
+  console.log(`  endgame: ${fixed} of ${list.length} conflict clusters re-placed`)
+  return fixed
+}
 function routeNet0Hard(n: Net): boolean {
   if (n.follows) setAttract(n.follows, true)
   try { return routeNet0(n) } finally { if (n.follows) setAttract(n.follows, false) }
@@ -414,6 +443,7 @@ function routeNet0Hard(n: Net): boolean {
 let failed: string[] = []
 let dirty = nets
 let best = Infinity, bestAt = 0
+let bestSnap: Map<Net, { path: any; vias: any }> | null = null
 for (let it = 0; it < MAXIT; it++) {
   failed = []
   for (const n of dirty) { stampNet(n, -1); if (!routeNet(n)) failed.push(n.name); stampNet(n, 1) }
@@ -422,14 +452,22 @@ for (let it = 0; it < MAXIT; it++) {
   console.log(`iter ${it} [${((performance.now() - t0) / 1e3).toFixed(0)}s] pres=${pres.toFixed(2)} conflicts=${total} nets=${bad.length} ${bad.slice(0, 8).map((n) => n.name).join(",")} failed=${failed.length} ${failed.slice(0, 6).join(",")}`)
   if (!total && !failed.length) break
   if (it % 10 === 9) await writeOut(dir + "/routes.ckpt.json", dir + "/copper.ckpt.json")
-  if (total < best) { best = total; bestAt = it }
-  if (total < +(process.env.EG_AT ?? 400) && it - bestAt >= 4) {
-    if (endgame(bad, +(process.env.EG_TRIES ?? 24))) {
-      let t2 = 0; for (const n of nets) { n.conflicts = conflictsOf(n); t2 += n.conflicts }
-      console.log(`  after endgame: conflicts=${t2}`)
-      if (!t2) { failed = []; break }
-      best = t2; bestAt = it
-    } else bestAt = it
+  if (total < best) { best = total; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }])) }
+  if (it - bestAt >= +(process.env.STALL ?? 4) && bestSnap) {
+    // no progress for a while (or diverging): go back to the best routing seen, then re-place its conflict clusters
+    if (total > best) {
+      for (const n of nets) stampNet(n, -1)
+      for (const n of nets) { const sv = bestSnap.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
+      console.log(`  back to the best routing (pass ${bestAt}, ${best} conflicts)`)
+    }
+    let b2: Net[] = []
+    for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) b2.push(n) }
+    endgameClusters(b2, +(process.env.EG_TRIES ?? 24))
+    let t2 = 0; bad.length = 0
+    for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) { t2 += n.conflicts; bad.push(n) } }
+    console.log(`  after endgame: conflicts=${t2}`)
+    if (!t2 && !failed.length) break
+    best = t2; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }]))
   }
   const want = new Set(bad.concat(nets.filter((n) => failed.includes(n.name))))
   for (const n of [...want]) { if (n.partner) want.add(n.partner); if (n.follows) want.add(n.follows) }
