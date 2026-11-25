@@ -250,7 +250,8 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
       if (hard && occT[l][cc] && isGoal[nid] !== goalStamp) continue
-      const cong = ((1 + histT[l][cc]) * (1 + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)) * (attractOn && attract[l][cc] ? 0.25 : 1)
+      // the pair attraction discounts only the distance, never the price of another net's space
+      const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)
       const ng = g + (d < 4 ? 1 : DIAG) * cong
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
@@ -259,7 +260,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
-      const ng = g + VIA_COST * (1 + histV[c]) * (1 + pres * occV[c]) * (attractOn && attractV[c] ? 0.3 : 1)
+      const ng = g + VIA_COST * (1 + histV[c]) * ((attractOn && attractV[c] ? 0.3 : 1) + pres * occV[c])
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(c), nid) }
     }
   }
