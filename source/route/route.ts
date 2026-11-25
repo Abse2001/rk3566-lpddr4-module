@@ -413,6 +413,8 @@ function endgame(bad: Net[], tries: number): boolean {
   for (const n of [...set]) { if (n.partner) set.add(n.partner); if (n.follows) set.add(n.follows) }
   const group = nets.filter((n) => set.has(n))
   const saved = new Map(group.map((n) => [n, { path: n.path, vias: n.vias }]))
+  const before = groupConflicts(group)
+  let bestT = Infinity, bestA = -1, best: Map<Net, { path: any; vias: any }> | null = null
   for (const n of group) stampNet(n, -1)
   const span = (n: Net) => { const ts = [...n.terms, ...n.drops]; const xs = ts.map((t) => t.x), ys = ts.map((t) => t.y); return Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys) }
   for (let a = 0; a < tries; a++) {
@@ -421,15 +423,35 @@ function endgame(bad: Net[], tries: number): boolean {
     order = order.filter((n) => !n.follows); for (const f of group.filter((n) => n.follows)) { const k = order.indexOf(f.follows!); order.splice(k < 0 ? order.length : k + 1, 0, f) }
     hard = true
     const placed: Net[] = []
-    let ok = true
-    for (const n of order) { if (!routeNet0Hard(n)) { ok = false; break } stampNet(n, 1); placed.push(n) }
+    for (const n of order) {
+      // no conflict-free path with everything else fixed: route it normally (priced), so the order still counts
+      if (!routeNet0Hard(n)) { hard = false; routeNet(n); hard = true }
+      stampNet(n, 1); placed.push(n)
+    }
     hard = false
-    if (ok) { console.log(`  endgame: ${group.length} nets around ${bad.length} in conflict re-placed (order ${a})`); return true }
+    const t = groupConflicts(group)
+    if (t < bestT) { bestT = t; bestA = a; best = new Map(group.map((n) => [n, { path: n.path, vias: n.vias }])) }
     for (const n of placed) stampNet(n, -1)
+    if (bestT === 0) break
   }
-  for (const n of group) { const sv = saved.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
-  console.log(`  endgame: no order fits ${group.length} nets in ${tries} tries`)
-  return false
+  // keep the best order if it beats what was there, else put the old routes back
+  const keep = bestT < before ? best! : saved
+  for (const n of group) { const sv = keep.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
+  if (bestT < before) console.log(`  endgame: ${group.length} nets around ${bad.length}: conflicts ${before} -> ${bestT} (order ${bestA})`)
+  else console.log(`  endgame: no better order for ${group.length} nets in ${tries} tries (${before})`)
+  return bestT < before
+}
+// conflicts of a group's nets with anything (no side effects on the history costs)
+function groupConflicts(group: Net[]): number {
+  let k = 0
+  for (const n of group) {
+    if (!n.path) { k += 1000; continue }
+    stampNet(n, -1)
+    for (const p of n.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN; if (occT[l][c]) k++ }
+    for (const c of n.vias!) if (occV[c]) k++
+    stampNet(n, 1)
+  }
+  return k
 }
 // the conflicts fall into separate places on the board; re-place each place's nets on their own, so one
 // crowded spot cannot sink the re-placement of the others
