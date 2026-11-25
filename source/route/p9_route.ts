@@ -4,7 +4,10 @@
 // Signal layers: top / inner3 / bottom, mapped to SRJ layers top / inner1 / bottom (layerCount 3). inner2 (power
 // islands) and inner1/inner4 (ground) are not offered to the router.
 // Output: routes_p9.json (solver output traces) and copper_p9.json (fixed + routed, copper.json format).
-import { AutoroutingPipelineSolver9_PreloadedTraceGraph } from "@tscircuit/capacity-autorouter"
+// AR_SRC=<path to a tscircuit-autorouter checkout's lib/index.ts> runs a local build of the autorouter instead of the
+// installed npm package
+const AR: any = process.env.AR_SRC ? await import(process.env.AR_SRC) : await import("@tscircuit/capacity-autorouter")
+const AutoroutingPipelineSolver9_PreloadedTraceGraph = AR[process.env.PIPELINE ?? "AutoroutingPipelineSolver9_PreloadedTraceGraph"]
 const dir = import.meta.dir
 const padsIn = await Bun.file(dir + "/../design/pads.json").json()
 const base = await Bun.file(dir + "/" + (process.env.BASE ?? "copper.json")).json()
