@@ -205,6 +205,7 @@ const histT = [0, 1, 2, 3].map(() => new Float32Array(NN)), histV = new Float32A
 const disk = (r: number) => { const o: number[] = []; const k = Math.ceil(r / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) if (Math.hypot(di, dj) * P < r - EPS) o.push(di, dj); return o }
 const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TTB = disk(W_BIG / 2 + W_SIG / 2 + GAP), D_BTV = disk(W_BIG / 2 + GAP + VIA_D / 2), D_TV = disk(W_SIG / 2 + GAP + VIA_D / 2), D_VV = disk(VIA_D + GAP)
 const D_WTV = disk(W_PWR / 2 + GAP + VIA_D / 2)
+const D_EXW = disk((W_PWR - W_SIG) / 2 + P / 2), D_EXB = disk((W_BIG - W_SIG) / 2 + P / 2)
 function stampDisk(arr: Uint16Array, c: number, offs: number[], s: number) {
   const i = c % NX, j = (c / NX) | 0
   for (let k = 0; k < offs.length; k += 2) { const ii = i + offs[k], jj = j + offs[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) arr[jj * NX + ii] += s }
@@ -249,6 +250,15 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
   heapK.length = 0; heapV.length = 0
   if (goals) for (const g of goals) isGoal[g] = goalStamp
   const wide = n.w > W_SIG, bT = n.w > W_PWR ? blockTB : wide ? blockTW : blockT
+  // other nets' keep-outs in occT are sized for a 0.1 mm trace; a wider trace must also keep its extra half-width
+  // clear of them, or it lands inside a thin neighbour's clearance (hard mode treats that as an obstacle)
+  const extra = hard && wide ? (n.w > W_PWR ? D_EXB : D_EXW) : null
+  const clearWide = (l: number, cc: number) => {
+    if (!extra || neck[cc]) return true
+    const i = cc % NX, j = (cc / NX) | 0, a = occT[l]
+    for (let k = 0; k < extra.length; k += 2) { const ii = i + extra[k], jj = j + extra[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY && a[jj * NX + ii]) return false }
+    return true
+  }
   const h = (c: number) => goalVia ? 0 : Math.hypot(wx(c % NX) - gx0, wy((c / NX) | 0) - gy0) / P * HW
   for (const s of sources) { gCost[s] = 0; from[s] = -1; seen[s] = stamp; push(h(s % NN), s) }
   let expanded = 0
@@ -268,7 +278,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
-      if (hard && occT[l][cc] && isGoal[nid] !== goalStamp) continue
+      if (hard && (occT[l][cc] || !clearWide(l, cc)) && isGoal[nid] !== goalStamp) continue
       // the pair attraction discounts only the distance, never the price of another net's space
       const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)
       const ng = g + (d < 4 ? 1 : DIAG) * cong
