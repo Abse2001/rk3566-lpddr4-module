@@ -507,14 +507,28 @@ for (let it = 0; it < MAXIT; it++) {
       for (const n of nets) { const sv = bestSnap.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
       console.log(`  back to the best routing (pass ${bestAt}, ${best} conflicts)`)
     }
-    let b2: Net[] = []
-    for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) b2.push(n) }
-    endgameClusters(b2, +(process.env.EG_TRIES ?? 24))
+    // clean-up rounds while they keep lowering the board's total (each round re-clusters what is left)
+    let prev = groupConflicts(nets)
+    for (let r = 0; r < +(process.env.EG_ROUNDS ?? 6) && prev > 0; r++) {
+      const b2: Net[] = []
+      for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) b2.push(n) }
+      endgameClusters(b2, +(process.env.EG_TRIES ?? 24))
+      const now = groupConflicts(nets)
+      console.log(`  endgame round ${r}: ${prev} -> ${now}`)
+      if (now >= prev) break
+      prev = now
+    }
     let t2 = 0; bad.length = 0
     for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) { t2 += n.conflicts; bad.push(n) } }
     console.log(`  after endgame: conflicts=${t2}`)
     if (!t2 && !failed.length) break
     best = t2; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }]))
+    // negotiate on from the cleaned-up routing with a low present price (the learned history stays), so the next
+    // pass refines it instead of scattering it
+    pres = +(process.env.PRESET ?? 2)
+    dirty = nets.filter((n) => n.conflicts)
+    for (const n of [...dirty]) { if (n.partner && !dirty.includes(n.partner)) dirty.push(n.partner); if (n.follows && !dirty.includes(n.follows)) dirty.push(n.follows) }
+    continue
   }
   const want = new Set(bad.concat(nets.filter((n) => failed.includes(n.name))))
   for (const n of [...want]) { if (n.partner) want.add(n.partner); if (n.follows) want.add(n.follows) }
