@@ -266,7 +266,13 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
 }
 function routeNet(n: Net): boolean {
   if (n.follows) setAttract(n.follows, true)
-  try { return routeNet0(n) } finally { if (n.follows) setAttract(n.follows, false) }
+  try {
+    if (routeNet0(n)) return true
+    // no path under the current prices: take the cheapest path ignoring other nets, so the net stays in the
+    // negotiation as a conflict (and its neighbours learn to make room) instead of dropping out
+    const keep = pres; pres = 0
+    try { return routeNet0(n) } finally { pres = keep }
+  } finally { if (n.follows) setAttract(n.follows, false) }
 }
 function routeNet0(n: Net): boolean {
   lift(n.name, -1)
