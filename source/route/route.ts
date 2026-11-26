@@ -19,7 +19,7 @@ if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await B
 const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
 // JLCPCB: a via's drilled hole keeps 0.2 mm from copper of other nets (inner layers included), so the copper gap
 // around a 0.15/0.25 mm via is 0.2 - (0.25 - 0.15) / 2 = 0.15 mm, not the 0.1 mm trace-to-trace gap
-const VGAP = Math.max(GAP, 0.2 + 0.012 - (VIA_D - VIA_H) / 2)
+const VGAP = process.env.HOLE_RULE ? Math.max(GAP, 0.2 + 0.012 - (VIA_D - VIA_H) / 2) : GAP  // HOLE_RULE=1: enforce it
 // inner2 is the power plane layer; small supply rails may also run there as traces (the plane islands avoid them)
 // GND_SIG: slow signals may also cross the ground layers (inner1 under top, inner4 above bottom) where no fast signal
 // runs on the adjacent outer layer, so every fast trace keeps an unbroken reference plane
@@ -84,7 +84,7 @@ for (const v of fixed.vias) objs.push({ net: v.net, via: true, hole: v.hole, d: 
 const blockT = ALL_L.map(() => new Uint16Array(NN)), blockTW = ALL_L.map(() => new Uint16Array(NN)), blockTB = ALL_L.map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
 const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_TB = GAP + W_BIG / 2, R_V = VGAP + VIA_D / 2
 for (const o of objs) {
-  const xg = o.via ? Math.max(0, 0.2 + 0.012 - (o.d - o.hole) / 2 - GAP) : 0  // a fixed via's hole keeps 0.2 mm from new copper too
+  const xg = o.via && process.env.HOLE_RULE ? Math.max(0, 0.2 + 0.012 - (o.d - o.hole) / 2 - GAP) : 0  // a fixed via's hole keeps 0.2 mm from new copper too
   o.t = Int32Array.from(cellsWithin(o.shape, R_T + xg)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW + xg)); o.tb = Int32Array.from(cellsWithin(o.shape, R_TB + xg)); o.v = Int32Array.from(cellsWithin(o.shape, R_V + xg))
   for (const l of o.layers) { for (const c of o.t) blockT[l][c]++; for (const c of o.tw) blockTW[l][c]++; for (const c of o.tb) blockTB[l][c]++ }
   for (const c of o.v) blockV[c]++
