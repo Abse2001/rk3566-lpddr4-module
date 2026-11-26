@@ -73,6 +73,23 @@ Correct as checked: all 200 pin names, all 51 GND pins, supply pins, outline and
 
 Rockchip's own 6-layer method (RK3568 Hardware Design Guide, section 3.1): L1 signal / L2 GND / L3 power / L4 signal / L5 GND / L6 signal (this board's stackup); outer two ball rings escape on top with 4 mil traces between balls; from the third ring vias on a grid between the balls, in rows every 2-4 ball rows with an empty row kept for plane channels, 3.5 mil traces between vias. Next step if routing still stalls: a breakout planner that lays the vias out this way before the negotiated routing.
 
+| R9 | A run could output a worse result than it had reached | The output was the last pass, not the best | Best routing written to `*.best.json` as it improves and used as the output | fixed |
+| R10 | Pair members kept colliding at layer changes (e.g. MIPI_DSI_TX0_D0P with D0N's via) | The follower's attraction rings overlapped the lead's own via/trace keep-out | Attraction never inside the lead's clearance | fixed |
+| R11 | 0.2/0.4 mm supply traces kept brushing thin signals | In priced mode a wide trace only checked its centre line | Priced over its full width (as strict mode already was) | fixed |
+| R12 | Phantom conflicts the endgame could never clear | Inside neck zones wide traces are drawn at 0.1 mm but stamped at full width | Signal-width stamps inside neck zones | fixed |
+| R13 | VCC_DDR island cut off at the RK809 | Island feed corridors were not enforced inside any fine-pitch zone | Enforced everywhere except the SoC ball field | fixed |
+| R14 | Endgame judged re-placements on the moved nets only and could raise the total (687 -> 972) | Fallback-routed nets pushed into nets outside the group | Judged on the whole board; a round that does not help is rolled back | fixed |
+
+Result after R9-R12: run 44 reached 4 conflict cells (one MIPI pair at exactly the 0.100 mm limit, which check.py accepts), from 184 earlier in the day.
+
+## Planes and fixed copper
+
+| # | Issue | Fix | Status |
+|---|---|---|---|
+| F1 | U1 B22/V2 pads 0.048 mm from GND vias | The supplied power fanout predates the corrected ball map; fixed.py now drops any fanout whose via does not clear another net's ball, and fanout_bga.py gives that ball a via-in-pad | fixed |
+| F2 | RK809 thermal-pad vias inside the VDD_NPU island | planes.py now treats footprint vias as foreign copper | fixed |
+| F3 | VDD_LOGIC touched VDD_GPU at one spot | Each island keeps SPLIT (0.25 mm) from the islands already made | fixed |
+
 ## Other solvers tried
 
 | # | Solver | Result | Notes |
