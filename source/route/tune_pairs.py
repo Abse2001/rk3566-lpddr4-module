@@ -45,7 +45,7 @@ for P_, N_ in pairs:
     partner_geom = [LineString([(a["x"], a["y"]), (b["x"], b["y"])]) for s in nets[long_]["segs"] for a, b in zip(s["pts"], s["pts"][1:])]
     done = 0.0
     segs = nets[short]["segs"]
-    MIN_L, AMPS, PITCH, BW = 0.5, (0.45, 0.35, 0.25, 0.15), 0.4, 0.2  # bump every 0.4 mm, 0.2 mm wide
+    MIN_L = float(os.environ.get("MIN_L", 0.5)); AMPS = tuple(float(a) for a in os.environ.get("AMPS", "0.45,0.35,0.25,0.15").split(",")); PITCH, BW = 0.4, 0.2  # bump every 0.4 mm, 0.2 mm wide
     for rnd in range(40):  # one bumped piece per round: the straight pieces change as bumps go in
         before = done
         cands = sorted(((math.hypot(b["x"] - a["x"], b["y"] - a["y"]), si, k) for si, s in enumerate(segs) for k, (a, b) in enumerate(zip(s["pts"], s["pts"][1:]))), reverse=True)

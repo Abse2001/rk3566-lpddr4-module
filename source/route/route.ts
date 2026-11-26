@@ -624,6 +624,7 @@ let bestSnap: Map<Net, { path: any; vias: any }> | null = null
 // POLISH=<routes.json>: load the routing, then for every pair whose P/N skew exceeds its limit re-route the longer
 // member strictly (everything else fixed, conflict-free) inside a tight corridor along its partner; keep the new path
 // only if it is shorter. Writes OUT routes/copper like a normal run.
+let polishLoaded = false
 if (process.env.POLISH) {
   const rj = await Bun.file(process.env.POLISH).json()
   for (const n of nets) {
@@ -643,9 +644,19 @@ if (process.env.POLISH) {
     n.path = paths; n.vias = r.vias.map((v: any) => gy(v.y) * NX + gx(v.x))
   }
   for (const n of nets) stampNet(n, 1)
+  polishLoaded = true
   const lenOf = (n: Net) => { const g = geometry(n); return g.segs.reduce((s: number, sg: any) => s + sg.pts.slice(1).reduce((t: number, q: any, k: number) => t + Math.hypot(q.x - sg.pts[k].x, q.y - sg.pts[k].y), 0), 0) + 0.6 * g.vias.length }
   const LIM = (name: string) => (name.startsWith("USB") ? 0.25 : 0.13)
   const FR = disk(+(process.env.POLISH_R ?? 0.45))
+  if (process.env.RENEG) {
+    // continue the normal negotiation from this routing: only the over-skewed pairs are ripped up at first; their
+    // neighbours join the negotiation as soon as they conflict
+    const skewed = nets.filter((n) => n.partner && Math.abs(lenOf(n) - lenOf(n.partner!)) > Math.max(LIM(n.name), +(process.env.RENEG_MIN ?? 1.0)))
+    dirty = skewed.flatMap((n) => [n, n.partner!])
+    pres = +(process.env.PRESET ?? 2)
+    console.log("renegotiate from the loaded routing; skewed pairs:", skewed.map((n) => n.name).join(","))
+  }
+  if (!process.env.RENEG) {
   for (const lead of nets.filter((n) => n.partner)) {
     const fol = lead.partner!
     const lp = lenOf(lead), lf = lenOf(fol)
@@ -684,11 +695,58 @@ if (process.env.POLISH) {
     if (ok && skew1 < skew0 - 0.05) { stampNet(lead, 1); stampNet(fol, 1); console.log(`polish pair ${lead.name}: skew ${skew0.toFixed(2)} -> ${skew1.toFixed(2)} mm`) }
     else { for (const o of old) { o.n.path = o.path; o.n.vias = o.vias; stampNet(o.n, 1) } console.log(`polish pair ${lead.name}: no better clean pair route (skew ${skew0.toFixed(2)} mm)`) }
   }
+  // still skewed: lift the pair and every net running near it, route the pair first (coupled, tight corridor), then
+  // the neighbours strictly around it in several orders; keep it only if all fit and the skew improves
+  const RN = Math.round(+(process.env.POLISH_NEAR ?? 0.8) / P)
+  for (const lead of nets.filter((n) => n.partner)) {
+    const fol = lead.partner!
+    const skew0 = Math.abs(lenOf(lead) - lenOf(fol))
+    if (skew0 <= LIM(lead.name)) continue
+    const near = new Uint8Array(NN)
+    for (const m of [lead, fol]) for (const p of m.path ?? []) for (const id of p) { const c = id % NN, i = c % NX, j = (c / NX) | 0
+      for (let dj = -RN; dj <= RN; dj += 2) for (let di = -RN; di <= RN; di += 2) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) near[jj * NX + ii] = 1 } }
+    const others = nets.filter((n) => n !== lead && n !== fol && !n.plane && n.path?.some((p) => p.some((id) => near[id % NN])))
+    // a neighbour pair moves as a pair
+    for (const n of [...others]) { const q = n.partner ?? n.follows; if (q && q !== lead && q !== fol && !others.includes(q)) others.push(q) }
+    const group = [lead, fol, ...others]
+    const saved = group.map((n) => ({ n, path: n.path, vias: n.vias }))
+    let best: { skew: number; st: { n: Net; path: any; vias: any }[] } | null = null
+    for (let a = 0; a < +(process.env.POLISH_TRIES ?? 8); a++) {
+      for (const n of group) stampNet(n, -1)
+      const stamped: Net[] = []
+      hard = true
+      let ok = routeNet0(lead)
+      if (ok) {
+        stampNet(lead, 1); stamped.push(lead)
+        const saveFol = D_FOL.slice(); D_FOL.length = 0; D_FOL.push(...FR)
+        setFollow(lead, fol, true); ok = routeNet0(fol); setFollow(lead, fol, false)
+        D_FOL.length = 0; D_FOL.push(...saveFol)
+        if (ok) { stampNet(fol, 1); stamped.push(fol) }
+      }
+      let order = [...others].sort(() => rand() - 0.5)
+      order = order.filter((n) => !n.follows); for (const f of others.filter((n) => n.follows)) { const k = order.indexOf(f.follows!); order.splice(k < 0 ? order.length : k + 1, 0, f) }
+      if (ok) for (const n of order) { if (!routeNet0Hard(n)) { ok = false; break } stampNet(n, 1); stamped.push(n) }
+      hard = false
+      const skew1 = ok ? Math.abs(lenOf(lead) - lenOf(fol)) : Infinity
+      if (ok && skew1 < skew0 - 0.05 && (!best || skew1 < best.skew)) best = { skew: skew1, st: group.map((n) => ({ n, path: n.path, vias: n.vias })) }
+      // undo this try exactly, then put the saved routes back for the next one
+      for (const n of stamped) stampNet(n, -1)
+      for (const o of saved) { o.n.path = o.path; o.n.vias = o.vias }
+      for (const n of group) stampNet(n, 1)
+      if (best && best.skew <= LIM(lead.name)) break
+    }
+    if (best) {
+      for (const n of group) stampNet(n, -1)
+      for (const o of best.st) { o.n.path = o.path; o.n.vias = o.vias; stampNet(o.n, 1) }
+      console.log(`polish area ${lead.name}: skew ${skew0.toFixed(2)} -> ${best.skew.toFixed(2)} mm (${others.length} neighbours re-placed)`)
+    } else console.log(`polish area ${lead.name}: no clean improvement (skew ${skew0.toFixed(2)} mm, ${others.length} neighbours)`)
+  }
   for (const n of nets) n.conflicts = conflictsOf(n)
   const OUTP = process.env.OUT ?? "_polish"
   await writeOut(dir + `/routes${OUTP}.json`, dir + `/copper${OUTP}.json`)
   console.log("polish done; conflicts", nets.reduce((s, n) => s + (n.conflicts ?? 0), 0))
   process.exit(0)
+  }
 }
 for (let it = 0; it < MAXIT; it++) {
   failed = []
