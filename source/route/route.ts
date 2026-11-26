@@ -331,7 +331,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
   stamp++; goalStamp++
   heapK.length = 0; heapV.length = 0
   if (goals) for (const g of goals) isGoal[g] = goalStamp
-  const wide = n.w > W_SIG, bT = n.w > W_PWR ? blockTB : wide ? blockTW : blockT
+  const wide = n.w > W_SIG, bT = n.w > W_PWR ? blockTB : wide ? blockTW : blockT, leadPair = !!n.partner
   // other nets' keep-outs in occT are sized for a 0.1 mm trace; a wider trace must also keep its extra half-width
   // clear of them, or it lands inside a thin neighbour's clearance (hard mode treats that as an obstacle)
   const extra = wide ? (n.w > W_PWR ? D_EXB : D_EXW) : null
@@ -365,7 +365,15 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const wideHit = extra !== null && !clearWide(l, cc)
       if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
       // the pair attraction discounts only the distance, never the price of another net's space
-      const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * (occT[l][cc] + (wideHit ? 1 : 0))) + (wide && occT[l][cc] ? 2 : 0)
+      // a pair's lead also pays for the room its follower needs beside it (the cheaper of the two sides, at the pair
+      // pitch, perpendicular to the step); outside the BGA / fine-pitch zones, where the pads set the geometry anyway
+      let room = 0
+      if (leadPair && !neck[cc]) {
+        const k = d < 4 ? 6 : 4, oi = -dj * k, oj = di * k
+        const side = (si: number, sj: number) => { const ii = i + di + si, jj = j + dj + sj; if (ii < 0 || jj < 0 || ii >= NX || jj >= NY) return 3; const c2 = jj * NX + ii; return blockT[l][c2] ? 3 : occT[l][c2] }
+        room = Math.min(side(oi, oj), side(-oi, -oj))
+      }
+      const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * (occT[l][cc] + (wideHit ? 1 : 0) + room)) + (wide && occT[l][cc] ? 2 : 0) + (room >= 3 ? 2 : 0)
       const ng = g + (d < 4 ? 1 : DIAG) * cong * (l >= 4 ? GND_COST : 1)
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
@@ -383,6 +391,11 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
   return null
 }
 function routeNet(n: Net): boolean {
+  const lifted = n.partner?.path ? n.partner : null
+  if (lifted) stampNet(lifted, -1)
+  try { return routeNet1(n) } finally { if (lifted) stampNet(lifted, 1) }
+}
+function routeNet1(n: Net): boolean {
   if (n.follows) { setAttract(n.follows, true); setFollow(n.follows, n, true) }
   try {
     n.decoupled = false
