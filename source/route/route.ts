@@ -270,6 +270,14 @@ function setAttract(lead: Net | undefined, on: boolean) {
     for (let k = 0; k < RING_T.length; k += 2) { const ii = i + RING_T[k], jj = j + RING_T[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attract[l][jj * NX + ii] = v } }
   for (const c of lead.vias ?? []) { const i = c % NX, j = (c / NX) | 0
     for (let k = 0; k < RING_V.length; k += 2) { const ii = i + RING_V[k], jj = j + RING_V[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attractV[jj * NX + ii] = v } }
+  if (on) {
+    // never attract the follower into the lead's own clearance: no follower via within via-to-trace distance of the
+    // lead's path, no follower trace within trace-to-via distance of the lead's vias
+    const clr = (arr: Uint8Array, c: number, offs: number[]) => { const i = c % NX, j = (c / NX) | 0
+      for (let k = 0; k < offs.length; k += 2) { const ii = i + offs[k], jj = j + offs[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) arr[jj * NX + ii] = 0 } }
+    for (const p of lead.path) for (const id of p) clr(attractV, id % NN, D_TV)
+    for (const c of lead.vias ?? []) for (let l = 0; l < NL; l++) clr(attract[l], c, D_TV)
+  }
   attractOn = on
 }
 const VIA_COST = 10, DIAG = Math.SQRT2, HW = +(process.env.HW ?? 1.3) // heuristic weight: > 1 trades a little path length for a much smaller search
@@ -305,7 +313,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
   const wide = n.w > W_SIG, bT = n.w > W_PWR ? blockTB : wide ? blockTW : blockT
   // other nets' keep-outs in occT are sized for a 0.1 mm trace; a wider trace must also keep its extra half-width
   // clear of them, or it lands inside a thin neighbour's clearance (hard mode treats that as an obstacle)
-  const extra = hard && wide ? (n.w > W_PWR ? D_EXB : D_EXW) : null
+  const extra = wide ? (n.w > W_PWR ? D_EXB : D_EXW) : null
   const clearWide = (l: number, cc: number) => {
     if (!extra || neck[cc]) return true
     const i = cc % NX, j = (cc / NX) | 0, a = occT[l]
@@ -331,9 +339,11 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
-      if (hard && (occT[l][cc] || !clearWide(l, cc)) && isGoal[nid] !== goalStamp) continue
+      // a wide trace also needs its extra half width clear of other nets: an obstacle in strict mode, priced otherwise
+      const wideHit = extra !== null && !clearWide(l, cc)
+      if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
       // the pair attraction discounts only the distance, never the price of another net's space
-      const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)
+      const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * (occT[l][cc] + (wideHit ? 1 : 0))) + (wide && occT[l][cc] ? 2 : 0)
       const ng = g + (d < 4 ? 1 : DIAG) * cong * (l >= 4 ? GND_COST : 1)
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
