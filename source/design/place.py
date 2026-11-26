@@ -11,6 +11,8 @@ D = os.path.dirname(os.path.abspath(__file__))
 net = json.load(open(D + "/netlist.json"))
 fp = json.load(open(D + "/footprints.json"))
 comps = {c["ref"]: c for c in net["components"]}
+# JLC_SPACING=0 places with courtyards only (no JLCPCB assembly spacing table), as before the table was added
+JLC_ON = os.environ.get("JLC_SPACING", "1") != "0"
 
 BOARD = box(-3.5, -51.5, 36.5, 3.5)
 HOLES = [(0, 0), (33, 0), (0, -48), (33, -48)]
@@ -27,7 +29,7 @@ FIXED = {
     "U4": dict(x=33.7, y=-8.6, rot=0, layer="top"),             # SYR837 VDD_CPU in the free north-east corner, clear of
                                                                  # the HDMI/MIPI pairs that leave the SoC bottom for J2
     "Y1": dict(x=25.6, y=-21.4, rot=0, layer="top"),            # 24 MHz next to XIN24M/XOUT24M (RK right edge, y -21.4)
-    "Y2": dict(x=18.2, y=-43.2, rot=0, layer="top"),            # 32.768 kHz next to RK809 XIN/XOUT (bottom side after the turn)
+    "Y2": dict(x=18.2, y=-43.2 if JLC_ON else -42.9, rot=0, layer="top"),            # 32.768 kHz next to RK809 XIN/XOUT (bottom side after the turn)
     "Q1": dict(x=24.0, y=-45.0, rot=0, layer="top"),
 }
 # inductors: next to their switch pins
@@ -36,8 +38,8 @@ FIXED.update({
     # (1.0 mm from the RK809 pads: JLCPCB SMD spacing, chip to QFN)
     # switch pins after the 270 degree turn: SW1 (LOGIC) and SW2 (GPU) on top, SW4 (NPU) and SW5 (1V8) on the right,
     # SW3 (DDR) on the left; each inductor next to its pin, ordered like the rail clusters under the SoC
-    "IND_SW1": dict(x=PM["x"] - 2.6, y=PM["y"] + 6.45, rot=90, layer="top"),
-    "IND_SW2": dict(x=PM["x"] + 1.0, y=PM["y"] + 6.45, rot=90, layer="top"),
+    "IND_SW1": dict(x=PM["x"] - 2.6, y=PM["y"] + (6.45 if JLC_ON else 6.0), rot=90, layer="top"),
+    "IND_SW2": dict(x=PM["x"] + 1.0, y=PM["y"] + (6.45 if JLC_ON else 6.0), rot=90, layer="top"),
     "IND_SW4": dict(x=PM["x"] + 6.4, y=PM["y"] + 2.4, rot=0, layer="top"),
     "IND_SW5": dict(x=PM["x"] + 6.4, y=PM["y"] - 1.6, rot=0, layer="top"),
     "IND_SW3": dict(x=PM["x"] - 6.3, y=PM["y"] + 0.4, rot=90, layer="top"),
@@ -84,6 +86,7 @@ def extent(ref, pl):
     return translate(srot(g, pl.get("rot", 0), origin=(0, 0)), pl["x"], pl["y"])
 ext = {"top": [], "bottom": []}  # (ref, kind, extent) of the parts placed so far
 def spacing_ok(ref, pl, skip=()):
+    if not JLC_ON: return True
     e = extent(ref, pl); k = kind_of(ref)
     return all(r2 in skip or e.distance(e2) >= jlc(k, k2) - 1e-6 for r2, k2, e2 in ext[pl["layer"]])
 place = dict(FIXED)
