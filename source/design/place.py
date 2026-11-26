@@ -98,6 +98,14 @@ EM = FIXED["U6"]
 bottom_block = unary_union(bot + vias_ddr + [box(EM["x"] - 4.0, EM["y"] - 3.75, EM["x"] + 4.0, EM["y"] + 3.75), box(RK[0] - 7.6, RK[1] - 7.0, RK[0] + 7.6, RK[1] + 7.0),
                                    box(RK[0] - 4 - 7.0, RK[1] + 16.6 - 4.6, RK[0] - 4 + 7.0, RK[1] + 16.6 + 4.6)])
 
+# escape corridor: the signals leaving the SoC ball field need the band just outside it on every layer, so no part
+# goes there (the 0201 decaps under the SoC sit on the ball vias, inside the field, and are placed separately).
+# South (the HDMI/MIPI/PMIC exits) 2.5 mm, east and west 1.5 mm; north is the routed DDR block.
+_u1 = [p for p in fp[comps["U1"]["role"]]["pads"]]
+_ux0, _ux1 = RK[0] + min(p["x"] for p in _u1), RK[0] + max(p["x"] for p in _u1)
+_uy0, _uy1 = RK[1] + min(p["y"] for p in _u1), RK[1] + max(p["y"] for p in _u1)
+escape_band = box(_ux0 - 1.5, _uy0 - 2.5, _ux1 + 1.5, _uy1).difference(box(_ux0 - 0.3, _uy0 - 0.3, _ux1 + 0.3, _uy1))
+
 def pin_xy(ref, pinname):
     """board position of a named pin of a placed part"""
     pl = place[ref]; role = comps[ref]["role"]
@@ -116,7 +124,7 @@ for b, n in comps["U1"]["pins"].items():
     if n: balls_of.setdefault(n, []).append((bxy[b][0] + RK[0], bxy[b][1] + RK[1]))
 
 # bulk decoupling of the core rails: just outside the SoC edge their regulator feed comes in from
-FEED_EDGE = {"VDD_LOGIC": (13.2, -27.6), "VDD_GPU": (14.8, -27.6), "VDD_NPU": (18.5, -27.6),
+FEED_EDGE = {"VDD_LOGIC": (13.2, -28.9), "VDD_GPU": (14.8, -28.9), "VDD_NPU": (18.5, -28.9),
              "VDD_CPU": (20.6, -11.3), "VCC_DDR": (6.6, -16.5)}
 def anchor(c):
     """where a passive wants to be, and on which side"""
@@ -214,7 +222,7 @@ for c in order:
                 for rot in (0, 90):
                     pl = dict(x=round(ax + rad * math.cos(a), 3), y=round(ay + rad * math.sin(a), 3), rot=rot, layer=s)
                     o = outline(c["ref"], pl)
-                    if not BOARD.contains(o) or o.intersects(keep): continue
+                    if not BOARD.contains(o) or o.intersects(keep) or o.intersects(escape_band): continue
                     if s == "bottom" and o.intersects(bottom_block): continue
                     if s == "top" and o.intersects(top_block): continue
                     if any(o.buffer(0.02).intersects(q) for q in occ[s]): continue

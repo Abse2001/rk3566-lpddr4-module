@@ -17,6 +17,7 @@ Status legend: **fixed** (done and verified), **in progress**, **open**.
 | P4 | tscircuit reported U4 courtyard overlaps | The imported WLCSP-20 footprint carries a 5.2 x 4.9 mm courtyard for a 1.8 x 1.4 mm chip | U4 gets its own footprint (same pads, same nets, verified) with a body + 0.25 mm courtyard | fixed |
 | P5 | C97 (VCC_DDR bulk) landed on top-layer DDR traces (DQS1) - a short | Top-side placement did not avoid the routed DDR copper (only the bottom side did) | Top-side parts keep 0.5 mm from DDR top traces and 0.6 mm from its vias | fixed |
 | P6 | EMMC_D3 could not route | R8 (pull-up) was placed on the bottom under the eMMC ball field, blocking the via-in-pad an inner 0.5 mm-pitch ball needs | No bottom-side parts under the eMMC ball field | fixed |
+| P8 | Conflicts piled up in a band 1-3 mm outside the SoC's south edge | 22 parts sat right where the escaping signals leave the ball field (core-rail bulk caps deliberately anchored there, PMIC pull-ups/caps, HDMI REXT/HPD resistors) | Escape corridor (Rockchip / common BGA practice): no parts within 2.5 mm of the SoC ball field on the south side and 1.5 mm east/west, either layer; bulk-cap anchors moved past it | fixed |
 | P7 | VCC3V3_SYS could not route | A rule letting capacitors use the other side when >= 2 mm closer put C11 under the RK809, inside the island corridors where no via may go | Rule removed (parts stay on their preferred side unless there is no room); the two VDD_CPU 22 uF output caps are placed deliberately under L6 | fixed |
 
 ## Pin map (`source/design/make-cm4-map.py`)
@@ -67,6 +68,10 @@ Correct as checked: all 200 pin names, all 51 GND pins, supply pins, outline and
 | R5 | Most clusters still failed | A cluster only counted if every net fitted with zero conflicts | Each order places nets strictly where possible and priced otherwise; the order with the fewest conflicts is kept if it beats the current routes, so a round can only lower the count | fixed |
 | R6 | After an endgame the next pass scattered the cleaned-up routing (434 -> 1710) | Negotiation continued at the capped maximum price | Endgame rounds repeat while they lower the total; afterwards the negotiation restarts at a low price (history kept) | in progress (run 26) |
 | R7 | Slow nets had no room south of the SoC | All of inner2 there was reserved for the power islands | INNER2_OPEN: the islands keep only their feed corridors (>= 1.5 mm wide) there; slow nets may use the rest of inner2; fast nets never use inner2 | fixed (in use) |
+
+| R8 | Only 3 usable signal layers in the strip under the SoC | Ground layers were never used for routing | GND_SIG: slow nets (<= 0.2 mm) may cross inner1/inner4 at 4x cost, never within w/2 + 3h + w/2 + clearance of a fast trace on the adjacent outer layer (and never under the DDR copper); GND_SIG_BGA also allows it under the SoC field. planes.py cuts those traces out of the ground pours and drops unconnected pieces; check.py fails the board if any copper sits under a fast trace on its reference ground layer | in use (run 36) |
+
+Rockchip's own 6-layer method (RK3568 Hardware Design Guide, section 3.1): L1 signal / L2 GND / L3 power / L4 signal / L5 GND / L6 signal (this board's stackup); outer two ball rings escape on top with 4 mil traces between balls; from the third ring vias on a grid between the balls, in rows every 2-4 ball rows with an empty row kept for plane channels, 3.5 mil traces between vias. Next step if routing still stalls: a breakout planner that lays the vias out this way before the negotiated routing.
 
 ## Other solvers tried
 
