@@ -260,6 +260,13 @@ bun export.ts                                              # writes ../fab: gerb
 ```
 
 Afterwards:
+- `export.ts` ends with `fix-pnp.ts`. It looks up each LCSC part's JLCPCB/EasyEDA footprint through the
+  tscircuit parts engine and compares where pin 1 sits on that footprint and on ours. Bottom-side parts are
+  un-mirrored first. It writes `pin1_location` and `supplier_pin1_location_map` into `index.circuit.json` and
+  corrected rotations into `cpl.csv`. Without that metadata, `tsci export -f gerbers` warns "cannot verify
+  jlcpcb pick-and-place rotation" for every part.
+- For a tscircuit-CLI fab zip: `tsci export index.circuit.json -f gerbers -o fab/tsci/<name>.zip`. It must
+  print 0 rotation warnings.
 - Re-run `check.py` on the final files.
 - Confirm that every `source_component` appears in both the BOM and the CPL.
 - Zip `fab/gerbers` for the JLC upload.

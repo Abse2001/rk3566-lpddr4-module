@@ -30,3 +30,5 @@ await Bun.write(OUT + "/cpl.csv", "Designator,Mid X,Mid Y,Layer,Rotation\n" + ne
 await Bun.write(OUT + "/cm4-pinmap.csv", "CM4 pin,CM4 signal,Module net,RK3566 ball,Note\n" + Object.entries(cm4).map(([pin, v]: any) => `${pin},"${v.cm4}",${v.net ?? "NC"},${v.ball ?? ""},"${v.note ?? ""}"`).join("\n") + "\n")
 const top = net.components.filter((c: any) => place[c.ref].layer === "top").length
 console.log(`bom: ${groups.size} lines, ${net.components.length} parts (${top} top, ${net.components.length - top} bottom)`)
+// rotations checked against JLCPCB's footprints (writes pin-1 metadata into the circuit JSON, rewrites cpl.csv)
+if (!process.env.NO_PNP_FIX) { const r = Bun.spawnSync(["bun", S + "/fix-pnp.ts"], { env: { ...process.env, CPL: OUT + "/cpl.csv" }, stdout: "inherit", stderr: "inherit" }); if (r.exitCode) throw new Error("fix-pnp: unverified rotations") }
