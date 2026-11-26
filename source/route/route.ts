@@ -433,7 +433,8 @@ function endgame(bad: Net[], tries: number): boolean {
   for (const n of [...set]) { if (n.partner) set.add(n.partner); if (n.follows) set.add(n.follows) }
   const group = nets.filter((n) => set.has(n))
   const saved = new Map(group.map((n) => [n, { path: n.path, vias: n.vias }]))
-  const before = groupConflicts(group)
+  // judged on the whole board: a fallback-routed net may push into nets outside the group
+  const before = groupConflicts(nets)
   let bestT = Infinity, bestA = -1, best: Map<Net, { path: any; vias: any }> | null = null
   for (const n of group) stampNet(n, -1)
   const span = (n: Net) => { const ts = [...n.terms, ...n.drops]; const xs = ts.map((t) => t.x), ys = ts.map((t) => t.y); return Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys) }
@@ -451,7 +452,7 @@ function endgame(bad: Net[], tries: number): boolean {
       stampNet(n, 1); placed.push(n)
     }
     hard = false
-    const t = groupConflicts(group)
+    const t = groupConflicts(nets)
     if (t < bestT) { bestT = t; bestA = a; best = new Map(group.map((n) => [n, { path: n.path, vias: n.vias }])) }
     for (const n of placed) stampNet(n, -1)
     if (bestT === 0) break
@@ -532,12 +533,18 @@ for (let it = 0; it < MAXIT; it++) {
     // clean-up rounds while they keep lowering the board's total (each round re-clusters what is left)
     let prev = groupConflicts(nets)
     for (let r = 0; r < +(process.env.EG_ROUNDS ?? 6) && prev > 0; r++) {
+      const snap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }]))
       const b2: Net[] = []
       for (const n of nets) { n.conflicts = conflictsOf(n); if (n.conflicts) b2.push(n) }
       endgameClusters(b2, +(process.env.EG_TRIES ?? 24))
       const now = groupConflicts(nets)
       console.log(`  endgame round ${r}: ${prev} -> ${now}`)
-      if (now >= prev) break
+      if (now >= prev) {
+        // the round did not help: put the routing back as it was
+        for (const n of nets) stampNet(n, -1)
+        for (const n of nets) { const sv = snap.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
+        break
+      }
       prev = now
     }
     let t2 = 0; bad.length = 0
