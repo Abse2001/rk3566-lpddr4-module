@@ -75,6 +75,11 @@ const planes = (await Bun.file(PL).exists()) ? await Bun.file(PL).json() : []
 for (const p of [...planes].sort((a: any, b: any) => b.area - a.area))
   cj.push({ type: "pcb_copper_pour", pcb_copper_pour_id: `r_pour_${n++}`, shape: "brep", layer: p.layer, net_name: p.net, covered_with_solder_mask: true,
     brep_shape: { outer_ring: { vertices: p.outer.map((q: any) => ({ x: q.x - CX, y: q.y - CY })) }, inner_rings: p.holes.map((h: any[]) => ({ vertices: h.map((q) => ({ x: q.x - CX, y: q.y - CY })) })) } })
+// JLCPCB silkscreen minimums: line width 0.15 mm, text 1.0 mm high. Reference designators at a legible 1 mm do not
+// fit on this board, so silk text smaller than that is dropped (assembly is placed from the CPL; the designators stay
+// on the fab layer), and silk lines are drawn at least 0.15 mm wide
+for (let i = cj.length - 1; i >= 0; i--) if (cj[i].type === "pcb_silkscreen_text" && (cj[i].font_size ?? 0) < 1.0) cj.splice(i, 1)
+for (const e of cj) if (e.type === "pcb_silkscreen_path" && (e.stroke_width ?? 0) < 0.15) e.stroke_width = 0.15
 // drop interior points of straight runs (same layer and width): the geometry is unchanged, the file much smaller
 for (const e of cj) if (e.type === "pcb_trace") e.route = e.route.filter((b: any, k: number, r: any[]) => {
   const a = r[k - 1], c = r[k + 1]

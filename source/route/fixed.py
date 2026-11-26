@@ -22,6 +22,10 @@ def add(t, name):
             continue
         if p["layer"] != layer:
             flush(); cur = []; layer = p["layer"]
+        # a segment takes the width of its start point; where that changes (a neck-down), a new run starts at the
+        # shared point so the copper stays continuous
+        if len(cur) > 1 and cur[-1].get("width", 0.11) != cur[0].get("width", 0.11):
+            last = cur[-1]; flush(); cur = [last]
         cur.append(p)
     flush()
 for t in json.load(open(D + "/ddr.lane.routed.json"))["traces"]:
