@@ -5,7 +5,8 @@ import json, os, math, re
 from shapely.geometry import LineString, Point, box
 from shapely.strtree import STRtree
 D = os.path.dirname(os.path.abspath(__file__))
-rt = json.load(open(D + "/routes.json")); cu = json.load(open(D + "/copper.json"))
+RP, CP = os.environ.get("ROUTES", D + "/routes.json"), os.environ.get("COPPER", D + "/copper.json")
+rt = json.load(open(RP)); cu = json.load(open(CP))
 pads = json.load(open(D + "/../design/pads.json"))["pads"]
 GAP, TOL, VIA_LEN = 0.1, 0.05, 0.6
 nets = rt["nets"]
@@ -25,6 +26,13 @@ def obstacles(layer, skip_net):
             for a, b in zip(t["pts"], t["pts"][1:]): gs.append(LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(t["w"] / 2))
     for v in cu["vias"]:
         if v["net"] != skip_net: gs.append(Point(v["x"], v["y"]).buffer(v["d"] / 2))
+    # a fast trace keeps its reference ground layer clear: slow traces on inner1 (under top) / inner4 (above bottom)
+    # count as obstacles, grown by 3x the 0.0764 mm prepreg minus the clearance the bump check adds
+    gl = {"top": "inner1", "bottom": "inner4"}.get(layer)
+    if gl:
+        for t in cu["traces"]:
+            if t["layer"] == gl and t["net"] != "GND":
+                for a, b in zip(t["pts"], t["pts"][1:]): gs.append(LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(max(0.0, 3 * 0.0764 - GAP)))
     for p in pads:
         if p["layer"] == layer and p["net"] != skip_net: gs.append(box(p["x"] - p["w"] / 2, p["y"] - p["h"] / 2, p["x"] + p["w"] / 2, p["y"] + p["h"] / 2))
     return gs
@@ -69,6 +77,6 @@ for P_, N_ in pairs:
         # keep the copper list in step for the next obstacle checks
         cu["traces"] = [t for t in cu["traces"] if t["net"] != short] + [dict(t, net=short) for t in segs]
     report.append((P_, round(abs(length(P_) - length(N_)), 3), "tuned" if abs(length(P_) - length(N_)) <= TOL + 0.02 else "STILL SKEWED"))
-json.dump(rt, open(D + "/routes.json", "w"))
-json.dump(cu, open(D + "/copper.json", "w"))
+json.dump(rt, open(RP, "w"))
+json.dump(cu, open(CP, "w"))
 for r in report: print(r)

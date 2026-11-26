@@ -67,10 +67,11 @@ const ALL = ["top", "inner1", "inner2", "inner3", "inner4", "bottom"]
 let n = 0
 const via = (x: number, y: number, d: number, hole: number, net: string) => cj.push({ type: "pcb_via", pcb_via_id: `r_via_${n++}`, x: x - CX, y: y - CY, hole_diameter: hole, outer_diameter: d, layers: ALL, from_layer: "top", to_layer: "bottom", net_name: net })
 const trace = (pts: any[], layer: string, w: number, net: string) => cj.push({ type: "pcb_trace", pcb_trace_id: `r_trace_${n++}`, net_name: net, route: pts.map((p) => ({ route_type: "wire", x: p.x - CX, y: p.y - CY, width: w, layer })) })
-const copper = await Bun.file(dir + "/route/copper.json").json()
+const copper = await Bun.file(process.env.COPPER ?? dir + "/route/copper.json").json()
 for (const t of copper.traces) trace(t.pts, t.layer, t.w, t.net)
 for (const v of copper.vias) via(v.x, v.y, v.d, v.hole, v.net)
-const planes = (await Bun.file(dir + "/route/planes.json").exists()) ? await Bun.file(dir + "/route/planes.json").json() : []
+const PL = process.env.PLANES ?? dir + "/route/planes.json"
+const planes = (await Bun.file(PL).exists()) ? await Bun.file(PL).json() : []
 for (const p of [...planes].sort((a: any, b: any) => b.area - a.area))
   cj.push({ type: "pcb_copper_pour", pcb_copper_pour_id: `r_pour_${n++}`, shape: "brep", layer: p.layer, net_name: p.net, covered_with_solder_mask: true,
     brep_shape: { outer_ring: { vertices: p.outer.map((q: any) => ({ x: q.x - CX, y: q.y - CY })) }, inner_rings: p.holes.map((h: any[]) => ({ vertices: h.map((q) => ({ x: q.x - CX, y: q.y - CY })) })) } })
