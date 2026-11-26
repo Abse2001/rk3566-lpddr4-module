@@ -246,7 +246,8 @@ function stampNet(n: Net, s: 1 | -1) {
   const ref = GND_SIG && n.fast
   for (const p of n.path) for (let k = 0; k < p.length; k++) {
     const id = p[k], l = (id / NN) | 0, c = id - l * NN
-    stampDisk(occT[l], c, DT, s); stampDisk(occV, c, DTV, s)
+    // inside a neck zone a wide trace is drawn at signal width (geometry()), so it keeps signal-width clearance there
+    if (neck[c]) { stampDisk(occT[l], c, D_TT, s); stampDisk(occV, c, D_TV, s) } else { stampDisk(occT[l], c, DT, s); stampDisk(occV, c, DTV, s) }
     if (ref && (l === 0 || l === 2)) stampDisk(occT[l === 0 ? 4 : 5], c, D_REF, s)
   }
   for (const c of n.vias!) { for (let l = 0; l < NL; l++) stampDisk(occT[l], c, D_TV, s); stampDisk(occV, c, D_VV, s) }
