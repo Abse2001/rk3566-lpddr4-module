@@ -105,7 +105,11 @@ Result after R9-R12: run 44 reached 4 conflict cells (one MIPI pair at exactly t
 | F2 | RK809 thermal-pad vias inside the VDD_NPU island | planes.py now treats footprint vias as foreign copper | fixed |
 | F3 | VDD_LOGIC touched VDD_GPU at one spot | Each island keeps SPLIT (0.25 mm) from the islands already made | fixed |
 
-| R15 | Differential pairs were not coupled (P/N up to 31 mm apart in length) even at 0 conflicts | The follower was only attracted to the lead | Follower confined to 0.6 mm of the lead's path (outside BGA/fine-pitch zones), never inside the lead's keep-out; a follower that cannot fit is "decoupled" (penalised, lead gets history cost); the lead pays for its follower's room | in progress |
+| R15 | Differential pairs were not coupled (P/N up to 31 mm apart in length) even at 0 conflicts | The follower was only attracted to the lead | Follower confined to 0.6 mm of the lead's path (outside BGA/fine-pitch zones), never inside the lead's keep-out; a follower that cannot fit is "decoupled" (penalised, lead gets history cost); the lead pays for its follower's room | fixed (with R16-R17) |
+| R16 | Renegotiating all skewed pairs from a finished routing diverged (400-1500 conflicts) | The loaded grid routing already counts ~1400 conflict cells that the exact DRC accepts (grid rounding, cleared by repair.py), so the negotiation starts far from its own optimum | Renegotiation abandoned for the last pairs; see R17 | replaced |
+| R17 | CSI D2 (4.3 mm) and DSI1 CLK (5.1 mm) still skewed after bump tuning: the N wire wandered across top/bottom under the SoC | Under the ball field only one trace fits per channel, so the members split and nothing in the bump tuner can recover 4-5 mm | New `route/reroute.py`: strict A* re-route of single nets on the exact finished copper (0.05 mm grid, exact clearance from pads/traces/vias, edge, reference-plane rule, through-via rule on all 6 layers), pair member attracted to its partner. P then N of both pairs re-routed: skews 0.7 / 2.3 mm, then `tune_pairs.py` (amplitudes up to 1.2 mm) matched every pair | fixed |
+
+Final routing: `source/route/final/` (run 61 + reroute of 4 nets + tune + repair + planes). check.py exit 0: 0 clearance, 0 edge, 0 hole, 0 pad, 0 reference-plane violations, 234/234 nets, every island one piece. pairs.py: 17/17 pairs within limit (worst 0.3 of limit). DDR traces and vias byte-identical to run 61 (281 items).
 
 ## Other solvers tried
 
@@ -117,7 +121,7 @@ Result after R9-R12: run 44 reached 4 conflict cells (one MIPI pair at exactly t
 
 ## Remaining before ordering
 
-1. Routing at 0 conflicts, every net connected (`check.py`: 0 clearance violations, all nets complete).
-2. Pair P/N matching within 0.13 mm (0.25 mm USB) (`tune_pairs.py`, `pairs.py`).
-3. Final planes, full-board build, Gerbers / BOM / CPL, README.
+1. ~~Routing at 0 conflicts, every net connected~~ done (`source/route/final`).
+2. ~~Pair P/N matching~~ done (17/17).
+3. ~~Final planes, full-board build, Gerbers / BOM / CPL~~ done (`fab/`); README ordering notes.
 4. Verify: eMMC VDDI cap value, 240R 1% stock, 32 kHz crystal load caps, JLCPCB CPL rotations (incl. the rotated SYR837 WLCSP), GPIO bank voltages of the moved CM4 pins.
