@@ -272,6 +272,18 @@ let attractOn = false
 // vias on every layer) or within FOLLOW_T of its own terminals. A follower that cannot fit there routes freely but
 // counts as DECOUPLE conflicts, and the lead's path gets history cost, until the pair fits together.
 const followM = ALL_L.map(() => new Uint8Array(NN)), followMarked: number[] = []
+// differential pairs only escape a BGA / fine-pitch field near their own balls/pins (PAIR_ESC mm); they never run
+// across a field (under the BGA the channels between via rows hold one trace, so the two wires would split up)
+const ownZone = new Uint8Array(NN), ownMarked: number[] = []
+const D_ESC = disk(+(process.env.PAIR_ESC ?? 2.0))
+let pairNet = false
+function setOwn(n: Net | null) {
+  for (const c of ownMarked) ownZone[c] = 0; ownMarked.length = 0; pairNet = false
+  if (!n || !(n.partner || n.follows) || process.env.PAIR_ESC === "off") return
+  for (const t of [...n.terms, ...n.drops]) for (const id of t.nodes) { const c = id % NN, i = c % NX, j = (c / NX) | 0
+    for (let k = 0; k < D_ESC.length; k += 2) { const ii = i + D_ESC[k], jj = j + D_ESC[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) { const cc = jj * NX + ii; if (!ownZone[cc]) { ownZone[cc] = 1; ownMarked.push(cc) } } } }
+  pairNet = true
+}
 // the lead's own keep-out, hard for its follower (per layer for traces, and for via sites)
 const leadKO = ALL_L.map(() => new Uint8Array(NN)), leadKOV = new Uint8Array(NN), koMarked: number[] = []
 let followOn = false
@@ -372,6 +384,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
+      if (pairNet && neck[cc] && !ownZone[cc] && isGoal[nid] !== goalStamp) continue
       // the two wires may separate only near their own terminals (FOLLOW_T, to escape their balls); NECK_FREE=1 also frees
       // the whole BGA / fine-pitch zones (that let pairs wander apart for millimetres under the SoC)
       if (followOn && ((!followM[l][cc] && !(NECK_FREE && neck[cc])) || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
@@ -427,6 +440,10 @@ function routeNet1(n: Net): boolean {
   } finally { if (n.follows) { setAttract(n.follows, false); setFollow(n.follows, n, false) } }
 }
 function routeNet0(n: Net): boolean {
+  setOwn(n)
+  try { return routeNet00(n) } finally { setOwn(null) }
+}
+function routeNet00(n: Net): boolean {
   lift(n.name, -1)
   const paths: Int32Array[] = [], vias: number[] = []
   const collectVias = (p: number[]) => { for (let k = 1; k < p.length; k++) { const a = p[k - 1], b = p[k]; if ((a % NN) === (b % NN) && a !== b) vias.push(a % NN) } }
