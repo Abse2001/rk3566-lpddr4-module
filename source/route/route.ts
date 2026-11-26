@@ -139,11 +139,15 @@ if (GND_SIG) {
 // inner2 corridors of the supply islands (planes.py, from a plane-drops-only run): another net's via there would
 // cut the island off from its regulator, so only the rail's own vias may go there (outside the BGA fields)
 const corr = new Int16Array(NN).fill(-1), corrName: string[] = []
+// the SoC ball field: there the island feeds are deliberately thin and run between the ball vias, so they are not
+// enforced as corridors; everywhere else (other parts' fine-pitch zones included) they are
+const SOCB = bgaBox.get("U1")!
+const socField = (c: number) => { const x = wx(c % NX), y = wy((c / NX) | 0); return x >= SOCB[0] - 0.6 && x <= SOCB[2] + 0.6 && y >= SOCB[1] - 0.6 && y <= SOCB[3] + 0.6 }
 if (!process.env.PLANES_ONLY && (await Bun.file(dir + "/corridors.json").exists())) {
   const cs = await Bun.file(dir + "/corridors.json").json()
   for (const c of cs) {
     const id = corrName.length; corrName.push(c.net)
-    for (const [x, y] of c.cells) { const i = gx(x), j = gy(y); if (i >= 0 && j >= 0 && i < NX && j < NY && !neck[j * NX + i] && corr[j * NX + i] < 0) corr[j * NX + i] = id }
+    for (const [x, y] of c.cells) { const i = gx(x), j = gy(y); if (i >= 0 && j >= 0 && i < NX && j < NY && !socField(j * NX + i) && corr[j * NX + i] < 0) corr[j * NX + i] = id }
   }
   console.log("corridors", cs.length, "cells", corr.reduce((s, v) => s + (v >= 0 ? 1 : 0), 0))
   // INNER2_OPEN: between the SoC and the RK809 the islands keep only their feed corridors (widened by KEEP on each
@@ -154,7 +158,7 @@ if (!process.env.PLANES_ONLY && (await Bun.file(dir + "/corridors.json").exists(
     const KEEP = Math.round(+(process.env.KEEP ?? 0.3) / P)
     let n = 0
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
-      if (neck[j * NX + i]) continue
+      if (socField(j * NX + i)) continue
       let hit = false
       for (let dj = -KEEP; dj <= KEEP && !hit; dj++) for (let di = -KEEP; di <= KEEP; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY && corr[jj * NX + ii] >= 0) { hit = true; break } }
       if (hit) { const c = j * NX + i; blockT[3][c] += 1000; blockTW[3][c] += 1000; blockTB[3][c] += 1000; n++ }

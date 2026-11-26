@@ -17,6 +17,10 @@ CLR, EDGE, SPLIT = 0.15, 0.3, 0.25  # CLR: plane to foreign via pad = 0.2 mm fro
 RAILS = ["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"]
 outline = BOARD.buffer(-EDGE).difference(unary_union([Point(h).buffer(1.35 + EDGE) for h in HOLES]))
 
+# every via on the board: routed and fixed (copper.json) plus the vias that come with part footprints (pads.json,
+# e.g. the RK809 thermal-pad vias, all ground)
+VIAS = cu["vias"] + [dict(v, net="GND") for v in json.load(open(D + "/../design/pads.json"))["footprintVias"]]
+
 def via_disc(v, extra):
     return Point(v["x"], v["y"]).buffer(v["d"] / 2 + extra, 16)
 
@@ -30,9 +34,9 @@ def emit(layer, net, geom):
                     "holes": [[{"x": round(x, 4), "y": round(y, 4)} for x, y in list(r.coords)[:-1]] for r in g.interiors]})
 
 # ---------------- ground planes ----------------
-foreign = unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != "GND"])
+foreign = unary_union([via_disc(v, CLR) for v in VIAS if v["net"] != "GND"])
 gnd = outline.difference(foreign)
-gnd_vias = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == "GND"]
+gnd_vias = [Point(v["x"], v["y"]) for v in VIAS if v["net"] == "GND"]
 GAP_T = 0.1 + 0.012
 for layer in ("inner1", "inner4"):
     # slow signals may cross the ground layers where no fast signal runs next to them: cut them out with clearance,
@@ -75,11 +79,11 @@ for t in cu["traces"]:
     if t["layer"] != "inner2": continue
     for a, b in zip(t["pts"], t["pts"][1:]):
         stamp_seg(owner, a, b, t["w"] / 2 + CLR, -1)
-for v in cu["vias"]:
+for v in VIAS:
     # a little wider than the exact clearance, so a path on the grid is a path in the exact copper too
     if v["net"] not in rail_id: stamp_disc(owner, v["x"], v["y"], v["d"] / 2 + CLR, -1)
 seeds = {r: [] for r in RAILS}
-for v in cu["vias"]:
+for v in VIAS:
     if v["net"] in rail_id:
         k = rail_id[v["net"]]; stamp_disc(owner, v["x"], v["y"], v["d"] / 2 + 0.05, k)
         seeds[v["net"]].append((int(round((v["y"] - Y0) / P)), int(round((v["x"] - X0) / P))))
@@ -194,22 +198,24 @@ def raster_poly(mask):
     return unary_union(rects)
 inner2_traces = [(t, LineString([(p["x"], p["y"]) for p in t["pts"]])) for t in cu["traces"] if t["layer"] == "inner2"]
 report = {}
+placed = []  # islands already made: the next one keeps SPLIT from them (rail-to-rail separation guaranteed)
 for r in RAILS:
     k = rail_id[r]
     g = raster_poly(owner == k).buffer(0)
     g = g.intersection(outline)
-    g = g.difference(unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != r] +
+    g = g.difference(unary_union([via_disc(v, CLR) for v in VIAS if v["net"] != r] +
                                   [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r]))
+    if placed: g = g.difference(unary_union(placed).buffer(SPLIT))
     g = g.buffer(0)
     # the island must touch each of the rail's vias
     parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
     # a piece the exact clearances split off: bridge it to the biggest piece where a 0.12 mm strip clears
     # all foreign copper (vias, inner2 traces) by CLR
     from shapely.ops import nearest_points
-    vs_r = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == r]
+    vs_r = [Point(v["x"], v["y"]) for v in VIAS if v["net"] == r]
     keep = [p for p in parts if any(p.contains(v) for v in vs_r)]
     if len(keep) > 1:
-        foreign_g = unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != r] + [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r])
+        foreign_g = unary_union([via_disc(v, CLR) for v in VIAS if v["net"] != r] + [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r])
         main = max(keep, key=lambda q: q.area)
         for q in sorted(keep, key=lambda q: -q.area):
             if q is main: continue
@@ -219,11 +225,12 @@ for r in RAILS:
                 main = unary_union([main, q, strip]); keep = [main] + [k for k in keep if k is not q and k is not main]
         g = unary_union([main] + [p for p in parts if p not in keep]).buffer(0)
         parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
-    vs = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == r]
+    vs = [Point(v["x"], v["y"]) for v in VIAS if v["net"] == r]
     holding = [p for p in parts if any(p.contains(v) for v in vs)]
     covered = sum(1 for v in vs if any(p.contains(v) for p in holding))
     report[r] = dict(vias=len(vs), covered=covered, pieces=len(holding), area=round(sum(p.area for p in holding), 1), unjoined=unjoined.get(r, 0))
     for p in holding: emit("inner2", r, p)
+    placed.extend(holding)
 json.dump(out, open(os.environ.get("PLANES_OUT", D + "/planes.json"), "w"))
 if os.environ.get("CORRIDORS_OUT"):
     # corridor centre-lines widened to CORR: the router keeps other nets' vias and inner2 copper out of them
