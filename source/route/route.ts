@@ -178,7 +178,7 @@ function lift(net: string, s: 1 | -1) {
 // ---------------- nets and terminals ----------------
 // A terminal is a set of graph nodes (layer * NN + cell): a pad's cells on its layer, or a via's cell on all layers.
 type Term = { nodes: Int32Array; x: number; y: number; label: string }
-type Net = { name: string; w: number; plane: boolean; inner2?: boolean; fast?: boolean; gnd?: boolean; partner?: Net; follows?: Net; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
+type Net = { name: string; w: number; plane: boolean; inner2?: boolean; fast?: boolean; gnd?: boolean; decoupled?: boolean; partner?: Net; follows?: Net; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
 const padTerm = (p: any): Term => {
   const l = L_OF[p.layer]
   const shape: Shape = p.shape === "circle" ? { kind: "circle", x: p.x, y: p.y, r: p.w / 2 } : { kind: "rect", x: p.x, y: p.y, w: p.w, h: p.h }
@@ -268,6 +268,22 @@ const PAIR_PITCH = 0.28, attract = ALL_L.map(() => new Uint8Array(NN)), attractV
 const ring = (r0: number, r1: number) => { const o: number[] = []; const k = Math.ceil(r1 / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) { const d = Math.hypot(di, dj) * P; if (d >= r0 && d <= r1) o.push(di, dj) } return o }
 const RING_T = ring(PAIR_PITCH - 0.06, PAIR_PITCH + 0.06), RING_V = ring(0.36, 0.55)
 let attractOn = false
+// pair coupling: the follower may only use cells within FOLLOW_R of the lead's path (same layer; around the lead's
+// vias on every layer) or within FOLLOW_T of its own terminals. A follower that cannot fit there routes freely but
+// counts as DECOUPLE conflicts, and the lead's path gets history cost, until the pair fits together.
+const followM = ALL_L.map(() => new Uint8Array(NN)), followMarked: number[] = []
+let followOn = false
+const D_FOL = disk(+(process.env.FOLLOW_R ?? 0.6)), D_FOLT = disk(+(process.env.FOLLOW_T ?? 1.0)), DECOUPLE = 25
+function setFollow(lead: Net, f: Net, on: boolean) {
+  if (!on) { for (const id of followMarked) followM[(id / NN) | 0][id % NN] = 0; followMarked.length = 0; followOn = false; return }
+  if (!lead.path) { followOn = false; return }
+  const mark = (l: number, c: number, offs: number[]) => { const i = c % NX, j = (c / NX) | 0
+    for (let k = 0; k < offs.length; k += 2) { const ii = i + offs[k], jj = j + offs[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) { const cc = jj * NX + ii; if (!followM[l][cc]) { followM[l][cc] = 1; followMarked.push(l * NN + cc) } } } }
+  for (const p of lead.path) for (const id of p) mark((id / NN) | 0, id % NN, D_FOL)
+  for (const c of lead.vias ?? []) for (let l = 0; l < NL; l++) mark(l, c, D_FOL)
+  for (const t of [...f.terms, ...f.drops]) for (const id of t.nodes) for (let l = 0; l < NL; l++) mark(l, id % NN, D_FOLT)
+  followOn = true
+}
 function setAttract(lead: Net | undefined, on: boolean) {
   if (!lead?.path) { attractOn = false; return }
   const v = on ? 1 : 0
@@ -344,6 +360,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
+      if (followOn && !followM[l][cc] && isGoal[nid] !== goalStamp) continue
       // a wide trace also needs its extra half width clear of other nets: an obstacle in strict mode, priced otherwise
       const wideHit = extra !== null && !clearWide(l, cc)
       if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
@@ -354,6 +371,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
+      if (followOn && !followM[l2][c]) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
@@ -365,14 +383,21 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
   return null
 }
 function routeNet(n: Net): boolean {
-  if (n.follows) setAttract(n.follows, true)
+  if (n.follows) { setAttract(n.follows, true); setFollow(n.follows, n, true) }
   try {
+    n.decoupled = false
     if (routeNet0(n)) return true
     // no path under the current prices: take the cheapest path ignoring other nets, so the net stays in the
     // negotiation as a conflict (and its neighbours learn to make room) instead of dropping out
     const keep = pres; pres = 0
-    try { return routeNet0(n) } finally { pres = keep }
-  } finally { if (n.follows) setAttract(n.follows, false) }
+    try {
+      if (routeNet0(n)) return true
+      if (!n.follows) return false
+      // a follower that does not fit beside its lead: route it freely, counted as decoupled
+      setFollow(n.follows, n, false); n.decoupled = true
+      return routeNet0(n)
+    } finally { pres = keep }
+  } finally { if (n.follows) { setAttract(n.follows, false); setFollow(n.follows, n, false) } }
 }
 function routeNet0(n: Net): boolean {
   lift(n.name, -1)
@@ -412,6 +437,11 @@ function conflictsOf(n: Net): number {
   for (const p of n.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN; if (occT[l][c]) { k++; histT[l][c] += 0.4 } }
   for (const c of n.vias!) if (occV[c]) { k++; histV[c] += 0.4 }
   stampNet(n, 1)
+  if (n.decoupled) {
+    k += DECOUPLE
+    // push the lead away from where its follower cannot fit
+    if (n.follows?.path) for (const p of n.follows.path) for (const id of p) histT[(id / NN) | 0][id % NN] += 0.2
+  }
   return k
 }
 // ---------------- single-net debug ----------------
@@ -521,6 +551,7 @@ function groupConflicts(group: Net[]): number {
     for (const p of n.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN; if (occT[l][c]) k++ }
     for (const c of n.vias!) if (occV[c]) k++
     stampNet(n, 1)
+    if (n.decoupled) k += DECOUPLE
   }
   return k
 }
@@ -555,8 +586,8 @@ function endgameClusters(bad: Net[], tries: number): number {
   return fixed
 }
 function routeNet0Hard(n: Net): boolean {
-  if (n.follows) setAttract(n.follows, true)
-  try { return routeNet0(n) } finally { if (n.follows) setAttract(n.follows, false) }
+  if (n.follows) { setAttract(n.follows, true); setFollow(n.follows, n, true) }
+  try { n.decoupled = false; return routeNet0(n) } finally { if (n.follows) { setAttract(n.follows, false); setFollow(n.follows, n, false) } }
 }
 let failed: string[] = []
 let dirty = nets
