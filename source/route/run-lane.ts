@@ -4,7 +4,11 @@ import { NegotiatedLaneSolver } from "/home/user/bus-lanes-solver/lib/negotiated
 const D = "/tmp/claude-0/-home-user/b9d79f2d-030e-532c-84b5-c3a79e3230d3/scratchpad/rk/"
 const TAG = process.env.TAG ?? "v3", CK = `${D}${TAG}.checkpoint.json`
 const srj = await Bun.file(D + (process.env.IN ?? "v3.withpower.json")).json()
-const solver: any = new NegotiatedLaneSolver(srj, { router: { w: 0.11, gap: 0.1, pairGap: 0.18, viaD: 0.25, viaHole: 0.15, allowViaInPad: process.env.VIP !== "0", verbose: !!process.env.VERB, ...(process.env.LAYERS ? { layers: process.env.LAYERS.split(",") } : {}) } })
+const solver: any = new NegotiatedLaneSolver(srj, { router: { w: 0.11, gap: 0.1, pairGap: 0.18, viaD: 0.25, viaHole: 0.15, allowViaInPad: process.env.VIP !== "0",
+  // delay-aware matching on the JLC06161H-1080A stackup (same model as ddr_timing.py): layer depth in mm, delay
+  // per mm relative to the outer layers (inner3 stripline 6.81 vs 5.87 ps/mm), via barrel x1.2 for its pads
+  ...(process.env.DELAY !== "0" ? { layerZ: { top: 0, inner1: 0.111, inner2: 0.727, inner3: 0.841, inner4: 1.457, bottom: 1.548 }, layerDelay: { top: 1, bottom: 1, inner3: 1.16 }, viaDelayFactor: 1.2 } : {}),
+  verbose: !!process.env.VERB, ...(process.env.LAYERS ? { layers: process.env.LAYERS.split(",") } : {}) } })
 if (await Bun.file(CK).exists()) {
   const c = await Bun.file(CK).json()
   solver.stages = c.stages; solver.stageIndex = c.stageIndex; solver.promotions = c.promotions; solver.log.push(...c.log)

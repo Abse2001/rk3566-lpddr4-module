@@ -5,7 +5,7 @@
 #     -> Hammerstad-Jensen effective Er, +4 % for the mask
 #   inner3: between inner2 (0.0994 mm 3313, Er 4.1) and inner4 (0.6 mm core, Er 4.6) -> stripline; the field sits
 #     mostly in the thin prepreg towards inner2, effective Er weighted by the plane coupling
-#   via: the barrel between the two layers it joins at the stripline velocity, x1.5 for the pad capacitance
+#   via: the barrel between the two layers it joins at the stripline velocity, x1.2 for the pad capacitance
 # Groups and limits: Rockchip RK356x LPDDR4 rules (RK3568 HDG table 33), converted from mil to ps at the faster
 # (outer) velocity so the time limit is the stricter one.
 # Usage: python3 ddr_timing.py [ddr.lane.routed.json] [ddr.input.json]
@@ -14,6 +14,7 @@ D = os.path.dirname(os.path.abspath(__file__))
 R = json.load(open(sys.argv[1] if len(sys.argv) > 1 else D + "/ddr.lane.routed.json"))
 I = json.load(open(sys.argv[2] if len(sys.argv) > 2 else D + "/ddr.input.json"))
 C0 = 299.792458  # mm/ns
+VIA_K = 1.2  # via barrel at the stripline velocity, +20 % for its pads (same as the solver's viaDelayFactor)
 def microstrip(w, h, t, er):
     # Hammerstad-Jensen with thickness correction
     weff = w + t / math.pi * math.log(4 * math.e / math.sqrt((t / h) ** 2 + (t / (w * math.pi + 1.1 * t * math.pi)) ** 2)) * (1 + 1 / er) / 2
@@ -50,7 +51,7 @@ for t in R["traces"]:
             d += s * ps_mm(EE[(lay(a["layer"]), w)][0]); L += s
     for p in r:
         if p["route_type"] == "via":
-            d += abs(Z[p["from_layer"]] - Z[p["to_layer"]]) * ps_mm(EE[("inner3", 0.11)][0]) * 1.5
+            d += abs(Z[p["from_layer"]] - Z[p["to_layer"]]) * ps_mm(EE[("inner3", 0.11)][0]) * VIA_K
     delay[n] = delay.get(n, 0) + d; length[n] = length.get(n, 0) + L
 MIL = 0.0254
 fast = ps_mm(EE[("outer", 0.11)][0])
