@@ -87,6 +87,19 @@ for v in VIAS:
     if v["net"] in rail_id:
         k = rail_id[v["net"]]; stamp_disc(owner, v["x"], v["y"], v["d"] / 2 + 0.05, k)
         seeds[v["net"]].append((int(round((v["y"] - Y0) / P)), int(round((v["x"] - X0) / P))))
+# final build: start from the feed corridors the router protected (corridors.json from the plane-drops-only run),
+# so the islands follow the paths that were kept free of other nets' vias and inner2 traces
+CIN = os.environ.get("CORRIDORS_IN", "" if os.environ.get("CORRIDORS_OUT") else D + "/corridors.json")
+if CIN and os.path.exists(CIN):
+    n_pre = 0
+    for c in json.load(open(CIN)):
+        if c["net"] not in rail_id: continue
+        k = rail_id[c["net"]]
+        for x, y in c["cells"]:
+            if 7.3 < x < 23.1 and -26.6 < y < -11.4: continue  # SoC ball field: thin feeds, not protected by the router
+            j, i = int(round((y - Y0) / P)), int(round((x - X0) / P))
+            if 0 <= j < NY and 0 <= i < NX and owner[j, i] == -2: owner[j, i] = k; n_pre += 1
+    print("pre-claimed corridor cells", n_pre)
 # corridors: for each rail join its via clusters with shortest paths through free cells (Dijkstra on 8-grid),
 # claiming a band of CORR mm around each path
 CORR = 0.45
@@ -205,7 +218,9 @@ for r in RAILS:
     g = g.intersection(outline)
     g = g.difference(unary_union([via_disc(v, CLR) for v in VIAS if v["net"] != r] +
                                   [ls.buffer(t["w"] / 2 + CLR) for t, ls in inner2_traces if t["net"] != r]))
-    if placed: g = g.difference(unary_union(placed).buffer(SPLIT))
+    # the raster already separates islands by SPLIT; this only removes the rare spots that still come closer than
+    # the 0.1 mm rule (a wider cut severs the deliberately thin feeds inside the SoC ball field)
+    if placed: g = g.difference(unary_union(placed).buffer(0.1 + 0.02))
     g = g.buffer(0)
     # the island must touch each of the rail's vias
     parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
@@ -221,7 +236,8 @@ for r in RAILS:
             if q is main: continue
             a_, b_ = nearest_points(q, main)
             strip = LineString([a_, b_]).buffer(0.06, cap_style=2)
-            if strip.length < 3 and not strip.intersects(foreign_g.buffer(-1e-6)):
+            others = unary_union(placed).buffer(0.1 + 0.02) if placed else None
+            if strip.length < 3 and not strip.intersects(foreign_g.buffer(-1e-6)) and (others is None or not strip.intersects(others)):
                 main = unary_union([main, q, strip]); keep = [main] + [k for k in keep if k is not q and k is not main]
         g = unary_union([main] + [p for p in parts if p not in keep]).buffer(0)
         parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
