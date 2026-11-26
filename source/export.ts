@@ -2,8 +2,8 @@
 // Gerbers + drills (circuit-json-to-gerber), BOM and pick-and-place in JLCPCB's CSV layout, CM4 pin map.
 import { convertCircuitJsonToGerberFiles } from "circuit-json-to-gerber"
 import { mkdirSync, rmSync } from "node:fs"
-const S = import.meta.dir, OUT = S + "/../fab"
-const cj = await Bun.file(S + "/../index.circuit.json").json()
+const S = import.meta.dir, OUT = process.env.FAB_OUT ?? S + "/../fab"
+const cj = await Bun.file(process.env.CIRCUIT ?? S + "/../index.circuit.json").json()
 const net = await Bun.file(S + "/design/netlist.json").json(), place = await Bun.file(S + "/design/placement.json").json()
 const roles = await Bun.file(S + "/design/roles.json").json(), cm4 = await Bun.file(S + "/design/cm4-map.json").json()
 rmSync(OUT + "/gerbers", { recursive: true, force: true }); mkdirSync(OUT + "/gerbers", { recursive: true })
