@@ -27,16 +27,17 @@ FIXED = {
     "U4": dict(x=33.7, y=-8.6, rot=0, layer="top"),             # SYR837 VDD_CPU in the free north-east corner, clear of
                                                                  # the HDMI/MIPI pairs that leave the SoC bottom for J2
     "Y1": dict(x=25.6, y=-21.4, rot=0, layer="top"),            # 24 MHz next to XIN24M/XOUT24M (RK right edge, y -21.4)
-    "Y2": dict(x=18.2, y=-42.9, rot=0, layer="top"),            # 32.768 kHz next to RK809 XIN/XOUT (bottom side after the turn)
+    "Y2": dict(x=18.2, y=-43.2, rot=0, layer="top"),            # 32.768 kHz next to RK809 XIN/XOUT (bottom side after the turn)
     "Q1": dict(x=24.0, y=-45.0, rot=0, layer="top"),
 }
 # inductors: next to their switch pins
 PM = FIXED["U3"]
 FIXED.update({
+    # (1.0 mm from the RK809 pads: JLCPCB SMD spacing, chip to QFN)
     # switch pins after the 270 degree turn: SW1 (LOGIC) and SW2 (GPU) on top, SW4 (NPU) and SW5 (1V8) on the right,
     # SW3 (DDR) on the left; each inductor next to its pin, ordered like the rail clusters under the SoC
-    "IND_SW1": dict(x=PM["x"] - 2.6, y=PM["y"] + 6.0, rot=90, layer="top"),
-    "IND_SW2": dict(x=PM["x"] + 1.0, y=PM["y"] + 6.0, rot=90, layer="top"),
+    "IND_SW1": dict(x=PM["x"] - 2.6, y=PM["y"] + 6.45, rot=90, layer="top"),
+    "IND_SW2": dict(x=PM["x"] + 1.0, y=PM["y"] + 6.45, rot=90, layer="top"),
     "IND_SW4": dict(x=PM["x"] + 6.4, y=PM["y"] + 2.4, rot=0, layer="top"),
     "IND_SW5": dict(x=PM["x"] + 6.4, y=PM["y"] - 1.6, rot=0, layer="top"),
     "IND_SW3": dict(x=PM["x"] - 6.3, y=PM["y"] + 0.4, rot=90, layer="top"),
@@ -65,7 +66,28 @@ def outline(ref, pl):
     g = srot(g, pl.get("rot", 0), origin=(0, 0))
     return translate(g, pl["x"], pl["y"])
 
+# JLCPCB "minimum spacing for SMD components" (assembly), same side, edge to edge of pads + body (mm). Power
+# inductors and crystals count as chip parts of their size; the table has no other entry for them.
+KIND_OF_ROLE = {"RK3566": "BGA", "LPDDR4": "BGA", "EMMC": "BGA", "BUCK_CPU": "BGA", "RK809": "QFN",
+                "BUCK_3V3": "SOT", "NMOS_DUAL": "SOT", "DF40_HEADER": "CONN"}
+JLC = {("chip", "chip"): 0.15, ("chip", "BGA"): 1.0, ("chip", "QFN"): 1.0, ("chip", "SOT"): 0.2, ("BGA", "BGA"): 2.0,
+       ("BGA", "QFN"): 1.5, ("BGA", "SOT"): 1.0, ("QFN", "SOT"): 1.0, ("QFN", "QFN"): 1.0, ("SOT", "SOT"): 0.2}
+def jlc(a, b): return JLC.get((a, b), JLC.get((b, a), 0.3))
+kind_of = lambda ref: KIND_OF_ROLE.get(comps[ref]["role"], "chip")
+def extent(ref, pl):
+    """pads + package body of a placed part, for the JLCPCB spacing check"""
+    role = comps[ref]["role"]; bx = fp[role]["padBox"]
+    g = box(*bx)
+    body = {"RK809": (3.6, 3.6), "BUCK_CPU": (1.0, 0.8), "BUCK_3V3": (1.45, 0.8), "NMOS_DUAL": (1.0, 0.625),
+            "XTAL_24M": (1.25, 1.0), "XTAL_32K": (1.6, 0.75), "L_470N": (1.25, 1.0), "L_CPU": (1.25, 1.0), "L_3V3": (2.0, 2.0)}.get(role)
+    if body: g = g.union(box(-body[0], -body[1], body[0], body[1]))
+    return translate(srot(g, pl.get("rot", 0), origin=(0, 0)), pl["x"], pl["y"])
+ext = {"top": [], "bottom": []}  # (ref, kind, extent) of the parts placed so far
+def spacing_ok(ref, pl, skip=()):
+    e = extent(ref, pl); k = kind_of(ref)
+    return all(r2 in skip or e.distance(e2) >= jlc(k, k2) - 1e-6 for r2, k2, e2 in ext[pl["layer"]])
 place = dict(FIXED)
+FIXBAD = []
 occ = {"top": [], "bottom": []}
 fixed_shapes = []
 for ref, pl in place.items():
@@ -74,9 +96,14 @@ for ref, pl in place.items():
         if l2 == pl["layer"] and o.intersects(o2) and {ref, r2} != {"J1", "J2"}:
             raise SystemExit(f"fixed parts overlap: {ref} {r2}")
     fixed_shapes.append((ref, pl["layer"], o))
+    if not spacing_ok(ref, pl, skip=("J1", "J2")):
+        bad = [r2 for r2, k2, e2 in ext[pl["layer"]] if extent(ref, pl).distance(e2) < jlc(kind_of(ref), k2) - 1e-6]
+        FIXBAD.append((ref, bad, [round(extent(ref, pl).distance(e2), 3) for r2, k2, e2 in ext[pl["layer"]] if r2 in bad]))
+    ext[pl["layer"]].append((ref, kind_of(ref), extent(ref, pl)))
     if ref in ("J1", "J2"):
         o = box(pl["x"] - 2.0, pl["y"] - 11.1, pl["x"] + 2.0, pl["y"] + 11.1)
     occ[pl["layer"]].append(o)
+if FIXBAD: raise SystemExit("fixed parts closer than JLCPCB's SMD spacing: " + str(FIXBAD))
 # keep-outs: holes (screw heads) on both sides, board edge
 keep = unary_union([Point(h).buffer(2.6) for h in HOLES] + [BOARD.exterior.buffer(0.45)])
 # bottom: the routed DDR copper (traces/vias) and the RK/LPDDR4 ball fields' via fanout stay free of parts
@@ -204,7 +231,7 @@ under_failed = []
 for c in net["components"]:
     if c["ref"] in place or c["group"] != "decap" or comps[c["ref"]]["role"] not in ("C_100N_0201", "C_1U_0201"): continue
     pl = try_cap(c)
-    if pl: place[c["ref"]] = pl
+    if pl: place[c["ref"]] = pl; ext["bottom"].append((c["ref"], "chip", extent(c["ref"], pl)))
     else: under_failed.append(c["ref"])
 print("decaps under the SoC:", sum(1 for c in net["components"] if c["ref"] in place and c["group"] == "decap"), "fell back:", under_failed)
 
@@ -226,6 +253,7 @@ for c in order:
                     if s == "bottom" and o.intersects(bottom_block): continue
                     if s == "top" and o.intersects(top_block): continue
                     if any(o.buffer(0.02).intersects(q) for q in occ[s]): continue
+                    if not spacing_ok(c["ref"], pl): continue
                     best = pl; break
                 if best: break
             if best: break
@@ -234,6 +262,7 @@ for c in order:
         failed.append(c["ref"]); continue
     place[c["ref"]] = best
     occ[best["layer"]].append(outline(c["ref"], best))
+    ext[best["layer"]].append((c["ref"], kind_of(c["ref"]), extent(c["ref"], best)))
 # schematic positions: a plain grid (the schematic is a reference view; the netlist is design/netlist.json)
 for i, k in enumerate(sorted(place)):
     place[k]["schX"] = (i % 20) * 6; place[k]["schY"] = -(i // 20) * 6

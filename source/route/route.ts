@@ -17,6 +17,9 @@ if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await B
 
 // ---------------- rules ----------------
 const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
+// JLCPCB: a via's drilled hole keeps 0.2 mm from copper of other nets (inner layers included), so the copper gap
+// around a 0.15/0.25 mm via is 0.2 - (0.25 - 0.15) / 2 = 0.15 mm, not the 0.1 mm trace-to-trace gap
+const VGAP = Math.max(GAP, 0.2 + 0.012 - (VIA_D - VIA_H) / 2)
 // inner2 is the power plane layer; small supply rails may also run there as traces (the plane islands avoid them)
 // GND_SIG: slow signals may also cross the ground layers (inner1 under top, inner4 above bottom) where no fast signal
 // runs on the adjacent outer layer, so every fast trace keeps an unbroken reference plane
@@ -69,19 +72,20 @@ for (const p of padsIn.pads) {
   const shape: Shape = p.shape === "circle" ? { kind: "circle", x: p.x, y: p.y, r: p.w / 2 } : { kind: "rect", x: p.x, y: p.y, w: p.w, h: p.h }
   objs.push({ net: p.net, layers: [l], shape, pad: p })
 }
-for (const v of padsIn.footprintVias) objs.push({ net: "GND", layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
+for (const v of padsIn.footprintVias) objs.push({ net: "GND", via: true, hole: v.hole, d: v.d, layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
 for (const t of fixed.traces) {
   const l = L_OF[t.layer]
   if (l === undefined) continue // plane-layer stubs of the fanout
   for (let i = 1; i < t.pts.length; i++)
     objs.push({ net: t.net, layers: [l], shape: { kind: "seg", x: t.pts[i - 1].x, y: t.pts[i - 1].y, x2: t.pts[i].x, y2: t.pts[i].y, r: t.w / 2 } })
 }
-for (const v of fixed.vias) objs.push({ net: v.net, layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
+for (const v of fixed.vias) objs.push({ net: v.net, via: true, hole: v.hole, d: v.d, layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
 
 const blockT = ALL_L.map(() => new Uint16Array(NN)), blockTW = ALL_L.map(() => new Uint16Array(NN)), blockTB = ALL_L.map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
-const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_TB = GAP + W_BIG / 2, R_V = GAP + VIA_D / 2
+const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_TB = GAP + W_BIG / 2, R_V = VGAP + VIA_D / 2
 for (const o of objs) {
-  o.t = Int32Array.from(cellsWithin(o.shape, R_T)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW)); o.tb = Int32Array.from(cellsWithin(o.shape, R_TB)); o.v = Int32Array.from(cellsWithin(o.shape, R_V))
+  const xg = o.via ? Math.max(0, 0.2 + 0.012 - (o.d - o.hole) / 2 - GAP) : 0  // a fixed via's hole keeps 0.2 mm from new copper too
+  o.t = Int32Array.from(cellsWithin(o.shape, R_T + xg)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW + xg)); o.tb = Int32Array.from(cellsWithin(o.shape, R_TB + xg)); o.v = Int32Array.from(cellsWithin(o.shape, R_V + xg))
   for (const l of o.layers) { for (const c of o.t) blockT[l][c]++; for (const c of o.tw) blockTW[l][c]++; for (const c of o.tb) blockTB[l][c]++ }
   for (const c of o.v) blockV[c]++
 }
@@ -234,8 +238,8 @@ for (const [name, ps] of padsByNet) {
 const occT = ALL_L.map(() => new Uint16Array(NN)), occV = new Uint16Array(NN)
 const histT = ALL_L.map(() => new Float32Array(NN)), histV = new Float32Array(NN)
 const disk = (r: number) => { const o: number[] = []; const k = Math.ceil(r / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) if (Math.hypot(di, dj) * P < r - EPS) o.push(di, dj); return o }
-const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TTB = disk(W_BIG / 2 + W_SIG / 2 + GAP), D_BTV = disk(W_BIG / 2 + GAP + VIA_D / 2), D_TV = disk(W_SIG / 2 + GAP + VIA_D / 2), D_VV = disk(VIA_D + GAP)
-const D_WTV = disk(W_PWR / 2 + GAP + VIA_D / 2)
+const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TTB = disk(W_BIG / 2 + W_SIG / 2 + GAP), D_BTV = disk(W_BIG / 2 + VGAP + VIA_D / 2), D_TV = disk(W_SIG / 2 + VGAP + VIA_D / 2), D_VV = disk(VIA_D + VGAP)
+const D_WTV = disk(W_PWR / 2 + VGAP + VIA_D / 2)
 // reference keep-out: a slow trace on the ground layer stays this far (centre to centre) from a fast trace above/below
 // it: the fast trace's half width + 3x the 0.076 mm prepreg + the slow trace's half width + clearance
 const R_REF = W_SIG / 2 + 3 * 0.0764 + W_SIG / 2 + GAP, D_REF = disk(R_REF)

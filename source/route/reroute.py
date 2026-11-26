@@ -40,7 +40,7 @@ def geoms(layer, skip):
         if t["layer"] == layer and t["net"] != skip and len(t["pts"]) > 1:
             out.append(LineString([(q["x"], q["y"]) for q in t["pts"]]).buffer(t["w"] / 2, 8))
     for v in cu["vias"] + fvias:
-        if v["net"] != skip: out.append(Point(v["x"], v["y"]).buffer(v["d"] / 2, 12))
+        if v["net"] != skip: out.append(Point(v["x"], v["y"]).buffer(v["d"] / 2 + max(0, 0.2 - (v["d"] - v["hole"]) / 2 - GAP), 12))  # hole rule
     return out
 
 def route(net):
@@ -71,7 +71,7 @@ def route(net):
                 slow = [g for g in slow if g.intersects(win)]
                 if slow: f &= ~shapely.contains_xy(unary_union(slow).buffer(W / 2 + 3 * H + M), X, Y)
             free[l] = f
-        if u is not None: viaok &= ~shapely.contains_xy(u.buffer(GAP + VD / 2 + M, 8), X, Y)
+        if u is not None: viaok &= ~shapely.contains_xy(u.buffer(max(GAP + VD / 2, 0.2 + 0.15 / 2) + M, 8), X, Y)  # hole 0.2 mm from copper
     # via holes keep 0.2 mm from other holes (edge to edge)
     hs = [Point(v["x"], v["y"]) for v in cu["vias"] + fvias if v["net"] != net]
     if hs: viaok &= ~shapely.contains_xy(unary_union(hs).buffer(0.2 + 0.15 + M), X, Y)

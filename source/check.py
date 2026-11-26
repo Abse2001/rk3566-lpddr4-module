@@ -56,6 +56,21 @@ ht = STRtree(hp); hole_v = 0
 for i, g in enumerate(hp):
     for j in ht.query(g.buffer(HOLE_GAP)):
         if j > i and g.distance(hp[j]) < HOLE_GAP - 1e-4 and allvias[i]["net"] != allvias[j]["net"]: hole_v += 1
+# JLCPCB: drilled via hole to copper of another net >= 0.2 mm on every layer (pads, traces, pours, other vias)
+HOLE_CU = 0.2
+FIXED_DDR = lambda n: n is not None and n.startswith("DDR_")
+holecu_v, holecu_ddr = [], 0
+for l, its in by_layer.items():
+    geoms = [it[2] for it in its]; tree = STRtree(geoms)
+    for v in allvias:
+        h = Point(v["x"], v["y"]).buffer(v["hole"] / 2, 12)
+        for j in tree.query(h.buffer(HOLE_CU)):
+            o = its[j]
+            if o[1] == v["net"] or (o[3] == "via" and abs(o[2].centroid.x - v["x"]) < 1e-6 and abs(o[2].centroid.y - v["y"]) < 1e-6): continue
+            d = h.distance(o[2])
+            if d < HOLE_CU - 1e-4:
+                if FIXED_DDR(v["net"]) and FIXED_DDR(o[1]): holecu_ddr += 1  # inside the frozen LPDDR4 block
+                else: holecu_v.append((l, round(d, 3), v["net"], o[3], o[4], round(v["x"], 2), round(v["y"], 2)))
 # JLCPCB SMD pad to pad, different nets: 0.15 mm (BGA balls are covered by the 0.1 mm pad-to-track rule above)
 PAD_GAP = 0.15
 pg = [it for it in items if it[3] == "pad"]
@@ -110,6 +125,7 @@ print(f"Reference planes: {len(ref_v)} slow traces under fast traces", ref_v[:5]
 print(f"DRC: {len(viol)} clearance violations (< {GAP} mm), {len(edge_v)} copper too close to edge/holes, {len(pour_edge)} pours near edge, {hole_v} via-hole spacing issues, {pad_v} pad pairs < {PAD_GAP} mm")
 for v in viol[:25]: print("  ", v)
 for v in edge_v[:5]: print("   edge", v)
+print(f"Via hole to other-net copper (>= {HOLE_CU} mm): {len(holecu_v)} issues (+{holecu_ddr} inside the frozen DDR block)", holecu_v[:5])
 print(f"Connectivity: {len(pad_items) - len(open_nets)}/{len(pad_items)} nets complete")
 for o in open_nets[:40]: print("   open", o)
-sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v else 0)
+sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v or (holecu_v and not os.environ.get("NO_HOLE_CU")) else 0)

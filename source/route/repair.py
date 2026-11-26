@@ -25,7 +25,8 @@ def obstacles(layer):
         for a, b in zip(t["pts"], t["pts"][1:]):
             out.append((LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(t["w"] / 2, 8), t["net"], k))
     for v in cu["vias"] + fv:
-        out.append((Point(v["x"], v["y"]).buffer(v["d"] / 2, 16), v["net"], None))
+        # a via counts with its hole rule (0.2 mm hole to copper): grown so the 0.1 mm gap check covers it
+        out.append((Point(v["x"], v["y"]).buffer(v["d"] / 2 + max(0, 0.2 - (v["d"] - v["hole"]) / 2 - GAP), 16), v["net"], None))
     return out
 
 from shapely.ops import nearest_points

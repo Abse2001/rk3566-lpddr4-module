@@ -25,7 +25,8 @@ def obstacles(layer, skip_net):
         if t["layer"] == layer and t["net"] != skip_net:
             for a, b in zip(t["pts"], t["pts"][1:]): gs.append(LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(t["w"] / 2))
     for v in cu["vias"]:
-        if v["net"] != skip_net: gs.append(Point(v["x"], v["y"]).buffer(v["d"] / 2))
+        # JLCPCB: via hole to other copper 0.2 mm, i.e. 0.15 mm from a 0.15/0.25 mm via's pad
+        if v["net"] != skip_net: gs.append(Point(v["x"], v["y"]).buffer(v["d"] / 2 + max(0, 0.2 - (v["d"] - v["hole"]) / 2 - GAP)))
     # a fast trace keeps its reference ground layer clear: slow traces on inner1 (under top) / inner4 (above bottom)
     # count as obstacles, grown by 3x the 0.0764 mm prepreg minus the clearance the bump check adds
     gl = {"top": "inner1", "bottom": "inner4"}.get(layer)
