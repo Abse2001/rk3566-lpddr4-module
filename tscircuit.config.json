@@ -1,1 +1,11 @@
-{"mainEntrypoint":"index.circuit.json","alwaysUseLatestTscircuitOnCloud":false}
+{
+  "mainEntrypoint": "index.circuit.json",
+  "alwaysUseLatestTscircuitOnCloud": false,
+  "ignoredFiles": [
+    "fab/**",
+    "**/__pycache__/**",
+    "source/route/**/*.json",
+    "source/route/*.png",
+    "**/*.pyc"
+  ]
+}

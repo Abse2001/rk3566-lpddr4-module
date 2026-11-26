@@ -1,16 +1,35 @@
-# RK3566 + LPDDR4 compute module (work in progress)
+# RK3566 + LPDDR4 compute module (CM4 compatible)
 
 A 6-layer compute module built around the Rockchip RK3566 (U1, LCSC C2943786) and 2 GB of SK hynix
 H9HCNNNBKUMLXR-NEE LPDDR4 (U2, LCSC C21912322).
 
-**Status: not ready to order.** The memory interface between the processor and the LPDDR4 is routed and
-verified. The rest of the module (schematic and netlist, power management, eMMC, connectors, the processor's
-other signals, planes, board outline) is not designed yet. The outline in `index.circuit.json` only frames
-the two packages and their copper.
+****Status: fully routed, fab files generated** (`fab/`, also `fab/tsci/` from `tsci export -f gerbers`).
+CM4-compatible: two Hirose DF40C-100DP-0.4V(51) on the bottom at the CM4 positions; CAM0, DSI0 and Ethernet
+are not populated (networking over USB). How it was routed: `ROUTING-PLAYBOOK.md`; issue log: `ISSUES-AND-FIXES.md`.
 
-![PCB](pcb.png)
+Full-board checks (`source/check.py`, `source/pairs.py` on `source/route/final/`):
 
-## What is done
+| Check | Result |
+|---|---|
+| Copper clearance 0.1 mm, all 6 layers (vias on every layer) | 0 violations |
+| Copper to edge / holes, via hole spacing, SMD pad to pad 0.15 mm | 0 issues |
+| Fast traces over unbroken GND (reference plane) | 0 issues |
+| Connectivity (pads, traces, vias, pours) | 234 / 234 nets |
+| Differential pairs P/N (0.13 mm, USB 0.25 mm) | 17 / 17 within limit |
+| LPDDR4 block | unchanged from the verified DDR routing |
+| Pick-and-place rotations vs JLCPCB footprints (`source/fix-pnp.ts`) | 211 / 211 verified |
+
+**Ordering (JLCPCB):** 6 layers, 1.6 mm, stackup JLC06161H-1080A, ENIG, via-in-pad filled and capped,
+0.15 mm hole / 0.25 mm via, assembly on both sides. Before paying, check part rotations in JLCPCB's
+placement preview (especially bottom side, U1, U2, U3, U4 and J1/J2) and stock of the BOM.
+
+Still to verify by hand: RK809 auto-start when GLOBAL_EN rises and the 1.8 V before 3.3 V sequence; eMMC
+VDDI capacitor; crystal load capacitors. The tscircuit viewer lists 59 courtyard overlaps: these are the
+0201 decoupling capacitors under the BGA (pads 0.18 mm or more apart, above JLCPCB's 0.15 mm).
+
+PCB](pcb.png)
+
+## LPDDR4 block
 
 - All 67 LPDDR4 nets between U1 and U2 are routed (both channels: CA, CS, CKE, ODT, RESET, CK pairs,
   16 DQ, 2 DMI and 2 DQS pairs per channel). They run on three signal layers: top, inner3 and bottom.
@@ -51,22 +70,6 @@ differential. Rockchip asks for 50 ohm single-ended and 100 ohm differential.
 
 Vias are through vias, 0.15 mm hole and 0.25 mm pad. Many sit in pads, so order them epoxy-filled and capped;
 JLCPCB fills via-in-pad free of charge on 6-layer boards.
-
-## Open items before ordering
-
-1. Schematic and netlist for every RK3566 ball: rails, boot straps, 24 MHz crystal, reset, debug UART
-   and the interfaces brought out to the carrier.
-2. Power: RK809 PMIC or discrete regulators, and the decoupling under both BGAs.
-3. eMMC.
-4. Board-to-board connectors (CM4 compatible).
-5. Placement, routing of everything outside the DDR block, plane shapes, stitching vias and the board outline,
-   then a full-board DRC.
-6. Gerbers, drill, BOM and pick-and-place.
-
-Eight balls in the power fanout are not supply rails: DDR_RZQ, ZQ0, DDR_VREFOUT, HDMI_TX_HPDIN,
-SARADC_VIN0, SYSPLL_AVDD_0V9, SYSPLL_AVDD_1V8 and the USB_AVDD2 balls. Their vias are breakouts only. Each
-needs its own part or rail (ZQ resistor, VREF capacitor, filtered analog supply), so the planes must not
-connect to them.
 
 ## Files
 
