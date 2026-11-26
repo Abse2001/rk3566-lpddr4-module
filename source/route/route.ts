@@ -555,7 +555,10 @@ for (let it = 0; it < MAXIT; it++) {
   console.log(`iter ${it} [${((performance.now() - t0) / 1e3).toFixed(0)}s] pres=${pres.toFixed(2)} conflicts=${total} nets=${bad.length} ${bad.slice(0, 8).map((n) => n.name).join(",")} failed=${failed.length} ${failed.slice(0, 6).join(",")}`)
   if (!total && !failed.length) break
   if (it % 10 === 9) await writeOut(dir + `/routes${process.env.OUT ?? ""}.ckpt.json`, dir + `/copper${process.env.OUT ?? ""}.ckpt.json`)
-  if (total < best) { best = total; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }])) }
+  if (total < best) {
+    best = total; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }]))
+    if (it >= 8) await writeOut(dir + `/routes${process.env.OUT ?? ""}.best.json`, dir + `/copper${process.env.OUT ?? ""}.best.json`)
+  }
   if (it - bestAt >= +(process.env.STALL ?? 4) && bestSnap) {
     // no progress for a while (or diverging): go back to the best routing seen, then re-place its conflict clusters
     if (total > best) {
@@ -585,6 +588,7 @@ for (let it = 0; it < MAXIT; it++) {
     console.log(`  after endgame: conflicts=${t2}`)
     if (!t2 && !failed.length) break
     best = t2; bestAt = it; bestSnap = new Map(nets.map((n) => [n, { path: n.path, vias: n.vias }]))
+    await writeOut(dir + `/routes${process.env.OUT ?? ""}.best.json`, dir + `/copper${process.env.OUT ?? ""}.best.json`)
     // negotiate on from the cleaned-up routing with a low present price (the learned history stays), so the next
     // pass refines it instead of scattering it
     pres = +(process.env.PRESET ?? 2)
@@ -617,6 +621,16 @@ function geometry(n: Net) {
     flush()
   }
   return { segs, vias: vs }
+}
+// the result is the best routing seen, not whatever the last pass left
+if (bestSnap) {
+  let last = 0; for (const n of nets) last += n.conflicts ?? 0
+  if (last > best) {
+    for (const n of nets) stampNet(n, -1)
+    for (const n of nets) { const sv = bestSnap.get(n)!; n.path = sv.path; n.vias = sv.vias; stampNet(n, 1) }
+    for (const n of nets) n.conflicts = conflictsOf(n)
+    console.log(`output: the best routing (pass ${bestAt}, ${best} conflicts) instead of the last pass (${last})`)
+  }
 }
 const OUT = process.env.OUT ?? ""
 await writeOut(dir + `/routes${OUT}.json`, dir + `/copper${OUT}.json`)
