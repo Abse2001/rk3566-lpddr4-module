@@ -96,9 +96,9 @@ for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
   if (d < EDGE + VIA_D / 2) blockV[c] += 1000
 }
 // neck-down zones: inside a BGA ball field a power trace narrows to signal width
-const neck = new Uint8Array(NN)
+const neck = new Uint8Array(NN), bgaBox = new Map<string, number[]>()
 {
-  const bgas = new Map<string, number[]>()
+  const bgas = bgaBox
   for (const p of padsIn.pads) if (/^[UJQ]\d/.test(p.ref)) { const b = bgas.get(p.ref) ?? [1e9, 1e9, -1e9, -1e9]; bgas.set(p.ref, [Math.min(b[0], p.x), Math.min(b[1], p.y), Math.max(b[2], p.x), Math.max(b[3], p.y)]) }
   for (const [, b] of bgas) for (let j = gy(b[1] - 0.6); j <= gy(b[3] + 0.6); j++) for (let i = gx(b[0] - 0.6); i <= gx(b[2] + 0.6); i++) if (i >= 0 && j >= 0 && i < NX && j < NY) neck[j * NX + i] = 1
 }
@@ -119,7 +119,14 @@ const neck = new Uint8Array(NN)
 // DDR traces on top reference inner1, those on the bottom inner4)
 if (GND_SIG) {
   const blk = (l: number, c: number) => { blockT[l][c] += 1000; blockTW[l][c] += 1000; blockTB[l][c] += 1000 }
-  for (let c = 0; c < NN; c++) if (neck[c]) { blk(4, c); blk(5, c) }
+  // GND_SIG_BGA: the ground layers under the SoC ball field also take slow signals (still never next to a fast trace);
+  // the other BGA / fine-pitch fields keep solid ground layers
+  const socBox = bgaBox.get("U1")
+  for (let c = 0; c < NN; c++) if (neck[c]) {
+    const x = wx(c % NX), y = wy((c / NX) | 0)
+    if (process.env.GND_SIG_BGA && socBox && x >= socBox[0] - 0.6 && x <= socBox[2] + 0.6 && y >= socBox[1] - 0.6 && y <= socBox[3] + 0.6) continue
+    blk(4, c); blk(5, c)
+  }
   const RR = W_SIG / 2 + 3 * 0.0764 + W_SIG / 2 + GAP
   let n = 0
   for (const t of fixed.traces) {
