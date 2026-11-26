@@ -32,7 +32,7 @@ def obstacles(layer, skip_net):
     if gl:
         for t in cu["traces"]:
             if t["layer"] == gl and t["net"] != "GND":
-                for a, b in zip(t["pts"], t["pts"][1:]): gs.append(LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(max(0.0, 3 * 0.0764 - GAP)))
+                for a, b in zip(t["pts"], t["pts"][1:]): gs.append(LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(t["w"] / 2 + 3 * 0.0764 - GAP))
     for p in pads:
         if p["layer"] == layer and p["net"] != skip_net: gs.append(box(p["x"] - p["w"] / 2, p["y"] - p["h"] / 2, p["x"] + p["w"] / 2, p["y"] + p["h"] / 2))
     return gs
