@@ -67,6 +67,18 @@ for l in LAYERS:
     for i, it in enumerate(its):
         for j in tr.query(it[2].buffer(PAD_GAP)):
             if j > i and (it[1] is None or it[1] != its[j][1]) and it[2].distance(its[j][2]) < PAD_GAP - 1e-4: pad_v += 1
+# reference planes: a fast trace on top (bottom) keeps its ground layer inner1 (inner4) unbroken underneath: no other
+# copper of another net on that ground layer within w/2 + 3h (h = 0.0764 mm prepreg) of the fast trace's edge
+import re as _re
+FAST = _re.compile(r"^(HDMI_TX_[CD]|MIPI_|PCIE20_|USB_OTG0_D|EMMC_|CM4_SD_|DDR_)")
+ref_v = []
+for t in cu["traces"]:
+    if t["layer"] not in ("top", "bottom") or not FAST.match(t["net"]): continue
+    gl = "inner1" if t["layer"] == "top" else "inner4"
+    zone = LineString([(q["x"], q["y"]) for q in t["pts"]]).buffer(t["w"] / 2 + 3 * 0.0764) if len(t["pts"]) > 1 else None
+    if zone is None: continue
+    for it in by_layer.get(gl, []):
+        if it[1] != "GND" and it[3] == "trace" and it[2].intersects(zone): ref_v.append((t["net"], gl, it[4]))
 # ---------- connectivity ----------
 parent = list(range(len(items)))
 def find(a):
@@ -94,9 +106,10 @@ for n, ks in pad_items.items():
         groups = defaultdict(list)
         for k in ks: groups[find(k)].append(items[k][4])
         open_nets.append((n, len(roots), [g[:3] for g in groups.values()][:4]))
+print(f"Reference planes: {len(ref_v)} slow traces under fast traces", ref_v[:5])
 print(f"DRC: {len(viol)} clearance violations (< {GAP} mm), {len(edge_v)} copper too close to edge/holes, {len(pour_edge)} pours near edge, {hole_v} via-hole spacing issues, {pad_v} pad pairs < {PAD_GAP} mm")
 for v in viol[:25]: print("  ", v)
 for v in edge_v[:5]: print("   edge", v)
 print(f"Connectivity: {len(pad_items) - len(open_nets)}/{len(pad_items)} nets complete")
 for o in open_nets[:40]: print("   open", o)
-sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v else 0)
+sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v else 0)
