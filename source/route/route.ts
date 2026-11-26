@@ -662,6 +662,28 @@ if (process.env.POLISH) {
     if (ok && newLen < oldLen - 0.05) { stampNet(longer, 1); console.log(`polish ${longer.name}: ${oldLen.toFixed(2)} -> ${newLen.toFixed(2)} mm (partner ${Math.min(lp, lf).toFixed(2)})`) }
     else { longer.path = old.path; longer.vias = old.vias; stampNet(longer, 1); console.log(`polish ${longer.name}: no shorter clean path (${oldLen.toFixed(2)} mm, partner ${Math.min(lp, lf).toFixed(2)})`) }
   }
+  // still skewed: re-route the whole pair strictly (lead with room for its follower, then the follower in a tight
+  // corridor along it); keep it only if the skew improves and both fit cleanly
+  for (const lead of nets.filter((n) => n.partner)) {
+    const fol = lead.partner!
+    const skew0 = Math.abs(lenOf(lead) - lenOf(fol))
+    if (skew0 <= LIM(lead.name)) continue
+    const old = [lead, fol].map((n) => ({ n, path: n.path, vias: n.vias }))
+    stampNet(lead, -1); stampNet(fol, -1)
+    hard = true
+    let ok = routeNet0(lead)
+    if (ok) {
+      stampNet(lead, 1)
+      const saveFol = D_FOL.slice(); D_FOL.length = 0; D_FOL.push(...FR)
+      setFollow(lead, fol, true); ok = routeNet0(fol); setFollow(lead, fol, false)
+      D_FOL.length = 0; D_FOL.push(...saveFol)
+      stampNet(lead, -1)
+    }
+    hard = false
+    const skew1 = ok ? Math.abs(lenOf(lead) - lenOf(fol)) : Infinity
+    if (ok && skew1 < skew0 - 0.05) { stampNet(lead, 1); stampNet(fol, 1); console.log(`polish pair ${lead.name}: skew ${skew0.toFixed(2)} -> ${skew1.toFixed(2)} mm`) }
+    else { for (const o of old) { o.n.path = o.path; o.n.vias = o.vias; stampNet(o.n, 1) } console.log(`polish pair ${lead.name}: no better clean pair route (skew ${skew0.toFixed(2)} mm)`) }
+  }
   for (const n of nets) n.conflicts = conflictsOf(n)
   const OUTP = process.env.OUT ?? "_polish"
   await writeOut(dir + `/routes${OUTP}.json`, dir + `/copper${OUTP}.json`)
