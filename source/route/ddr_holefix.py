@@ -169,18 +169,22 @@ def nearest_seg(t, l, v):
 def variants(t, l, v, need, w):
     out = []
     for nk in (True, False):
-        for op in ("none", "shift", "corner", "detour"):
-            for extra in (0.006, 0.015):
+        for op in ("none", "shift", "corner", "detour", "detour_s", "detour_l"):
+            for extra in (0.006, 0.015, 0.03):
                 if op == "none" and (not nk or extra > 0.006): continue
                 out.append((nk, op, max(0, need - ((w - WMIN) / 2 if nk else 0)) + extra))
     return out
+HALF = 0.15
 def apply(t, l, v, nk, op, rem):
+    global HALF
+    HALF = {"detour_s": 0.06, "detour_l": 0.3}.get(op, 0.15)
+    if op.startswith("detour"): op = "detour"
     if nk: neck_all(t, l, v)
     if op == "none" or rem <= 0: return True
     if op == "shift": return shift_seg(t, l, v, rem)
     if op == "corner": return corner(t, l, v, rem)
     j = nearest_seg(t, l, v)
-    return j is not None and detour(t, j, v, rem)
+    return j is not None and detour(t, j, v, rem, half=HALF)
 fixed_n = 0
 for pas in range(int(os.environ.get("PASSES", 3))):
     for k, t in enumerate(traces):
@@ -204,5 +208,68 @@ for pas in range(int(os.environ.get("PASSES", 3))):
     left = [(net_of(t), p) for k, t in enumerate(traces) for p in problems(k) if p[0] == "hole"]
     print(f"pass {pas}: {fixed_n} changes, {len({(n, p[3]) for n, p in left})} trace/via spots left", flush=True)
     if not left: break
+# ---- last resort: move an offending DDR via (with the wire ends on it) by up to 0.05 mm ----
+via_owner = {}
+for m, t in enumerate(traces):
+    for idx, p in enumerate(t["route"]):
+        if p["route_type"] == "via":
+            for j, vv in enumerate(vias):
+                if abs(vv[0] - p["x"]) < 1e-6 and abs(vv[1] - p["y"]) < 1e-6 and vv[4] == net_of(t): via_owner.setdefault(j, []).append((m, idx))
+def via_ok(j):
+    """the via's hole keeps 0.2 mm from all other-net copper on every layer, 0.2 mm hole to hole"""
+    x, y, d, h, vn = vias[j]; hg = Point(x, y).buffer(h / 2, 12)
+    for l in LAY:
+        tree, items = TREES[l]
+        for q in tree.query(hg.buffer(HOLE)):
+            if items[q][1] != vn and hg.distance(items[q][0]) < HOLE - EPS: return False
+    for q in HOLE_TREE.query(hg.buffer(HOLE + 0.13)):
+        if q != j and vias[q][4] != vn:
+            ox, oy, od, oh, on = vias[q]
+            if Point(ox, oy).buffer(od / 2, 12).distance(hg) < HOLE - EPS: return False
+    return True
+def move_via(j, dx, dy):
+    global HOLE_TREE
+    x, y, d, h, vn = vias[j]
+    for m, idx in via_owner[j]:
+        r = traces[m]["route"]
+        for q in (idx - 1, idx, idx + 1):
+            if 0 <= q < len(r) and abs(r[q]["x"] - x) < 1e-6 and abs(r[q]["y"] - y) < 1e-6:
+                r[q]["x"] = round(r[q]["x"] + dx, 5); r[q]["y"] = round(r[q]["y"] + dy, 5)
+    vias[j] = (x + dx, y + dy, d, h, vn); HOLES_G[j] = Point(x + dx, y + dy).buffer(h / 2, 12); HOLE_TREE = STRtree(HOLES_G)
+    for m, idx in via_owner[j]: ddr_cu[m] = ddr_geoms(m)
+    rebuild()
+def near_traces(x, y):
+    out = set()
+    for l in LAY:
+        tree, items = TREES[l]
+        for q in tree.query(Point(x, y).buffer(0.6)):
+            if items[q][2] is not None: out.add(items[q][2])
+    return out
+moved_v = 0
+for rnd in range(3):
+    spots = {(k, p[3]) for k in range(len(traces)) for p in problems(k) if p[0] == "hole"}
+    for k, v in sorted(spots):
+        js = [j for j in via_owner if abs(vias[j][0] - v[0]) < 1e-6 and abs(vias[j][1] - v[1]) < 1e-6]
+        if not js: continue
+        j = js[0]; x0, y0 = vias[j][0], vias[j][1]
+        aff = near_traces(x0, y0) | {m for m, _ in via_owner[j]} | {k}
+        c0 = sum(cost(problems(m)) for m in aff); g0 = sum(1 for m in aff for p in problems(m) if p[0] == "gap")
+        snap = {m: json.dumps(traces[m]["route"]) for m in aff}; best = None
+        for mag in (0.01, 0.02, 0.03, 0.04, 0.05, 0.065, 0.08, 0.1):
+            for a in range(8):
+                dx, dy = mag * math.cos(a * math.pi / 4), mag * math.sin(a * math.pi / 4)
+                move_via(j, dx, dy)
+                aff2 = aff | near_traces(x0 + dx, y0 + dy)
+                ps = [p for m in aff2 for p in problems(m)]
+                c1 = sum(p[2] for p in ps if p[0] == "hole") + 10 * sum(1 for p in ps if p[0] == "gap")
+                g1 = sum(1 for p in ps if p[0] == "gap")
+                if via_ok(j) and g1 <= g0 and c1 < c0 - 1e-4 and (best is None or c1 < best[0]): best = (c1, dx, dy)
+                move_via(j, -dx, -dy)
+                for m in aff: traces[m]["route"] = json.loads(snap[m])
+                for m in aff: ddr_cu[m] = ddr_geoms(m)
+                rebuild()
+        if best: move_via(j, best[1], best[2]); moved_v += 1
+left = [(net_of(t), p) for k, t in enumerate(traces) for p in problems(k) if p[0] == "hole"]
+print(f"via moves: {moved_v}; {len({(n, p[3]) for n, p in left})} trace/via spots left")
 json.dump(R, open(SRC, "w"))
 for n, p in sorted({(n, (p[1], round(p[2], 3), (round(p[3][0] + RK[0], 2), round(p[3][1] + RK[1], 2)))) for n, p in left})[:30]: print("  left", n, p)
