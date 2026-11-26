@@ -32,6 +32,16 @@ Status legend: **fixed** (done and verified), **in progress**, **open**.
 CAM0 (CM4 pins 128-142) and DSI0 (157-171) are not connected: six fewer differential pairs through the crowded
 escape south of the SoC. Kept: HDMI0, USB 2.0 OTG, PCIe x1, DSI1 (4 lanes), CAM1 (2 lanes, CSI D2/D3 + CLK1).
 
+## Networking (user decision)
+
+No Ethernet on the module (CM4 pins 3-19 not connected; a real CM4 has its PHY on the module). Network access is
+over USB (USB Ethernet / Wi-Fi dongle on the carrier's USB ports). Requirements for that to work:
+- USB_OTG0 DP/DM on CM4 pins 103/105, OTG_ID on 101, VBUSDET pulled high: the RK3566 OTG port in host mode drives
+  the carrier's USB hub (USB2514B on the CM4 IO board).
+- Device tree: usb dr_mode = "otg" with ID-pin role switching (host when the carrier's device port is unused).
+- Device tree: GPIO4_B7 (CM4 nEXTRST, pin 100) driven high by a gpio-hog after boot, so the carrier's USB hub
+  leaves reset (the module holds it low at power-up through 100 kOhm, like a CM4).
+
 ## CM4 carrier compatibility (audit against the CM4 datasheet and the CM4 IO board design)
 
 | # | Issue | Root cause | Fix | Status |
