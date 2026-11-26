@@ -371,7 +371,8 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
-      if (followOn && (!followM[l][cc] || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
+      // coupling applies outside the BGA / fine-pitch zones; inside them the two wires escape their balls separately
+      if (followOn && ((!followM[l][cc] && !neck[cc]) || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
       // a wide trace also needs its extra half width clear of other nets: an obstacle in strict mode, priced otherwise
       const wideHit = extra !== null && !clearWide(l, cc)
       if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
@@ -390,7 +391,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
-      if (followOn && (!followM[l2][c] || leadKOV[c] || leadKO[l2][c])) continue
+      if (followOn && ((!followM[l2][c] && !neck[c]) || leadKOV[c] || leadKO[l2][c])) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
