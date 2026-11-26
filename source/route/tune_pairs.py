@@ -45,37 +45,52 @@ for P_, N_ in pairs:
     partner_geom = [LineString([(a["x"], a["y"]), (b["x"], b["y"])]) for s in nets[long_]["segs"] for a, b in zip(s["pts"], s["pts"][1:])]
     done = 0.0
     segs = nets[short]["segs"]
-    # candidate straight pieces, longest first
-    cands = sorted(((math.hypot(b["x"] - a["x"], b["y"] - a["y"]), si, k) for si, s in enumerate(segs) for k, (a, b) in enumerate(zip(s["pts"], s["pts"][1:]))), reverse=True)
-    for L, si, k in cands:
-        if done >= need - TOL or L < 0.8: break
-        s = segs[si]; a, b = s["pts"][k], s["pts"][k + 1]; w = s["w"]
-        obs = obstacles(s["layer"], short); tree = STRtree(obs)
-        ux, uy = (b["x"] - a["x"]) / L, (b["y"] - a["y"]) / L
-        nx, ny = -uy, ux
-        mid = Point((a["x"] + b["x"]) / 2, (a["y"] + b["y"]) / 2)
-        if partner_geom and min(g.distance(Point(mid.x + nx * 0.3, mid.y + ny * 0.3)) for g in partner_geom) < min(g.distance(Point(mid.x - nx * 0.3, mid.y - ny * 0.3)) for g in partner_geom):
-            nx, ny = -nx, -ny  # bulge away from the partner
-        pitch, bw = 0.5, 0.25  # bump every 0.5 mm, 0.25 mm wide
-        nb = int((L - 0.4) / pitch)
-        if nb < 1: continue
-        rem = need - done
-        amp = min(0.35, max(0.12, rem / (2 * nb)))
-        nb_use = min(nb, max(1, math.ceil(rem / (2 * amp))))
-        amp = min(0.35, rem / (2 * nb_use))
-        start = (L - nb_use * pitch) / 2
-        pts = [a]
-        for q in range(nb_use):
-            t0 = start + q * pitch + (pitch - bw) / 2; t1 = t0 + bw
-            p0 = (a["x"] + ux * t0, a["y"] + uy * t0); p1 = (a["x"] + ux * t1, a["y"] + uy * t1)
-            pts += [{"x": p0[0], "y": p0[1]}, {"x": p0[0] + nx * amp, "y": p0[1] + ny * amp}, {"x": p1[0] + nx * amp, "y": p1[1] + ny * amp}, {"x": p1[0], "y": p1[1]}]
-        pts.append(b)
-        geom = LineString([(q["x"], q["y"]) for q in pts]).buffer(w / 2)
-        if any(obs[j].distance(geom) < GAP - 1e-6 for j in tree.query(geom.buffer(GAP))): continue
-        s["pts"] = s["pts"][:k] + [{"x": round(q["x"], 4), "y": round(q["y"], 4)} for q in pts] + s["pts"][k + 2:]
-        done += 2 * amp * nb_use
-        # keep the copper list in step for the next obstacle checks
-        cu["traces"] = [t for t in cu["traces"] if t["net"] != short] + [dict(t, net=short) for t in segs]
+    MIN_L, AMPS, PITCH, BW = 0.5, (0.45, 0.35, 0.25, 0.15), 0.4, 0.2  # bump every 0.4 mm, 0.2 mm wide
+    for rnd in range(40):  # one bumped piece per round: the straight pieces change as bumps go in
+        before = done
+        cands = sorted(((math.hypot(b["x"] - a["x"], b["y"] - a["y"]), si, k) for si, s in enumerate(segs) for k, (a, b) in enumerate(zip(s["pts"], s["pts"][1:]))), reverse=True)
+        used = set()
+        for L, si, k in cands:
+            if done >= need - TOL or L < MIN_L: break
+            if (si, k) in used: continue
+            s = segs[si]; a, b = s["pts"][k], s["pts"][k + 1]; w = s["w"]
+            obs = obstacles(s["layer"], short); tree = STRtree(obs)
+            ux, uy = (b["x"] - a["x"]) / L, (b["y"] - a["y"]) / L
+            nx, ny = -uy, ux
+            mid = Point((a["x"] + b["x"]) / 2, (a["y"] + b["y"]) / 2)
+            if partner_geom and min(g.distance(Point(mid.x + nx * 0.3, mid.y + ny * 0.3)) for g in partner_geom) < min(g.distance(Point(mid.x - nx * 0.3, mid.y - ny * 0.3)) for g in partner_geom):
+                nx, ny = -nx, -ny  # first try bulging away from the partner
+            nb = int((L - 0.3) / PITCH)
+            if nb < 1: continue
+            rem = need - done
+            best = None
+            for side in (1, -1):
+                for amp_max in AMPS:
+                    nb_use = min(nb, max(1, math.ceil(rem / (2 * amp_max))))
+                    amp = min(amp_max, rem / (2 * nb_use))
+                    if amp < 0.02: continue
+                    start = (L - nb_use * PITCH) / 2
+                    pts = [a]
+                    for q in range(nb_use):
+                        t0 = start + q * PITCH + (PITCH - BW) / 2; t1 = t0 + BW
+                        p0 = (a["x"] + ux * t0, a["y"] + uy * t0); p1 = (a["x"] + ux * t1, a["y"] + uy * t1)
+                        sx, sy = nx * side * amp, ny * side * amp
+                        pts += [{"x": p0[0], "y": p0[1]}, {"x": p0[0] + sx, "y": p0[1] + sy}, {"x": p1[0] + sx, "y": p1[1] + sy}, {"x": p1[0], "y": p1[1]}]
+                    pts.append(b)
+                    geom = LineString([(q["x"], q["y"]) for q in pts]).buffer(w / 2)
+                    if any(obs[j].distance(geom) < GAP - 1e-6 for j in tree.query(geom.buffer(GAP))): continue
+                    best = (pts, 2 * amp * nb_use); break
+                if best: break
+            if not best: continue
+            pts, gain = best
+            s["pts"] = s["pts"][:k] + [{"x": round(q["x"], 4), "y": round(q["y"], 4)} for q in pts] + s["pts"][k + 2:]
+            done += gain
+            # keep the copper list in step for the next obstacle checks
+            cu["traces"] = [t for t in cu["traces"] if t["net"] != short] + [dict(t, net=short) for t in segs]
+            # indices after this segment shifted: recompute candidates next round
+            break
+        if done == before: break
+        if done < need - TOL: continue
     report.append((P_, round(abs(length(P_) - length(N_)), 3), "tuned" if abs(length(P_) - length(N_)) <= TOL + 0.02 else "STILL SKEWED"))
 json.dump(rt, open(RP, "w"))
 json.dump(cu, open(CP, "w"))

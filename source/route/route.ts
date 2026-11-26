@@ -275,7 +275,8 @@ const followM = ALL_L.map(() => new Uint8Array(NN)), followMarked: number[] = []
 // the lead's own keep-out, hard for its follower (per layer for traces, and for via sites)
 const leadKO = ALL_L.map(() => new Uint8Array(NN)), leadKOV = new Uint8Array(NN), koMarked: number[] = []
 let followOn = false
-const D_FOL = disk(+(process.env.FOLLOW_R ?? 0.6)), D_FOLT = disk(+(process.env.FOLLOW_T ?? 1.0)), DECOUPLE = 25
+let D_FOL = disk(+(process.env.FOLLOW_R ?? 0.6)), D_FOLT = disk(+(process.env.FOLLOW_T ?? 2.0)), DECOUPLE = 25
+const NECK_FREE = process.env.NECK_FREE === "1"
 function setFollow(lead: Net, f: Net, on: boolean) {
   if (!on) {
     for (const id of followMarked) followM[(id / NN) | 0][id % NN] = 0; followMarked.length = 0
@@ -371,8 +372,9 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
-      // coupling applies outside the BGA / fine-pitch zones; inside them the two wires escape their balls separately
-      if (followOn && ((!followM[l][cc] && !neck[cc]) || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
+      // the two wires may separate only near their own terminals (FOLLOW_T, to escape their balls); NECK_FREE=1 also frees
+      // the whole BGA / fine-pitch zones (that let pairs wander apart for millimetres under the SoC)
+      if (followOn && ((!followM[l][cc] && !(NECK_FREE && neck[cc])) || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
       // a wide trace also needs its extra half width clear of other nets: an obstacle in strict mode, priced otherwise
       const wideHit = extra !== null && !clearWide(l, cc)
       if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
@@ -391,7 +393,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
-      if (followOn && ((!followM[l2][c] && !neck[c]) || leadKOV[c] || leadKO[l2][c])) continue
+      if (followOn && ((!followM[l2][c] && !(NECK_FREE && neck[c])) || leadKOV[c] || leadKO[l2][c])) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
@@ -618,6 +620,54 @@ let failed: string[] = []
 let dirty = nets
 let best = Infinity, bestAt = 0
 let bestSnap: Map<Net, { path: any; vias: any }> | null = null
+// ---------------- polish: shorten the longer wire of a skewed pair on a finished routing ----------------
+// POLISH=<routes.json>: load the routing, then for every pair whose P/N skew exceeds its limit re-route the longer
+// member strictly (everything else fixed, conflict-free) inside a tight corridor along its partner; keep the new path
+// only if it is shorter. Writes OUT routes/copper like a normal run.
+if (process.env.POLISH) {
+  const rj = await Bun.file(process.env.POLISH).json()
+  for (const n of nets) {
+    const r = rj.nets[n.name]; if (!r) continue
+    const paths: Int32Array[] = []
+    for (const sg of r.segs) {
+      const l = L_OF[sg.layer]; if (l === undefined) continue
+      const cells: number[] = []
+      for (let k = 0; k < sg.pts.length; k++) {
+        const i1 = gx(sg.pts[k].x), j1 = gy(sg.pts[k].y)
+        if (k === 0) { cells.push(l * NN + j1 * NX + i1); continue }
+        let i = gx(sg.pts[k - 1].x), j = gy(sg.pts[k - 1].y)
+        while (i !== i1 || j !== j1) { i += Math.sign(i1 - i); j += Math.sign(j1 - j); cells.push(l * NN + j * NX + i) }
+      }
+      paths.push(Int32Array.from(cells))
+    }
+    n.path = paths; n.vias = r.vias.map((v: any) => gy(v.y) * NX + gx(v.x))
+  }
+  for (const n of nets) stampNet(n, 1)
+  const lenOf = (n: Net) => { const g = geometry(n); return g.segs.reduce((s: number, sg: any) => s + sg.pts.slice(1).reduce((t: number, q: any, k: number) => t + Math.hypot(q.x - sg.pts[k].x, q.y - sg.pts[k].y), 0), 0) + 0.6 * g.vias.length }
+  const LIM = (name: string) => (name.startsWith("USB") ? 0.25 : 0.13)
+  const FR = disk(+(process.env.POLISH_R ?? 0.45))
+  for (const lead of nets.filter((n) => n.partner)) {
+    const fol = lead.partner!
+    const lp = lenOf(lead), lf = lenOf(fol)
+    if (Math.abs(lp - lf) <= LIM(lead.name)) continue
+    const longer = lp > lf ? lead : fol, other = longer === lead ? fol : lead
+    const old = { path: longer.path, vias: longer.vias }, oldLen = Math.max(lp, lf)
+    stampNet(longer, -1)
+    // corridor along the other member (tighter than during negotiation), plus the longer member's own terminals
+    const saveFol = D_FOL.slice(); D_FOL.length = 0; D_FOL.push(...FR)
+    setFollow(other, longer, true); hard = true
+    const ok = routeNet0(longer)
+    hard = false; setFollow(other, longer, false); D_FOL.length = 0; D_FOL.push(...saveFol)
+    const newLen = ok ? lenOf(longer) : Infinity
+    if (ok && newLen < oldLen - 0.05) { stampNet(longer, 1); console.log(`polish ${longer.name}: ${oldLen.toFixed(2)} -> ${newLen.toFixed(2)} mm (partner ${Math.min(lp, lf).toFixed(2)})`) }
+    else { longer.path = old.path; longer.vias = old.vias; stampNet(longer, 1); console.log(`polish ${longer.name}: no shorter clean path (${oldLen.toFixed(2)} mm, partner ${Math.min(lp, lf).toFixed(2)})`) }
+  }
+  for (const n of nets) n.conflicts = conflictsOf(n)
+  const OUTP = process.env.OUT ?? "_polish"
+  await writeOut(dir + `/routes${OUTP}.json`, dir + `/copper${OUTP}.json`)
+  console.log("polish done; conflicts", nets.reduce((s, n) => s + (n.conflicts ?? 0), 0))
+  process.exit(0)
+}
 for (let it = 0; it < MAXIT; it++) {
   failed = []
   for (const n of dirty) { stampNet(n, -1); if (!routeNet(n)) failed.push(n.name); stampNet(n, 1) }
