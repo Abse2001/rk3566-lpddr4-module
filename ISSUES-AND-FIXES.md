@@ -27,6 +27,11 @@ Status legend: **fixed** (done and verified), **in progress**, **open**.
 | M1 | CM4 pins 89 (WL_nDisable), 91 (BT_nDisable), 97 (Camera_GPIO) wired to GPIO2_C2/C3/C6 in the 1.8 V VCCIO4 bank, while a CM4 carrier drives them at 3.3 V (over-voltage risk) | Copied from the SOQuartz mapping, which has on-module wireless | 89/91 not connected (no wireless on this module); 97 moved to a 3.3 V ball | fixed |
 | M2 | LED_nACT (21), LED_nPWR (95), nEXTRST (100) crossed the whole SoC from east-edge GPIO0 balls to J1 on the west | SOQuartz ball choice | Moved to free 3.3 V balls on the west edge next to J1 (device tree needs the new GPIO numbers; UART/I2C/etc. unchanged) | fixed |
 
+## Scope decision (user)
+
+CAM0 (CM4 pins 128-142) and DSI0 (157-171) are not connected: six fewer differential pairs through the crowded
+escape south of the SoC. Kept: HDMI0, USB 2.0 OTG, PCIe x1, DSI1 (4 lanes), CAM1 (2 lanes, CSI D2/D3 + CLK1).
+
 ## CM4 carrier compatibility (audit against the CM4 datasheet and the CM4 IO board design)
 
 | # | Issue | Root cause | Fix | Status |
@@ -89,6 +94,8 @@ Result after R9-R12: run 44 reached 4 conflict cells (one MIPI pair at exactly t
 | F1 | U1 B22/V2 pads 0.048 mm from GND vias | The supplied power fanout predates the corrected ball map; fixed.py now drops any fanout whose via does not clear another net's ball, and fanout_bga.py gives that ball a via-in-pad | fixed |
 | F2 | RK809 thermal-pad vias inside the VDD_NPU island | planes.py now treats footprint vias as foreign copper | fixed |
 | F3 | VDD_LOGIC touched VDD_GPU at one spot | Each island keeps SPLIT (0.25 mm) from the islands already made | fixed |
+
+| R15 | Differential pairs were not coupled (P/N up to 31 mm apart in length) even at 0 conflicts | The follower was only attracted to the lead | Follower confined to 0.6 mm of the lead's path (outside BGA/fine-pitch zones), never inside the lead's keep-out; a follower that cannot fit is "decoupled" (penalised, lead gets history cost); the lead pays for its follower's room | in progress |
 
 ## Other solvers tried
 

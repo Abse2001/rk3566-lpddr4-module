@@ -762,9 +762,9 @@
   "cm4": "CAM1_C_N"
  },
  "128": {
-  "net": "MIPI_CSI_RX_D0N",
-  "ball": "AR18",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_D0_N"
  },
  "129": {
@@ -774,9 +774,9 @@
   "cm4": "CAM1_C_P"
  },
  "130": {
-  "net": "MIPI_CSI_RX_D0P",
-  "ball": "AP18",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_D0_P"
  },
  "131": {
@@ -798,9 +798,9 @@
   "cm4": "CAM1_D2_N"
  },
  "134": {
-  "net": "MIPI_CSI_RX_D1N",
-  "ball": "AP17",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_D1_N"
  },
  "135": {
@@ -810,9 +810,9 @@
   "cm4": "CAM1_D2_P"
  },
  "136": {
-  "net": "MIPI_CSI_RX_D1P",
-  "ball": "AR17",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_D1_P"
  },
  "137": {
@@ -834,9 +834,9 @@
   "cm4": "CAM1_D3_N"
  },
  "140": {
-  "net": "MIPI_CSI_RX_CLK0N",
-  "ball": "1U9",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_C_N"
  },
  "141": {
@@ -846,9 +846,9 @@
   "cm4": "CAM1_D3_P"
  },
  "142": {
-  "net": "MIPI_CSI_RX_CLK0P",
-  "ball": "1V9",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "CAM0_C_P"
  },
  "143": {
@@ -936,9 +936,9 @@
   "cm4": "GND"
  },
  "157": {
-  "net": "MIPI_DSI_TX0_D0N",
-  "ball": "AR30",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_D0_N"
  },
  "158": {
@@ -948,9 +948,9 @@
   "cm4": "HDMI1_TX0_P"
  },
  "159": {
-  "net": "MIPI_DSI_TX0_D0P",
-  "ball": "AP30",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_D0_P"
  },
  "160": {
@@ -972,9 +972,9 @@
   "cm4": "GND"
  },
  "163": {
-  "net": "MIPI_DSI_TX0_D1N",
-  "ball": "AP29",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_D1_N"
  },
  "164": {
@@ -984,9 +984,9 @@
   "cm4": "HDMI1_CLK_P"
  },
  "165": {
-  "net": "MIPI_DSI_TX0_D1P",
-  "ball": "AR29",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_D1_P"
  },
  "166": {
@@ -1008,9 +1008,9 @@
   "cm4": "GND"
  },
  "169": {
-  "net": "MIPI_DSI_TX0_CLKN",
-  "ball": "1V15",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_C_N"
  },
  "170": {
@@ -1020,9 +1020,9 @@
   "cm4": "HDMI0_TX2_P"
  },
  "171": {
-  "net": "MIPI_DSI_TX0_CLKP",
-  "ball": "1V16",
-  "note": "",
+  "net": null,
+  "ball": null,
+  "note": "not connected on this module",
   "cm4": "DSI0_C_P"
  },
  "172": {

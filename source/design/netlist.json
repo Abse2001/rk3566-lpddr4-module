@@ -397,21 +397,9 @@
 "AP14": "MIPI_CSI_RX_D3N",
 "AR14": "MIPI_CSI_RX_D3P",
 "1U8": "MIPI_CSI_RX_CLK1N",
-"AR18": "MIPI_CSI_RX_D0N",
 "1V8": "MIPI_CSI_RX_CLK1P",
-"AP18": "MIPI_CSI_RX_D0P",
-"AP17": "MIPI_CSI_RX_D1N",
-"AR17": "MIPI_CSI_RX_D1P",
-"1U9": "MIPI_CSI_RX_CLK0N",
-"1V9": "MIPI_CSI_RX_CLK0P",
 "1V5": "HDMI_CEC",
-"AR30": "MIPI_DSI_TX0_D0N",
-"AP30": "MIPI_DSI_TX0_D0P",
-"AP29": "MIPI_DSI_TX0_D1N",
-"AR29": "MIPI_DSI_TX0_D1P",
-"1V15": "MIPI_DSI_TX0_CLKN",
 "AP36": "HDMI_TX_D2P",
-"1V16": "MIPI_DSI_TX0_CLKP",
 "AR36": "HDMI_TX_D2N",
 "AR24": "MIPI_DSI_TX1_D0N",
 "AR35": "HDMI_TX_D1P",
@@ -534,10 +522,22 @@
 "1T6": null,
 "1D17": null,
 "1C17": null,
+"AP18": null,
+"AR18": null,
+"AR17": null,
+"AP17": null,
+"1V9": null,
+"1U9": null,
+"AP30": null,
+"AR30": null,
+"AR29": null,
+"AP29": null,
 "AP27": null,
 "AR27": null,
 "AR26": null,
 "AP26": null,
+"1V16": null,
+"1V15": null,
 "J37": null,
 "J38": null,
 "K38": null,
@@ -3067,21 +3067,21 @@
 "25": "GND",
 "26": "GND",
 "27": "MIPI_CSI_RX_CLK1N",
-"28": "MIPI_CSI_RX_D0N",
+"28": null,
 "29": "MIPI_CSI_RX_CLK1P",
-"30": "MIPI_CSI_RX_D0P",
+"30": null,
 "31": "GND",
 "32": "GND",
 "33": null,
-"34": "MIPI_CSI_RX_D1N",
+"34": null,
 "35": null,
-"36": "MIPI_CSI_RX_D1P",
+"36": null,
 "37": "GND",
 "38": "GND",
 "39": null,
-"40": "MIPI_CSI_RX_CLK0N",
+"40": null,
 "41": null,
-"42": "MIPI_CSI_RX_CLK0P",
+"42": null,
 "43": null,
 "44": "GND",
 "45": null,
@@ -3096,21 +3096,21 @@
 "54": null,
 "55": "GND",
 "56": "GND",
-"57": "MIPI_DSI_TX0_D0N",
+"57": null,
 "58": null,
-"59": "MIPI_DSI_TX0_D0P",
+"59": null,
 "60": null,
 "61": "GND",
 "62": "GND",
-"63": "MIPI_DSI_TX0_D1N",
+"63": null,
 "64": null,
-"65": "MIPI_DSI_TX0_D1P",
+"65": null,
 "66": null,
 "67": "GND",
 "68": "GND",
-"69": "MIPI_DSI_TX0_CLKN",
+"69": null,
 "70": "HDMI_TX_D2P",
-"71": "MIPI_DSI_TX0_CLKP",
+"71": null,
 "72": "HDMI_TX_D2N",
 "73": "GND",
 "74": "GND",
@@ -4429,66 +4429,18 @@
 "U1.1U8",
 "J2.27"
 ],
-"MIPI_CSI_RX_D0N": [
-"U1.AR18",
-"J2.28"
-],
 "MIPI_CSI_RX_CLK1P": [
 "U1.1V8",
 "J2.29"
-],
-"MIPI_CSI_RX_D0P": [
-"U1.AP18",
-"J2.30"
-],
-"MIPI_CSI_RX_D1N": [
-"U1.AP17",
-"J2.34"
-],
-"MIPI_CSI_RX_D1P": [
-"U1.AR17",
-"J2.36"
-],
-"MIPI_CSI_RX_CLK0N": [
-"U1.1U9",
-"J2.40"
-],
-"MIPI_CSI_RX_CLK0P": [
-"U1.1V9",
-"J2.42"
 ],
 "HDMI_CEC": [
 "U1.1V5",
 "R45.1",
 "J2.51"
 ],
-"MIPI_DSI_TX0_D0N": [
-"U1.AR30",
-"J2.57"
-],
-"MIPI_DSI_TX0_D0P": [
-"U1.AP30",
-"J2.59"
-],
-"MIPI_DSI_TX0_D1N": [
-"U1.AP29",
-"J2.63"
-],
-"MIPI_DSI_TX0_D1P": [
-"U1.AR29",
-"J2.65"
-],
-"MIPI_DSI_TX0_CLKN": [
-"U1.1V15",
-"J2.69"
-],
 "HDMI_TX_D2P": [
 "U1.AP36",
 "J2.70"
-],
-"MIPI_DSI_TX0_CLKP": [
-"U1.1V16",
-"J2.71"
 ],
 "HDMI_TX_D2N": [
 "U1.AR36",
