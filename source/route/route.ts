@@ -149,16 +149,17 @@ if (!process.env.PLANES_ONLY && (await Bun.file(dir + "/corridors.json").exists(
   // INNER2_OPEN: between the SoC and the RK809 the islands keep only their feed corridors (widened by KEEP on each
   // side, so every feed stays >= CORR + 2 KEEP wide); slow signals may use the rest of inner2 there
   if (process.env.INNER2_OPEN) {
-    const KEEP = Math.round(+(process.env.KEEP ?? 0.3) / P), SOUTH = [7.5, -35.0, 23.5, -26.5]
+    // the widened feed corridors apply on the whole board: wherever inner2 takes slow traces (south of the SoC and
+    // everywhere outside the island boxes) an island keeps a full-width connection to its regulator
+    const KEEP = Math.round(+(process.env.KEEP ?? 0.3) / P)
     let n = 0
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
-      const x = wx(i), y = wy(j)
-      if (x < SOUTH[0] || x > SOUTH[2] || y < SOUTH[1] || y > SOUTH[3]) continue
+      if (neck[j * NX + i]) continue
       let hit = false
       for (let dj = -KEEP; dj <= KEEP && !hit; dj++) for (let di = -KEEP; di <= KEEP; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY && corr[jj * NX + ii] >= 0) { hit = true; break } }
       if (hit) { const c = j * NX + i; blockT[3][c] += 1000; blockTW[3][c] += 1000; blockTB[3][c] += 1000; n++ }
     }
-    console.log("inner2 open south of the SoC; feed corridors kept:", n, "cells")
+    console.log("inner2 open to slow traces outside the islands; widened feed corridors:", n, "cells")
   }
 }
 const objsByNet = new Map<string, Obj[]>()
