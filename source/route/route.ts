@@ -272,16 +272,27 @@ let attractOn = false
 // vias on every layer) or within FOLLOW_T of its own terminals. A follower that cannot fit there routes freely but
 // counts as DECOUPLE conflicts, and the lead's path gets history cost, until the pair fits together.
 const followM = ALL_L.map(() => new Uint8Array(NN)), followMarked: number[] = []
+// the lead's own keep-out, hard for its follower (per layer for traces, and for via sites)
+const leadKO = ALL_L.map(() => new Uint8Array(NN)), leadKOV = new Uint8Array(NN), koMarked: number[] = []
 let followOn = false
 const D_FOL = disk(+(process.env.FOLLOW_R ?? 0.6)), D_FOLT = disk(+(process.env.FOLLOW_T ?? 1.0)), DECOUPLE = 25
 function setFollow(lead: Net, f: Net, on: boolean) {
-  if (!on) { for (const id of followMarked) followM[(id / NN) | 0][id % NN] = 0; followMarked.length = 0; followOn = false; return }
+  if (!on) {
+    for (const id of followMarked) followM[(id / NN) | 0][id % NN] = 0; followMarked.length = 0
+    for (const id of koMarked) { if (id < 0) leadKOV[-id - 1] = 0; else leadKO[(id / NN) | 0][id % NN] = 0 } koMarked.length = 0
+    followOn = false; return
+  }
   if (!lead.path) { followOn = false; return }
   const mark = (l: number, c: number, offs: number[]) => { const i = c % NX, j = (c / NX) | 0
     for (let k = 0; k < offs.length; k += 2) { const ii = i + offs[k], jj = j + offs[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) { const cc = jj * NX + ii; if (!followM[l][cc]) { followM[l][cc] = 1; followMarked.push(l * NN + cc) } } } }
   for (const p of lead.path) for (const id of p) mark((id / NN) | 0, id % NN, D_FOL)
   for (const c of lead.vias ?? []) for (let l = 0; l < NL; l++) mark(l, c, D_FOL)
   for (const t of [...f.terms, ...f.drops]) for (const id of t.nodes) for (let l = 0; l < NL; l++) mark(l, id % NN, D_FOLT)
+  const ko = (l: number, c: number, offs: number[]) => { const i = c % NX, j = (c / NX) | 0
+    for (let k = 0; k < offs.length; k += 2) { const ii = i + offs[k], jj = j + offs[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) { const cc = jj * NX + ii
+      if (l < 0) { if (!leadKOV[cc]) { leadKOV[cc] = 1; koMarked.push(-cc - 1) } } else if (!leadKO[l][cc]) { leadKO[l][cc] = 1; koMarked.push(l * NN + cc) } } } }
+  for (const p of lead.path) for (const id of p) { const l = (id / NN) | 0, c = id % NN; ko(l, c, D_TT); ko(-1, c, D_TV) }
+  for (const c of lead.vias ?? []) { for (let l = 0; l < NL; l++) ko(l, c, D_TV); ko(-1, c, D_VV) }
   followOn = true
 }
 function setAttract(lead: Net | undefined, on: boolean) {
@@ -360,7 +371,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       const cc = jj * NX + ii, nid = l * NN + cc
       if ((neck[cc] ? blockT : bT)[l][cc] && isGoal[nid] !== goalStamp) continue
       if (l === 3 && !corrOk(cc)) continue
-      if (followOn && !followM[l][cc] && isGoal[nid] !== goalStamp) continue
+      if (followOn && (!followM[l][cc] || leadKO[l][cc]) && isGoal[nid] !== goalStamp) continue
       // a wide trace also needs its extra half width clear of other nets: an obstacle in strict mode, priced otherwise
       const wideHit = extra !== null && !clearWide(l, cc)
       if (hard && (occT[l][cc] || wideHit) && isGoal[nid] !== goalStamp) continue
@@ -379,7 +390,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
-      if (followOn && !followM[l2][c]) continue
+      if (followOn && (!followM[l2][c] || leadKOV[c] || leadKO[l2][c])) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
