@@ -45,30 +45,40 @@ def segs(t):
         if a["route_type"] == "wire" and b["route_type"] == "wire" and a["layer"] == b["layer"]:
             out.append((a["layer"], a["width"], LineString([(a["x"], a["y"]), (b["x"], b["y"])])))
     return out
-def geoms_except(k):
-    """other DDR traces' copper per layer"""
-    out = {l: [] for l in LAY}
-    for j, t in enumerate(traces):
-        if j == k: continue
-        for l, w, ls in segs(t):
-            if ls.length > 0: out[l].append((ls.buffer(w / 2, 8), net_of(t)))
-    return out
+# spatial indexes: via holes (static), and per layer all copper (static + DDR traces, rebuilt when a trace changes)
+HOLES_G = [Point(x, y).buffer(h / 2, 12) for x, y, d, h, vn in vias]
+HOLE_TREE = STRtree(HOLES_G)
+ddr_cu = {}  # k -> [(layer, geom)]
+def ddr_geoms(k):
+    return [(l, ls.buffer(w / 2, 8)) for l, w, ls in segs(traces[k]) if ls.length > 0]
+for k in range(len(traces)): ddr_cu[k] = ddr_geoms(k)
+TREES = {}
+def rebuild():
+    for l in LAY:
+        items = [(g, n, None) for g, n in stat[l]] + [(g, net_of(traces[k]), k) for k in ddr_cu for ll, g in ddr_cu[k] if ll == l]
+        TREES[l] = (STRtree([i[0] for i in items]), items)
+rebuild()
+def geoms_except(k): return k
 def problems(k, others=None):
     """violations of trace k: (kind, layer, need, via or None, segment index)"""
     t = traces[k]; n = net_of(t); out = []
-    others = others if others is not None else geoms_except(k)
     r = t["route"]
     for i, (a, b) in enumerate(zip(r, r[1:])):
         if not (a["route_type"] == "wire" and b["route_type"] == "wire" and a["layer"] == b["layer"]): continue
         ls = LineString([(a["x"], a["y"]), (b["x"], b["y"])])
         if ls.length == 0: continue
         g = ls.buffer(a["width"] / 2, 8); l = a["layer"]
-        for x, y, d, h, vn in vias:
+        for j in HOLE_TREE.query(g.buffer(HOLE)):
+            x, y, d, h, vn = vias[j]
             if vn == n: continue
-            dd = Point(x, y).buffer(h / 2, 12).distance(g)
+            dd = HOLES_G[j].distance(g)
             if dd < HOLE - EPS: out.append(("hole", l, HOLE - dd, (x, y), i))
-        for og, on in stat[l] + others[l]:
-            if on != n and og.distance(g) < GAP - EPS: out.append(("gap", l, GAP - og.distance(g), None, i))
+        tree, items = TREES[l]
+        for j in tree.query(g.buffer(GAP)):
+            og, on, owner = items[j]
+            if owner == k or on == n: continue
+            dd = og.distance(g)
+            if dd < GAP - EPS: out.append(("gap", l, GAP - dd, None, i))
     return out
 def neck(t, i, v, reach=0.45):
     """split segment i so the part within reach of v is its own segment, and narrow that part to WMIN"""
@@ -190,6 +200,7 @@ for pas in range(int(os.environ.get("PASSES", 3))):
                 if ca < c0 - 1e-4 and (best is None or ca < best[0]): best = (ca, json.dumps(t["route"]))
             if best: t["route"] = json.loads(best[1]); fixed_n += 1
             else: t["route"] = json.loads(before); skip.add(v)
+        if ddr_geoms(k) != ddr_cu[k]: ddr_cu[k] = ddr_geoms(k); rebuild()
     left = [(net_of(t), p) for k, t in enumerate(traces) for p in problems(k) if p[0] == "hole"]
     print(f"pass {pas}: {fixed_n} changes, {len({(n, p[3]) for n, p in left})} trace/via spots left", flush=True)
     if not left: break
