@@ -32,8 +32,18 @@ def emit(layer, net, geom):
 # ---------------- ground planes ----------------
 foreign = unary_union([via_disc(v, CLR) for v in cu["vias"] if v["net"] != "GND"])
 gnd = outline.difference(foreign)
+gnd_vias = [Point(v["x"], v["y"]) for v in cu["vias"] if v["net"] == "GND"]
+GAP_T = 0.1 + 0.012
 for layer in ("inner1", "inner4"):
-    emit(layer, "GND", gnd)
+    # slow signals may cross the ground layers where no fast signal runs next to them: cut them out with clearance,
+    # and keep only plane pieces that a ground via ties to the rest of the ground (no floating copper)
+    cut = [LineString([(a["x"], a["y"]), (b["x"], b["y"])]).buffer(t["w"] / 2 + GAP_T, 8)
+           for t in cu["traces"] if t["layer"] == layer and t["net"] != "GND" for a, b in zip(t["pts"], t["pts"][1:])]
+    g = gnd.difference(unary_union(cut)) if cut else gnd
+    parts = list(g.geoms) if isinstance(g, MultiPolygon) else [g]
+    kept = [q for q in parts if any(q.contains(v) for v in gnd_vias)]
+    if len(kept) != len(parts): print(layer, "dropped", len(parts) - len(kept), "unconnected ground pieces", round(sum(q.area for q in parts if q not in kept), 2), "mm2")
+    emit(layer, "GND", unary_union(kept))
 
 # ---------------- inner2 islands ----------------
 P = 0.05

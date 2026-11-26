@@ -18,7 +18,11 @@ if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await B
 // ---------------- rules ----------------
 const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
 // inner2 is the power plane layer; small supply rails may also run there as traces (the plane islands avoid them)
-const LAYERS = ["top", "inner3", "bottom", "inner2"] as const, NL = 4
+// GND_SIG: slow signals may also cross the ground layers (inner1 under top, inner4 above bottom) where no fast signal
+// runs on the adjacent outer layer, so every fast trace keeps an unbroken reference plane
+const GND_SIG = !!process.env.GND_SIG
+const LAYERS = ["top", "inner3", "bottom", "inner2", "inner1", "inner4"] as const, NL = GND_SIG ? 6 : 4
+const ALL_L = Array.from({ length: NL }, (_, i) => i)
 const B = padsIn.board, X0 = B.x0, Y0 = B.y0
 const NX = Math.round((B.x1 - B.x0) / P) + 1, NY = Math.round((B.y1 - B.y0) / P) + 1, NN = NX * NY
 const gx = (x: number) => Math.round((x - X0) / P), gy = (y: number) => Math.round((y - Y0) / P)
@@ -59,22 +63,22 @@ function cellsWithin(s: Shape, reach: number): number[] {
 // trace centre of another net may not go, its "via" stamp cells where another net's via centre may not go.
 type Obj = { net: string | null; layers: number[]; shape: Shape; t?: Int32Array; tw?: Int32Array; tb?: Int32Array; v?: Int32Array; pad?: any }
 const objs: Obj[] = []
-const L_OF: Record<string, number> = { top: 0, inner3: 1, bottom: 2, inner2: 3 }
+const L_OF: Record<string, number> = GND_SIG ? { top: 0, inner3: 1, bottom: 2, inner2: 3, inner1: 4, inner4: 5 } : { top: 0, inner3: 1, bottom: 2, inner2: 3 }
 for (const p of padsIn.pads) {
   const l = L_OF[p.layer]
   const shape: Shape = p.shape === "circle" ? { kind: "circle", x: p.x, y: p.y, r: p.w / 2 } : { kind: "rect", x: p.x, y: p.y, w: p.w, h: p.h }
   objs.push({ net: p.net, layers: [l], shape, pad: p })
 }
-for (const v of padsIn.footprintVias) objs.push({ net: "GND", layers: [0, 1, 2, 3], shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
+for (const v of padsIn.footprintVias) objs.push({ net: "GND", layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
 for (const t of fixed.traces) {
   const l = L_OF[t.layer]
   if (l === undefined) continue // plane-layer stubs of the fanout
   for (let i = 1; i < t.pts.length; i++)
     objs.push({ net: t.net, layers: [l], shape: { kind: "seg", x: t.pts[i - 1].x, y: t.pts[i - 1].y, x2: t.pts[i].x, y2: t.pts[i].y, r: t.w / 2 } })
 }
-for (const v of fixed.vias) objs.push({ net: v.net, layers: [0, 1, 2, 3], shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
+for (const v of fixed.vias) objs.push({ net: v.net, layers: ALL_L, shape: { kind: "circle", x: v.x, y: v.y, r: v.d / 2 } })
 
-const blockT = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockTW = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockTB = [0, 1, 2, 3].map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
+const blockT = ALL_L.map(() => new Uint16Array(NN)), blockTW = ALL_L.map(() => new Uint16Array(NN)), blockTB = ALL_L.map(() => new Uint16Array(NN)), blockV = new Uint16Array(NN)
 const R_T = GAP + W_SIG / 2, R_TW = GAP + W_PWR / 2, R_TB = GAP + W_BIG / 2, R_V = GAP + VIA_D / 2
 for (const o of objs) {
   o.t = Int32Array.from(cellsWithin(o.shape, R_T)); o.tw = Int32Array.from(cellsWithin(o.shape, R_TW)); o.tb = Int32Array.from(cellsWithin(o.shape, R_TB)); o.v = Int32Array.from(cellsWithin(o.shape, R_V))
@@ -110,6 +114,20 @@ const neck = new Uint8Array(NN)
     const x = wx(i), y = wy(j)
     if (ISLANDS.some((b, k) => inBox(x, y, b) && !(k === 1 && process.env.INNER2_OPEN)) && !inBox(x, y, DDR_CORNER)) { blockT[3][j * NX + i] += 1000; blockTW[3][j * NX + i] += 1000; blockTB[3][j * NX + i] += 1000 }
   }
+}
+// ground layers (GND_SIG): kept solid under the BGA / fine-pitch fields and under the routed DDR copper (fast: the
+// DDR traces on top reference inner1, those on the bottom inner4)
+if (GND_SIG) {
+  const blk = (l: number, c: number) => { blockT[l][c] += 1000; blockTW[l][c] += 1000; blockTB[l][c] += 1000 }
+  for (let c = 0; c < NN; c++) if (neck[c]) { blk(4, c); blk(5, c) }
+  const RR = W_SIG / 2 + 3 * 0.0764 + W_SIG / 2 + GAP
+  let n = 0
+  for (const t of fixed.traces) {
+    if (!t.net.startsWith("DDR_") || (t.layer !== "top" && t.layer !== "bottom")) continue
+    const l = t.layer === "top" ? 4 : 5
+    for (let i = 1; i < t.pts.length; i++) for (const c of cellsWithin({ kind: "seg", x: t.pts[i - 1].x, y: t.pts[i - 1].y, x2: t.pts[i].x, y2: t.pts[i].y, r: t.w / 2 }, RR)) { blk(l, c); n++ }
+  }
+  console.log("ground layers open to slow signals; kept solid under BGAs and", n, "DDR reference cells")
 }
 // inner2 corridors of the supply islands (planes.py, from a plane-drops-only run): another net's via there would
 // cut the island off from its regulator, so only the rail's own vias may go there (outside the BGA fields)
@@ -148,7 +166,7 @@ function lift(net: string, s: 1 | -1) {
 // ---------------- nets and terminals ----------------
 // A terminal is a set of graph nodes (layer * NN + cell): a pad's cells on its layer, or a via's cell on all layers.
 type Term = { nodes: Int32Array; x: number; y: number; label: string }
-type Net = { name: string; w: number; plane: boolean; inner2?: boolean; partner?: Net; follows?: Net; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
+type Net = { name: string; w: number; plane: boolean; inner2?: boolean; fast?: boolean; gnd?: boolean; partner?: Net; follows?: Net; terms: Term[]; drops: Term[]; path?: Int32Array[]; vias?: number[]; conflicts?: number; order: number }
 const padTerm = (p: any): Term => {
   const l = L_OF[p.layer]
   const shape: Shape = p.shape === "circle" ? { kind: "circle", x: p.x, y: p.y, r: p.w / 2 } : { kind: "rect", x: p.x, y: p.y, w: p.w, h: p.h }
@@ -156,7 +174,7 @@ const padTerm = (p: any): Term => {
   if (!cells.length) cells = [gy(p.y) * NX + gx(p.x)]
   return { nodes: Int32Array.from(cells.map((c) => l * NN + c)), x: p.x, y: p.y, label: `${p.ref}.${p.names[0]}` }
 }
-const viaTerm = (v: any): Term => { const c = gy(v.y) * NX + gx(v.x); return { nodes: Int32Array.from([0, 1, 2, 3].map((l) => l * NN + c)), x: v.x, y: v.y, label: "via" } }
+const viaTerm = (v: any): Term => { const c = gy(v.y) * NX + gx(v.x); return { nodes: Int32Array.from(ALL_L.map((l) => l * NN + c)), x: v.x, y: v.y, label: "via" } }
 // fixed copper of a net, as connected groups touching pads: a pad covered by the net's fixed copper is done already
 const fixedNets = new Set<string>([...fixed.traces.map((t: any) => t.net), ...fixed.vias.map((v: any) => v.net)])
 const padsByNet = new Map<string, any[]>()
@@ -187,7 +205,8 @@ for (const [name, ps] of padsByNet) {
   // inner2 (L3) sits next to the L2 ground plane: supply traces and slow signals may use it where the supply
   // islands do not; high-speed nets (HDMI, MIPI, PCIe, USB, eMMC, SD) stay on top / inner3 / bottom
   const fast = /^(HDMI_TX_[CD]|MIPI_|PCIE20_|USB_OTG0_D|EMMC_|CM4_SD_)/.test(name)
-  if (terms.length >= 2) nets.push({ name, w: widthOf(name), plane: false, inner2: !fast, terms, drops: [], order: rand() })
+  // ground-layer crossings: slow nets up to small-rail width only (wide supply traces would cut the plane too much)
+  if (terms.length >= 2) nets.push({ name, w: widthOf(name), plane: false, inner2: !fast, fast, gnd: GND_SIG && !fast && widthOf(name) <= W_PWR, terms, drops: [], order: rand() })
 }
 // differential pairs: the negative net follows the positive one at the pair spacing
 {
@@ -200,11 +219,14 @@ for (const [name, ps] of padsByNet) {
   }
 }
 // ---------------- occupancy (other nets' routed copper) ----------------
-const occT = [0, 1, 2, 3].map(() => new Uint16Array(NN)), occV = new Uint16Array(NN)
-const histT = [0, 1, 2, 3].map(() => new Float32Array(NN)), histV = new Float32Array(NN)
+const occT = ALL_L.map(() => new Uint16Array(NN)), occV = new Uint16Array(NN)
+const histT = ALL_L.map(() => new Float32Array(NN)), histV = new Float32Array(NN)
 const disk = (r: number) => { const o: number[] = []; const k = Math.ceil(r / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) if (Math.hypot(di, dj) * P < r - EPS) o.push(di, dj); return o }
 const D_TT = disk(W_SIG + GAP + 0.0), D_TTW = disk(W_PWR / 2 + W_SIG / 2 + GAP), D_TTB = disk(W_BIG / 2 + W_SIG / 2 + GAP), D_BTV = disk(W_BIG / 2 + GAP + VIA_D / 2), D_TV = disk(W_SIG / 2 + GAP + VIA_D / 2), D_VV = disk(VIA_D + GAP)
 const D_WTV = disk(W_PWR / 2 + GAP + VIA_D / 2)
+// reference keep-out: a slow trace on the ground layer stays this far (centre to centre) from a fast trace above/below
+// it: the fast trace's half width + 3x the 0.076 mm prepreg + the slow trace's half width + clearance
+const R_REF = W_SIG / 2 + 3 * 0.0764 + W_SIG / 2 + GAP, D_REF = disk(R_REF)
 const D_EXW = disk((W_PWR - W_SIG) / 2 + P / 2), D_EXB = disk((W_BIG - W_SIG) / 2 + P / 2)
 function stampDisk(arr: Uint16Array, c: number, offs: number[], s: number) {
   const i = c % NX, j = (c / NX) | 0
@@ -213,9 +235,11 @@ function stampDisk(arr: Uint16Array, c: number, offs: number[], s: number) {
 function stampNet(n: Net, s: 1 | -1) {
   if (!n.path) return
   const DT = n.w > W_PWR ? D_TTB : n.w > W_SIG ? D_TTW : D_TT, DTV = n.w > W_PWR ? D_BTV : n.w > W_SIG ? D_WTV : D_TV
+  const ref = GND_SIG && n.fast
   for (const p of n.path) for (let k = 0; k < p.length; k++) {
     const id = p[k], l = (id / NN) | 0, c = id - l * NN
     stampDisk(occT[l], c, DT, s); stampDisk(occV, c, DTV, s)
+    if (ref && (l === 0 || l === 2)) stampDisk(occT[l === 0 ? 4 : 5], c, D_REF, s)
   }
   for (const c of n.vias!) { for (let l = 0; l < NL; l++) stampDisk(occT[l], c, D_TV, s); stampDisk(occV, c, D_VV, s) }
 }
@@ -227,7 +251,7 @@ const push = (k: number, v: number) => { heapK.push(k); heapV.push(v); let i = h
 let lastKey = 0
 const pop = () => { lastKey = heapK[0]; const v = heapV[0], lk = heapK.pop()!, lv = heapV.pop()!; if (heapK.length) { heapK[0] = lk; heapV[0] = lv; let i = 0; for (;;) { const a = 2 * i + 1, b = a + 1; let m = i; if (a < heapK.length && heapK[a] < heapK[m]) m = a; if (b < heapK.length && heapK[b] < heapK[m]) m = b; if (m === i) break;[heapK[m], heapK[i]] = [heapK[i], heapK[m]];[heapV[m], heapV[i]] = [heapV[i], heapV[m]]; i = m } } return v }
 // pair attraction: cells at the pair spacing beside the positive net's copper (same layer) cost less for its partner
-const PAIR_PITCH = 0.28, attract = [0, 1, 2, 3].map(() => new Uint8Array(NN)), attractV = new Uint8Array(NN)
+const PAIR_PITCH = 0.28, attract = ALL_L.map(() => new Uint8Array(NN)), attractV = new Uint8Array(NN)
 const ring = (r0: number, r1: number) => { const o: number[] = []; const k = Math.ceil(r1 / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) { const d = Math.hypot(di, dj) * P; if (d >= r0 && d <= r1) o.push(di, dj) } return o }
 const RING_T = ring(PAIR_PITCH - 0.06, PAIR_PITCH + 0.06), RING_V = ring(0.36, 0.55)
 let attractOn = false
@@ -241,6 +265,7 @@ function setAttract(lead: Net | undefined, on: boolean) {
   attractOn = on
 }
 const VIA_COST = 10, DIAG = Math.SQRT2, HW = +(process.env.HW ?? 1.3) // heuristic weight: > 1 trades a little path length for a much smaller search
+const GND_COST = +(process.env.GND_COST ?? 4) // a ground-layer crossing costs this much more than a signal layer
 let pres = 0.5, hard = false // hard: other nets' copper is an obstacle, not a price (endgame)
 let local = false // endgame: priced fallback searches start near the net too (then widen to the whole board)
 const isGoal = new Uint32Array(NL * NN)
@@ -290,7 +315,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     const corrOk = (cc: number) => corr[cc] < 0 || corrName[corr[cc]] === n.name
     if (goalVia && !blockV[c] && !occV[c] && corrOk(c) && (!hard || !occT[l][c])) { const out: number[] = []; for (let k = id; k !== -1; k = from[k]) out.push(k); return out.reverse() }
     const i = c % NX, j = (c / NX) | 0
-    if (l === 3 && !n.inner2) continue
+    if ((l === 3 && !n.inner2) || (l >= 4 && !n.gnd)) continue
     for (let d = 0; d < 8; d++) {
       const di = d < 4 ? [1, -1, 0, 0][d] : [1, 1, -1, -1][d - 4], dj = d < 4 ? [0, 0, 1, -1][d] : [1, -1, 1, -1][d - 4]
       const ii = i + di, jj = j + dj
@@ -301,11 +326,11 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       if (hard && (occT[l][cc] || !clearWide(l, cc)) && isGoal[nid] !== goalStamp) continue
       // the pair attraction discounts only the distance, never the price of another net's space
       const cong = (1 + histT[l][cc]) * ((attractOn && attract[l][cc] ? 0.25 : 1) + pres * occT[l][cc]) + (wide && occT[l][cc] ? 2 : 0)
-      const ng = g + (d < 4 ? 1 : DIAG) * cong
+      const ng = g + (d < 4 ? 1 : DIAG) * cong * (l >= 4 ? GND_COST : 1)
       if (seen[nid] !== stamp || ng < gCost[nid]) { seen[nid] = stamp; gCost[nid] = ng; from[nid] = id; push(ng + h(cc), nid) }
     }
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
-      if (l2 === l || (l2 === 3 && !n.inner2)) continue
+      if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
