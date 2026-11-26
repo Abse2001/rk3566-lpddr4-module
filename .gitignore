@@ -9,3 +9,4 @@ source/design/pads.json
 source/route/rk_escape.input.json
 source/route/rk_escape.json
 source/route/p9*.json
+.tscircuit-build-history
