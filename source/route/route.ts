@@ -242,6 +242,7 @@ function setAttract(lead: Net | undefined, on: boolean) {
 }
 const VIA_COST = 10, DIAG = Math.SQRT2, HW = +(process.env.HW ?? 1.3) // heuristic weight: > 1 trades a little path length for a much smaller search
 let pres = 0.5, hard = false // hard: other nets' copper is an obstacle, not a price (endgame)
+let local = false // endgame: priced fallback searches start near the net too (then widen to the whole board)
 const isGoal = new Uint32Array(NL * NN)
 let goalStamp = 1
 /** cheapest path from any source node to any goal node (or, with goalVia, to any cell that can take a via) */
@@ -256,7 +257,7 @@ function search(n: Net, sources: number[], goals: Int32Array | null, gx0: number
   if (goals) for (const g of goals) add(g); else add(gy(gy0) * NX + gx(gx0))
   const M = Math.round(+(process.env.BOX ?? 3) / P)
   // priced (negotiation) searches keep the whole board, so a net can still take a long detour around congestion
-  for (const m of hard ? [M, 2 * M] : [1e6]) {
+  for (const m of hard ? [M, 2 * M] : local ? [M, 2 * M, 1e6] : [1e6]) {
     bx0 = Math.max(0, i0 - m); bx1 = Math.min(NX - 1, i1 + m); by0 = Math.max(0, j0 - m); by1 = Math.min(NY - 1, j1 + m)
     const p = searchIn(n, sources, goals, gx0, gy0, goalVia)
     if (p) return p
@@ -436,7 +437,9 @@ function endgame(bad: Net[], tries: number): boolean {
   let bestT = Infinity, bestA = -1, best: Map<Net, { path: any; vias: any }> | null = null
   for (const n of group) stampNet(n, -1)
   const span = (n: Net) => { const ts = [...n.terms, ...n.drops]; const xs = ts.map((t) => t.x), ys = ts.map((t) => t.y); return Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys) }
-  for (let a = 0; a < tries; a++) {
+  // a big group gets fewer orders: every order re-routes all of its nets
+  const T = group.length > 8 ? Math.min(tries, 6) : tries
+  for (let a = 0; a < T; a++) {
     let order = a === 0 ? [...group].sort((x, y) => span(y) - span(x)) : [...group].sort(() => rand() - 0.5)
     // keep each pair's lead right before its follower
     order = order.filter((n) => !n.follows); for (const f of group.filter((n) => n.follows)) { const k = order.indexOf(f.follows!); order.splice(k < 0 ? order.length : k + 1, 0, f) }
@@ -444,7 +447,7 @@ function endgame(bad: Net[], tries: number): boolean {
     const placed: Net[] = []
     for (const n of order) {
       // no conflict-free path with everything else fixed: route it normally (priced), so the order still counts
-      if (!routeNet0Hard(n)) { hard = false; routeNet(n); hard = true }
+      if (!routeNet0Hard(n)) { hard = false; local = true; routeNet(n); local = false; hard = true }
       stampNet(n, 1); placed.push(n)
     }
     hard = false
@@ -497,7 +500,7 @@ function endgameClusters(bad: Net[], tries: number): number {
   for (const g of list) {
     const live = g.filter((n) => conflictsOf(n) > 0)
     // a big cluster gets fewer orders: each failed order costs a full search per net
-    if (live.length && endgame(live, live.length > 6 ? Math.max(4, tries >> 2) : tries)) fixed++
+    if (live.length && endgame(live, tries)) fixed++
   }
   console.log(`  endgame: ${fixed} of ${list.length} conflict clusters re-placed`)
   return fixed
