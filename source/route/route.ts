@@ -275,7 +275,7 @@ const followM = ALL_L.map(() => new Uint8Array(NN)), followMarked: number[] = []
 // differential pairs only escape a BGA / fine-pitch field near their own balls/pins (PAIR_ESC mm); they never run
 // across a field (under the BGA the channels between via rows hold one trace, so the two wires would split up)
 const ownZone = new Uint8Array(NN), ownMarked: number[] = []
-const D_ESC = disk(+(process.env.PAIR_ESC ?? 2.0))
+const D_ESC = disk(+(process.env.PAIR_ESC ?? 3.0))
 let pairNet = false
 function setOwn(n: Net | null) {
   for (const c of ownMarked) ownZone[c] = 0; ownMarked.length = 0; pairNet = false
