@@ -53,5 +53,9 @@ for t in json.load(open(D + "/power.fanout.json")):
     if not clears(t, n):
         dropped.append((ref, ball, n + " (via too close to another net's ball)")); continue
     add(t, n)
+# escape stubs reserved before the DDR solve (ddr_reserve.py) are fixed copper of their nets
+if os.path.exists(D + "/escape_stubs.json"):
+    st = json.load(open(D + "/escape_stubs.json"))
+    traces += [dict(t) for t in st["traces"]]; vias += [dict(v) for v in st["vias"]]
 json.dump({"traces": traces, "vias": vias}, open(D + "/fixed.json", "w"))
 print("traces", len(traces), "vias", len(vias), "dropped", dropped)

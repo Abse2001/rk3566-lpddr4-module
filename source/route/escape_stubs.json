@@ -1,0 +1,97 @@
+{
+ "_doc": "Escape stubs reserved before the LPDDR4 solve: a CPU signal ball whose only way out crosses the DDR breakout gets this fixed copper (fixed.py) and the DDR problem sees it as an obstacle (ddr_reserve.py). Board coordinates.",
+ "traces": [
+  {
+   "net": "CM4_ID_SD",
+   "layer": "top",
+   "w": 0.1,
+   "pts": [
+    {
+     "x": 16.25,
+     "y": -12.1
+    },
+    {
+     "x": 16.3,
+     "y": -12.05
+    },
+    {
+     "x": 16.35,
+     "y": -12
+    },
+    {
+     "x": 16.4,
+     "y": -12
+    },
+    {
+     "x": 16.45,
+     "y": -11.95
+    },
+    {
+     "x": 16.5,
+     "y": -11.95
+    },
+    {
+     "x": 16.55,
+     "y": -11.9
+    },
+    {
+     "x": 16.6,
+     "y": -11.9
+    },
+    {
+     "x": 16.65,
+     "y": -11.85
+    },
+    {
+     "x": 16.7,
+     "y": -11.8
+    },
+    {
+     "x": 16.8,
+     "y": -11.7
+    },
+    {
+     "x": 16.85,
+     "y": -11.65
+    },
+    {
+     "x": 16.85,
+     "y": -11.6
+    },
+    {
+     "x": 16.9,
+     "y": -11.55
+    },
+    {
+     "x": 16.9,
+     "y": -11.35
+    },
+    {
+     "x": 16.85,
+     "y": -11.3
+    },
+    {
+     "x": 16.85,
+     "y": -11.25
+    },
+    {
+     "x": 16.8,
+     "y": -11.2
+    },
+    {
+     "x": 16.8,
+     "y": -11.15
+    }
+   ]
+  }
+ ],
+ "vias": [
+  {
+   "net": "CM4_ID_SD",
+   "x": 16.8,
+   "y": -11.15,
+   "d": 0.25,
+   "hole": 0.15
+  }
+ ]
+}
