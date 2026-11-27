@@ -4,7 +4,7 @@ A 6-layer compute module built around the Rockchip RK3566 (U1, LCSC C2943786) an
 H9HCNNNBKUMLXR-NEE LPDDR4 (U2, LCSC C21912322).
 
 ****Status: fully routed, fab files generated** (`fab/`, also `fab/tsci/` from `tsci export -f gerbers`).
-CM4-compatible: two Hirose DF40C-100DP-0.4V(51) on the bottom at the CM4 positions; CAM0, DSI0 and Ethernet
+CM4-compatible: two Hirose DF40C-100DP-0.4V (LCSC C6021443, the (58) reel; C531031 is out of stock) on the bottom at the CM4 positions; CAM0, DSI0 and Ethernet
 are not populated (networking over USB). How it was routed: `ROUTING-PLAYBOOK.md`; issue log: `ISSUES-AND-FIXES.md`.
 
 Full-board checks (`source/check.py`, `source/pairs.py` on `source/route/final/`):
