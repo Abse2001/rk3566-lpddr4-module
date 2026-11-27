@@ -9,6 +9,7 @@ cu = json.load(open(os.environ.get("COPPER", D + "/final/copper.json")))
 tm = json.load(open(D + "/ddr_timing.json"))["ps_per_mm"]
 PS = {"outer": tm["outer_0.11"], "inner": tm["inner3_0.11"]}
 VIA_PS = 1.548 * PS["inner"] * 1.2
+VCAL = json.load(open(D + "/via_cal.json")) if os.path.exists(D + "/via_cal.json") else None  # ngspice via delay (via_cal.py)
 L = collections.defaultdict(float); T = collections.defaultdict(float); V = collections.Counter()
 for t in cu["traces"]:
     s = sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for a, b in zip(t["pts"], t["pts"][1:]))
@@ -26,7 +27,9 @@ for v in cu["vias"]:
     ls = set(ends.get((v["net"], round(v["x"], 3), round(v["y"], 3)), set()))
     for p in P_:
         if p["net"] == v["net"] and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2: ls.add(p["layer"])
-    if len(ls) >= 2: VD[v["net"]] += (max(Z[l] for l in ls) - min(Z[l] for l in ls)) * PS["inner"] * 1.2
+    if len(ls) >= 2:
+        span = max(Z[l] for l in ls) - min(Z[l] for l in ls)
+        VD[v["net"]] += VCAL["ps_per_mm"] * span + VCAL["ps_fixed"] if VCAL else span * PS["inner"] * 1.2
 names = set(L)
 LIMIT_MM = {"HDMI": 0.13, "MIPI": 0.13, "PCIE": 0.13, "USB": 0.25}
 ok = True; rows = []

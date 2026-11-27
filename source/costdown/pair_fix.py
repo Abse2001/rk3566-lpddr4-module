@@ -13,6 +13,7 @@ for n in sorted(names):
     if m and not n.startswith("DDR_"):
         q = m.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[m.group(2)] + (m.group(3) or "")
         if q in names and vias(cu, n) != vias(cu, q): pairs.append((n, q))
+if os.environ.get("PAIRS"): pairs = [pq for pq in pairs if pq[0] in os.environ["PAIRS"].split(",")]
 print("pairs to fix:", pairs)
 for P, N in pairs:
     shutil.copy(F + "/routes.json", F + "/r.base"); shutil.copy(F + "/copper.json", F + "/c.base")

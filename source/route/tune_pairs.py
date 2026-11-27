@@ -19,13 +19,17 @@ if DELAY:
     K = {l: (1.0 if l in ("top", "bottom") else _tm["inner3_0.11"] / _tm["outer_0.11"]) for l in ("top", "inner1", "inner2", "inner3", "inner4", "bottom")}
     ZL = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.457, "bottom": 1.548}
     VK = _tm["inner3_0.11"] * 1.2 / _tm["outer_0.11"]
+    # via delay calibrated with ngspice (via_cal.py: barrel over its span + pad capacitance), if present
+    VCAL = json.load(open(D + "/via_cal.json")) if os.path.exists(D + "/via_cal.json") else None
 else:
     K = collections_K = None
 def via_len(n, v):
     if not DELAY: return VIA_LEN
     ls = {s["layer"] for s in nets[n]["segs"] for q in (s["pts"][0], s["pts"][-1]) if abs(q["x"] - v["x"]) < 1e-3 and abs(q["y"] - v["y"]) < 1e-3}
     ls |= {p["layer"] for p in pads if p["net"] == n and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2}
-    return (max(ZL[l] for l in ls) - min(ZL[l] for l in ls)) * VK if len(ls) >= 2 else 0.0
+    if len(ls) < 2: return 0.0
+    span = max(ZL[l] for l in ls) - min(ZL[l] for l in ls)
+    return (VCAL["ps_per_mm"] * span + VCAL["ps_fixed"]) / _tm["outer_0.11"] if VCAL else span * VK
 def length(n):
     r = nets[n]; k = (lambda l: K[l]) if DELAY else (lambda l: 1.0)
     return sum(k(s["layer"]) * math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for s in r["segs"] for a, b in zip(s["pts"], s["pts"][1:])) + sum(via_len(n, v) for v in r["vias"])
@@ -66,6 +70,14 @@ for P_, N_ in pairs:
     for rnd in range(40):  # one bumped piece per round: the straight pieces change as bumps go in
         before = done
         cands = sorted(((math.hypot(b["x"] - a["x"], b["y"] - a["y"]), si, k) for si, s in enumerate(segs) for k, (a, b) in enumerate(zip(s["pts"], s["pts"][1:]))), reverse=True)
+        # skew from extra vias is compensated next to them (Intel P/N de-skew: fix it where it arises): the long
+        # member's vias with no partner via within 1 mm; long-enough pieces nearest to one go first
+        extra = [v for v in nets[long_]["vias"] if not any(math.hypot(v["x"] - u["x"], v["y"] - u["y"]) < 1.0 for u in nets[short]["vias"])]
+        if extra and DELAY:
+            def _d(c):
+                a, b = segs[c[1]]["pts"][c[2]], segs[c[1]]["pts"][c[2] + 1]
+                return min(math.hypot((a["x"] + b["x"]) / 2 - v["x"], (a["y"] + b["y"]) / 2 - v["y"]) for v in extra)
+            cands = sorted([c for c in cands if c[0] >= MIN_L], key=_d)
         used = set()
         for L, si, k in cands:
             if done >= need - TOL or L < MIN_L: break

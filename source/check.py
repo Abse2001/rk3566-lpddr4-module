@@ -128,17 +128,35 @@ for v in edge_v[:5]: print("   edge", v)
 print(f"Via hole to other-net copper (>= {HOLE_CU} mm, JLCPCB DFM 'Danger' below 0.18; fails the check only with HOLE_RULE=1): {len(holecu_v)} issues (+{holecu_ddr} inside the frozen DDR block)", holecu_v[:5])
 print(f"Connectivity: {len(pad_items) - len(open_nets)}/{len(pad_items)} nets complete")
 for o in open_nets[:40]: print("   open", o)
-# differential pairs: P and N must use the same number of vias (else their delays only match for one via model);
-# ALLOW_PAIR_VIA_MISMATCH=1 turns the failure into a warning
-import re as _re
-from collections import Counter as _C
+# differential pairs. Equal P/N via counts are preferred (WARNING when they differ); what must hold is the P/N skew
+# in time: trace delay per layer + each via's ngspice-calibrated delay (route/via_cal.json), limit 5 mil at the
+# outer-layer velocity (USB 10 mil). A pair over the limit fails the check.
+import re as _re, math as _m
+from collections import Counter as _C, defaultdict as _dd
+_tm = json.load(open(D + "/route/ddr_timing.json"))["ps_per_mm"]; _po, _pi = _tm["outer_0.11"], _tm["inner3_0.11"]
+_vcal = json.load(open(D + "/route/via_cal.json")) if os.path.exists(D + "/route/via_cal.json") else None
+_Z = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.457, "bottom": 1.548}
 _vc = _C(v["net"] for v in cu["vias"]); _tn = {t["net"] for t in cu["traces"]}
-pairvia_v = []
+_dl = _dd(float); _ends = _dd(set)
+for t in cu["traces"]:
+    _dl[t["net"]] += sum(_m.hypot(b["x"] - a["x"], b["y"] - a["y"]) for a, b in zip(t["pts"], t["pts"][1:])) * (_po if t["layer"] in ("top", "bottom") else _pi)
+    for q in (t["pts"][0], t["pts"][-1]): _ends[(t["net"], round(q["x"], 3), round(q["y"], 3))].add(t["layer"])
+for v in cu["vias"]:
+    _ls = set(_ends.get((v["net"], round(v["x"], 3), round(v["y"], 3)), set()))
+    _ls |= {p["layer"] for p in pads if p["net"] == v["net"] and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2}
+    if len(_ls) >= 2:
+        _sp = max(_Z[l] for l in _ls) - min(_Z[l] for l in _ls)
+        _dl[v["net"]] += _vcal["ps_per_mm"] * _sp + _vcal["ps_fixed"] if _vcal else _sp * _pi * 1.2
+pairvia_v, pairskew_v = [], []
 for _n in sorted(_tn):
-    _m = _re.match(r"(.*?)(P|_P|DP)(_C)?$", _n or "")
-    if not _m or _n.startswith("DDR_"): continue
-    _q = _m.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[_m.group(2)] + (_m.group(3) or "")
-    if _q in _tn and _vc[_n] != _vc[_q]: pairvia_v.append((_n, _vc[_n], _q, _vc[_q]))
-print(f"Differential pairs: {len(pairvia_v)} with unequal P/N via counts" + (" -- WARNING: P and N must use the same number of vias" if pairvia_v else ""))
+    _mm = _re.match(r"(.*?)(P|_P|DP)(_C)?$", _n or "")
+    if not _mm or _n.startswith("DDR_"): continue
+    _q = _mm.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[_mm.group(2)] + (_mm.group(3) or "")
+    if _q not in _tn: continue
+    if _vc[_n] != _vc[_q]: pairvia_v.append((_n, _vc[_n], _q, _vc[_q]))
+    _lim = (0.25 if _n.startswith("USB") else 0.13) * _po
+    if abs(_dl[_n] - _dl[_q]) > _lim: pairskew_v.append((_n, round(abs(_dl[_n] - _dl[_q]), 2), round(_lim, 2)))
+print(f"Differential pairs: {len(pairskew_v)} over the P/N skew limit (ps, calibrated via delay), {len(pairvia_v)} with unequal P/N via counts" + (" -- WARNING: prefer the same number of vias on P and N" if pairvia_v else ""))
+for _x in pairskew_v: print("   SKEW", _x)
 for _x in pairvia_v: print("   WARNING pair vias", _x)
-sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v or (holecu_v and os.environ.get("HOLE_RULE")) or (pairvia_v and not os.environ.get("ALLOW_PAIR_VIA_MISMATCH")) else 0)
+sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v or (holecu_v and os.environ.get("HOLE_RULE")) or pairskew_v else 0)

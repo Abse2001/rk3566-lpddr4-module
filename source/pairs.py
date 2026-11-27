@@ -10,10 +10,13 @@ _tm = json.load(open(D + "/route/ddr_timing.json"))["ps_per_mm"]
 K = lambda l: 1.0 if l in ("top", "bottom") else _tm["inner3_0.11"] / _tm["outer_0.11"]
 ZL = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.457, "bottom": 1.548}
 _pads = json.load(open(D + "/design/pads.json"))["pads"]
+_vc = json.load(open(D + "/route/via_cal.json")) if os.path.exists(D + "/route/via_cal.json") else None  # ngspice via delay
 def via_len(n, r, v):
     ls = {s["layer"] for s in r["segs"] for q in (s["pts"][0], s["pts"][-1]) if abs(q["x"] - v["x"]) < 1e-3 and abs(q["y"] - v["y"]) < 1e-3}
     ls |= {p["layer"] for p in _pads if p["net"] == n and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2}
-    return (max(ZL[l] for l in ls) - min(ZL[l] for l in ls)) * _tm["inner3_0.11"] * 1.2 / _tm["outer_0.11"] if len(ls) >= 2 else 0.0
+    if len(ls) < 2: return 0.0
+    span = max(ZL[l] for l in ls) - min(ZL[l] for l in ls)
+    return (_vc["ps_per_mm"] * span + _vc["ps_fixed"]) / _tm["outer_0.11"] if _vc else span * _tm["inner3_0.11"] * 1.2 / _tm["outer_0.11"]
 def length(n):
     r = rt.get(n)
     if not r: return None

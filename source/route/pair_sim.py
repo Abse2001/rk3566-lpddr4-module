@@ -27,21 +27,18 @@ def lane(net):
         a, b = min(ls, key=lambda l: Z[l]), max(ls, key=lambda l: Z[l])
         out.append({"connection_name": net, "route": [{"route_type": "wire", "x": v["x"], "y": v["y"], "layer": a}, {"route_type": "via", "x": v["x"], "y": v["y"], "from_layer": a, "to_layer": b}]})
     return out
-# vias here are listed after the wires (copper has no route order): consecutive via pieces are merged into one line
-# carrying their total delay and total pad capacitance, else ngspice crawls through the reflections between
-# back-to-back short lines. Total delay and load are unchanged; only their position along the net is lumped.
+# copper has no route order: the net's wire delay is split into (vias + 1) equal pieces and one via (45 ohm barrel
+# line + 0.3 pF pad, as ddr_sim.py / via_cal.py) goes between consecutive pieces, so vias sit apart as on the board
+# instead of back to back (back-to-back vias make ngspice crawl and distort the result).
 def channel(prefix, name, src, rx):
-    lines, node, k = [], src, 0
-    vt, vn = 0.0, 0
-    def flush_vias():
-        nonlocal node, k, vt, vn
-        if vn:
-            nxt = f"{prefix}{k}"; lines.append(f"T{prefix}{k} {node} 0 {nxt} 0 Z0=45.0 TD={vt:.3f}p"); lines.append(f"C{prefix}v{k} {nxt} 0 {0.3 * vn:.2f}p")
-            node = nxt; k += 1; vt, vn = 0.0, 0
-    for z0, td, kind in S.merged(name):
-        if kind == "via": vt += td; vn += 1; continue
-        flush_vias(); nxt = f"{prefix}{k}"; lines.append(f"T{prefix}{k} {node} 0 {nxt} 0 Z0={z0:.1f} TD={td:.3f}p"); node = nxt; k += 1
-    flush_vias(); lines.append(f"R{prefix}j {node} {rx} 0.01")
+    pcs = S.merged(name); wires = [(z, td) for z, td, kind in pcs if kind == "wire"]; vias = [td for z, td, kind in pcs if kind == "via"]
+    tot = sum(td for _, td in wires); zavg = sum(z * td for z, td in wires) / tot if tot else 50.0
+    lines, node = [], src; n = len(vias) + 1
+    for k in range(n):
+        nxt = f"{prefix}w{k}"; lines.append(f"T{prefix}w{k} {node} 0 {nxt} 0 Z0={zavg:.1f} TD={tot / n:.3f}p"); node = nxt
+        if k < len(vias):
+            nxt = f"{prefix}v{k}"; lines.append(f"T{prefix}v{k} {node} 0 {nxt} 0 Z0=45.0 TD={vias[k]:.3f}p"); lines.append(f"C{prefix}v{k} {nxt} 0 0.3p"); node = nxt
+    lines.append(f"R{prefix}j {node} {rx} 0.01")
     return lines
 S.channel = channel
 RATE = {"HDMI": 3400, "MIPI": 1500, "PCIE": 5000, "USB": 480}
