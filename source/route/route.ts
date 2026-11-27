@@ -24,7 +24,7 @@ if (process.env.FROZEN) {
 }
 
 // ---------------- rules ----------------
-const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
+const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = +(process.env.W_PWR ?? 0.2), W_BIG = +(process.env.W_BIG ?? 0.4), VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
 // JLCPCB: a via's drilled hole keeps 0.2 mm from copper of other nets (inner layers included), so the copper gap
 // around a 0.15/0.25 mm via is 0.2 - (0.25 - 0.15) / 2 = 0.15 mm, not the 0.1 mm trace-to-trace gap
 const VGAP = process.env.HOLE_RULE ? Math.max(GAP, 0.2 + 0.012 - (VIA_D - VIA_H) / 2) : GAP  // HOLE_RULE=1: enforce it
@@ -42,7 +42,8 @@ const HOLES = [[0, 0], [33, 0], [0, -48], [33, -48]], HOLE_R = 1.35
 const PLANE_GND = new Set(["GND"])
 const PLANE_PWR = new Set(["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC0V6_DDR"])
 const isPlane = (n: string) => PLANE_GND.has(n) || PLANE_PWR.has(n)
-const widthOf = (n: string) => (["VCC3V3_SYS", "VCC5V0_SYS"].includes(n) ? W_BIG : !isPlane(n) && /^(VCC|VDD)/.test(n) ? W_PWR : W_SIG)
+// buck switch nodes and the 5 V / 3.3 V input rails carry 1-3 A: widest class; other supplies the middle class
+const widthOf = (n: string) => (["VCC3V3_SYS", "VCC5V0_SYS"].includes(n) || /^SW(\d|_)/.test(n) ? W_BIG : !isPlane(n) && /^(VCC|VDD)/.test(n) ? W_PWR : W_SIG)
 const SEED = +(process.env.SEED ?? 1), MAXIT = +(process.env.MAXIT ?? 60), VERB = !!process.env.VERB
 let rng = SEED * 2654435761 % 4294967296
 const rand = () => ((rng = (rng * 1664525 + 1013904223) % 4294967296) / 4294967296)
