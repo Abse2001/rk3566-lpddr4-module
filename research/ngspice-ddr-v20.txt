@@ -1,0 +1,8 @@
+data rate 1560 MT/s, UI 641 ps; generic 40 ohm driver, 60 ohm ODT, 0.8 pF
+DQ10_a   delay  187.1 ps  vias 2  eye height   660 mV  eye width  538 ps of 641
+DQ8_a    delay  182.5 ps  vias 2  eye height   660 mV  eye width  538 ps of 641
+CA0_a    delay   78.2 ps  vias 2  eye height   660 mV  eye width  538 ps of 641
+CK_t_a/CK_c_a pair: P/N crossing skew   0.0 ps; differential eye height  1320 mV, width  538 ps
+CK_t_b/CK_c_b pair: P/N crossing skew   0.1 ps; differential eye height  1320 mV, width  538 ps
+DQS1_t_a/DQS1_c_a pair: P/N crossing skew   0.0 ps; differential eye height  1319 mV, width  538 ps
+DQS0_t_b/DQS0_c_b pair: P/N crossing skew   0.1 ps; differential eye height  1320 mV, width  551 ps

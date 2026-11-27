@@ -1,0 +1,4 @@
+stages: 12,55
+[1s] stage 0 (12 nets, order 0):   pair CK_t_b+CK_c_b: emitted skew -0.001 mm (model 0.000 mm)
+[1029s] stage 1 (55 nets, order 0): SOLVED in 1028s
+solved true error null 1029s

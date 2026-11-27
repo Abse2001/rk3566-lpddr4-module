@@ -13,10 +13,13 @@ Full-board checks (`source/check.py`, `source/pairs.py` on `source/route/final/`
 |---|---|
 | Copper clearance 0.1 mm, all 6 layers (vias on every layer) | 0 violations |
 | Copper to edge / holes, via hole spacing, SMD pad to pad 0.15 mm | 0 issues |
+| Via hole to other copper | below JLCPCB's 0.2 mm in places (their DFM: "Danger"; accepted on past orders) |
 | Fast traces over unbroken GND (reference plane) | 0 issues |
 | Connectivity (pads, traces, vias, pours) | 234 / 234 nets |
 | Differential pairs P/N (0.13 mm, USB 0.25 mm) | 17 / 17 within limit |
-| LPDDR4 block | unchanged from the verified DDR routing |
+| LPDDR4 block | re-solved with the delay-aware solver: Rockchip length rules pass; delay check (per-layer ps/mm + via barrels, `source/route/ddr_timing.py`) all CK/DQS pairs 0.0-0.1 ps; ngspice (`ddr_sim.py`) CK crossing skew 0.0 ps |
+| JLCPCB SMD assembly spacing (`source/dfm_spacing.py`) | 0 pairs below the table (chip-QFN/BGA 1.0 mm, chip-chip 0.15 mm) |
+| Silkscreen | lines >= 0.15 mm; text under 1.0 mm dropped (designators on the fab layer) |
 | Pick-and-place rotations vs JLCPCB footprints (`source/fix-pnp.ts`) | 211 / 211 verified |
 
 **Ordering (JLCPCB):** 6 layers, 1.6 mm, stackup JLC06161H-1080A, ENIG, via-in-pad filled and capped,

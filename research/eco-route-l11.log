@@ -1,0 +1,109 @@
+ground layers open to slow signals; kept solid under BGAs and 1338344 DDR reference cells
+corridors 5 cells 70665
+inner2 open to slow traces outside the islands; widened feed corridors: 121447 cells
+grid 801x1101, 93 nets (6 plane drop sets, 444 terminals)
+iter 0 [20s] pres=0.50 conflicts=1847 nets=66 CPU_SDA,VCCA_1V8,HDMITX_SCL,EMMC_D1,CM4_ID_SD,FLASH_VOL_SEL,HDMI_TX_REXT,SD_PWR_ON failed=0 
+iter 1 [36s] pres=0.65 conflicts=1330 nets=52 VCCA_1V8,HDMITX_SCL,EMMC_D1,CM4_ID_SD,FLASH_VOL_SEL,HDMI_TX_REXT,VCC_3V3,VDDA0V9_PMU failed=0 
+iter 2 [50s] pres=0.85 conflicts=915 nets=50 CPU_SDA,VCCA_1V8,HDMITX_SCL,EMMC_D1,CM4_ID_SD,FLASH_VOL_SEL,HDMI_TX_REXT,VCC_3V3 failed=0 
+iter 3 [67s] pres=1.10 conflicts=730 nets=44 CPU_SDA,VCCA_1V8,EMMC_D1,CM4_ID_SD,FLASH_VOL_SEL,HDMI_TX_REXT,VCC_3V3,VDDA0V9_PMU failed=0 
+iter 4 [85s] pres=1.43 conflicts=646 nets=40 CPU_SDA,VCCA_1V8,EMMC_D1,FLASH_VOL_SEL,HDMI_TX_REXT,VCC_3V3,VDDA0V9_PMU,MIPI_DSI_TX1_D0P failed=0 
+iter 5 [96s] pres=1.86 conflicts=969 nets=39 VCCA_1V8,FLASH_VOL_SEL,HDMI_TX_REXT,VDDA0V9_PMU,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VCCIO_SD,VDDA_0V9 failed=0 
+iter 6 [144s] pres=2.41 conflicts=1589 nets=38 VCCA_1V8,HDMITX_SCL,HDMI_TX_REXT,SD_PWR_ON,VCC_3V3,VDDA0V9_PMU,VCCIO_ACODEC,MIPI_DSI_TX1_D0P failed=0 
+iter 7 [154s] pres=3.14 conflicts=607 nets=38 HDMITX_SCL,HDMI_TX_REXT,VCC_3V3,SW1,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,FB2,VDDA_0V9 failed=0 
+iter 8 [163s] pres=4.08 conflicts=800 nets=29 HDMITX_SCL,CM4_ID_SD,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,FB2,VDDA_0V9,CM4_SDA0,MIPI_DSI_TX1_D1P failed=0 
+iter 9 [173s] pres=5.30 conflicts=513 nets=24 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VDDA_0V9,CM4_SDA0,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1P,HDMI_TX_D1N failed=0 
+iter 10 [180s] pres=6.89 conflicts=550 nets=24 HDMI_TX_REXT,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VDDA_0V9,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA failed=0 
+iter 11 [185s] pres=8.96 conflicts=767 nets=17 HDMI_TX_REXT,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VDDA_0V9,MIPI_DSI_TX1_D1N,PCIE20_TXN,MIPI_DSI_TX1_D3P,MIPI_DSI_TX1_D3N failed=0 
+iter 12 [188s] pres=11.65 conflicts=811 nets=27 HDMI_TX_REXT,MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VCCIO_SD,VDDA_0V9,CM4_SDA0,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N failed=0 
+iter 13 [195s] pres=15.14 conflicts=426 nets=20 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VDDA_0V9,CM4_SDA0,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,I2C0_SDA,PCIE20_TXN failed=0 
+iter 14 [202s] pres=19.69 conflicts=554 nets=19 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,VCCIO_SD,VDDA_0V9,CM4_SDA0,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,I2C0_SDA failed=0 
+iter 15 [209s] pres=20.00 conflicts=373 nets=16 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,FB2,MIPI_DSI_TX1_D1N,HDMI_TX_D1P,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3P failed=0 
+iter 16 [219s] pres=20.00 conflicts=313 nets=16 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,FB2,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3P,MIPI_DSI_TX1_D3N failed=0 
+iter 17 [224s] pres=20.00 conflicts=278 nets=15 MIPI_DSI_TX1_D0N,VCCIO_SD,CM4_SDA0,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3P failed=0 
+iter 18 [244s] pres=20.00 conflicts=378 nets=10 MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3P,MIPI_DSI_TX1_D3N,CLK32K,VCC3V3_PMU failed=0 
+iter 19 [248s] pres=20.00 conflicts=222 nets=14 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3N,RESETn,VCC_1V8 failed=0 
+iter 20 [261s] pres=20.00 conflicts=55 nets=8 MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3N,MIPI_DSI_TX1_D2N,PMIC_INT_L,GND failed=0 
+iter 21 [266s] pres=20.00 conflicts=58 nets=5 MIPI_DSI_TX1_D1N,HDMI_TX_D1N,I2C0_SDA,MIPI_DSI_TX1_D3N,MIPI_DSI_TX1_D2N failed=0 
+iter 22 [267s] pres=20.00 conflicts=37 nets=4 MIPI_DSI_TX1_D1N,HDMI_TX_D1N,MIPI_DSI_TX1_D3N,MIPI_DSI_TX1_D2N failed=0 
+iter 23 [272s] pres=20.00 conflicts=28 nets=4 MIPI_DSI_TX1_D1N,HDMI_TX_D1N,MIPI_DSI_TX1_D3N,MIPI_DSI_TX1_D2N failed=0 
+iter 24 [273s] pres=20.00 conflicts=40 nets=4 MIPI_DSI_TX1_D1N,HDMI_TX_D1N,MIPI_DSI_TX1_D3N,MIPI_DSI_TX1_D2N failed=0 
+iter 25 [273s] pres=20.00 conflicts=44 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 26 [274s] pres=20.00 conflicts=27 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 27 [274s] pres=20.00 conflicts=24 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 28 [274s] pres=20.00 conflicts=18 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 29 [275s] pres=20.00 conflicts=18 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 30 [275s] pres=20.00 conflicts=18 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 31 [275s] pres=20.00 conflicts=22 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 32 [275s] pres=20.00 conflicts=24 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  back to the best routing (pass 28, 18 conflicts)
+  endgame: no better order for 13 nets in 6 tries (18)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 18 -> 18
+  after endgame: conflicts=18
+iter 33 [299s] pres=2.00 conflicts=18 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 34 [299s] pres=2.60 conflicts=19 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 35 [300s] pres=3.38 conflicts=48 nets=3 MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 36 [300s] pres=4.39 conflicts=34 nets=3 MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  back to the best routing (pass 32, 18 conflicts)
+  endgame: no better order for 13 nets in 6 tries (18)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 18 -> 18
+  after endgame: conflicts=18
+iter 37 [320s] pres=2.00 conflicts=23 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 38 [320s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 39 [320s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 40 [321s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 41 [321s] pres=5.71 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 42 [321s] pres=7.43 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 2
+  after endgame: conflicts=2
+iter 43 [342s] pres=2.00 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 44 [342s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 45 [342s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 46 [342s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 2
+  after endgame: conflicts=2
+iter 47 [365s] pres=2.00 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 48 [365s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 49 [365s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 50 [365s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 2
+  after endgame: conflicts=2
+iter 51 [380s] pres=2.00 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 52 [380s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 53 [380s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 54 [380s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 2
+  after endgame: conflicts=2
+iter 55 [404s] pres=2.00 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 56 [404s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 57 [404s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 58 [404s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 2
+  after endgame: conflicts=2
+iter 59 [425s] pres=2.00 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 60 [425s] pres=2.60 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 61 [425s] pres=3.38 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 62 [425s] pres=4.39 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+  endgame: no better order for 13 nets in 6 tries (2)
+  endgame: 0 of 1 conflict clusters re-placed
+  endgame round 0: 2 -> 27
+  after endgame: conflicts=27
+iter 63 [438s] pres=2.00 conflicts=329 nets=4 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1N,HDMI_TX_D1N failed=0 
+iter 64 [439s] pres=2.60 conflicts=47 nets=7 MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1P,MIPI_DSI_TX1_D1N,CLK32K,VCC3V3_PMU,PMIC_INT_L,HDMI_TX_CLKN failed=0 
+iter 65 [439s] pres=3.38 conflicts=58 nets=6 MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1N,PMIC_SLEEP,VCC3V3_PMU,MIPI_DSI_TX1_D2P,MIPI_DSI_TX1_D2N failed=0 
+iter 66 [440s] pres=4.39 conflicts=6 nets=4 MIPI_DSI_TX1_D0P,MIPI_DSI_TX1_D0N,MIPI_DSI_TX1_D1N,VCC3V3_PMU failed=0 
+iter 67 [441s] pres=5.71 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,VCC3V3_PMU failed=0 
+iter 68 [441s] pres=7.43 conflicts=2 nets=2 MIPI_DSI_TX1_D1N,VCC3V3_PMU failed=0 
+iter 69 [442s] pres=9.65 conflicts=0 nets=0  failed=0 
+SOLVED 442s

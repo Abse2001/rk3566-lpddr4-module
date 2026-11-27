@@ -125,3 +125,18 @@ Final routing: `source/route/final/` (run 61 + reroute of 4 nets + tune + repair
 2. ~~Pair P/N matching~~ done (17/17).
 3. ~~Final planes, full-board build, Gerbers / BOM / CPL~~ done (`fab/`); README ordering notes.
 4. Verify: eMMC VDDI cap value, 240R 1% stock, 32 kHz crystal load caps, JLCPCB CPL rotations (incl. the rotated SYR837 WLCSP), GPIO bank voltages of the moved CM4 pins.
+
+## Round 2: JLCPCB spacing, DDR delay matching, ECO routing
+
+| # | Issue | Cause | Fix | Status |
+|---|---|---|---|---|
+| D1 | CK_a/CK_b P/N 50-63 ps apart (DQS1 18 ps) though lengths matched to 0.0 mil | DDR solver let a pair's rear member dive under its partner's ball (4 vias vs 0); lengths ignored via barrels and inner-layer delay | Solver: delay-aware lengths (layerZ / layerDelay / viaDelayFactor), pairs with unequal member vias move off the terminal layer, pair counts as tuned by achieved lengths, emitted-skew self-check (`solver-patches/`) | fixed: all pairs 0.0-0.1 ps, ngspice CK skew 67.6 -> 0.0 ps |
+| D2 | DDR traces over GND dog-bone vias after the re-solve | solver input was a scratch copy with an older power fanout | runner solves `ddr.input.json` (current fanout); fixed-copper DRC before routing | fixed |
+| D3 | CM4_ID_SD ball walled in by the re-routed DQ_b lanes | nothing reserved its escape | escape stubs reserved before the DDR solve (`escape_stubs.json`, `ddr_reserve.py`); solver: only package pads bound the tuning zone | fixed |
+| J1 | 20 parts closer than JLCPCB's SMD spacing table (caps 0.43-0.78 mm from RK809 / SYR837) | placement used courtyards only | `place.py` enforces the table (inductors/crystals as chip parts; L1/L2/Y2 moved) | fixed: 0 pairs below the table |
+| J2 | Full re-routes after every change took hours | 167 nets negotiated from scratch | ECO routing: `eco_prepare.py` keeps untouched nets (plane nets per drop), `route.ts FROZEN=` routes only the rest, GROW releases nets near stuck conflicts, light endgame (EG_TRIES 6, EG_ROUNDS 2) | fixed: 7 min to 0 conflicts |
+| J3 | Kept fast traces lost their ground reference | router protected only traces it routed | fixed fast-net copper also blocks slow traces on the reference ground layer | fixed |
+| J4 | Rail via outside its island (VDD_GPU at L2), floating GND cap pair | lone balls enclosed by another island; ECO plane remnants | `join_orphans.py MODE=island` (0.3 mm stub to a via inside the island); ECO clears plane copper at moved pads and dangling pieces | fixed |
+| J5 | Two MIPI DSI pairs 1.5-3.6 mm skewed, strict re-route could not leave the 0.4 mm-pitch outer ball rows | re-route started only at the ball centre on its own grid and forbade diagonal steps without a free corner cell | `reroute.py`: start/end anywhere inside the pad, half-cell grid offset, DIAG=1, rips all listed nets first | fixed: 17/17 pairs in limit |
+
+Final board (`source/route/final/`): check.py exit 0 (0 clearance / edge / hole / pad / reference-plane issues, 234/234 nets, every island one piece), 17/17 pairs, DDR Rockchip rules + delay check pass, 0 JLCPCB spacing issues, 211/211 placement rotations verified.

@@ -52,8 +52,8 @@ def route(net):
     # rip up
     cu["traces"] = [t for t in cu["traces"] if t["net"] != net]; cu["vias"] = [v for v in cu["vias"] if v["net"] != net]
     fast = bool(FAST.match(net))
-    x0 = min(p["x"] for p in tp) - BOXM; x1 = max(p["x"] for p in tp) + BOXM
-    y0 = min(p["y"] for p in tp) - BOXM; y1 = max(p["y"] for p in tp) + BOXM
+    x0 = min(p["x"] for p in tp) - BOXM + float(os.environ.get("GRID_OFF", 0)) * G; x1 = max(p["x"] for p in tp) + BOXM
+    y0 = min(p["y"] for p in tp) - BOXM + float(os.environ.get("GRID_OFF", 0)) * G; y1 = max(p["y"] for p in tp) + BOXM
     xs = np.arange(x0, x1, G); ys = np.arange(y0, y1, G); NX, NY = len(xs), len(ys)
     X, Y = np.meshgrid(xs, ys)
     win = box(x0 - 1, y0 - 1, x1 + 1, y1 + 1)
@@ -98,11 +98,18 @@ def route(net):
     gi = lambda x: int(round((x - x0) / G)); gj = lambda y: int(round((y - y0) / G))
     L = {l: k for k, l in enumerate(LAY)}
     def term(p):
+        """the pad centre plus every free grid cell inside the pad (a trace may leave its pad anywhere)"""
         ls = [p["layer"]] if p["layer"] in L else []
-        return [(L[l], gj(p["y"]), gi(p["x"])) for l in ls]
+        pg = Point(p["x"], p["y"]).buffer(p["w"] / 2 - 0.01, 16) if p["shape"] == "circle" else box(p["x"] - p["w"] / 2 + 0.01, p["y"] - p["h"] / 2 + 0.01, p["x"] + p["w"] / 2 - 0.01, p["y"] + p["h"] / 2 - 0.01)
+        inside = shapely.contains_xy(pg, X, Y)
+        out = []
+        for l in ls:
+            free[l][gj(p["y"]), gi(p["x"])] = True
+            out.append((L[l], gj(p["y"]), gi(p["x"])))
+            for j, i in zip(*np.nonzero(inside & free[l])): out.append((L[l], int(j), int(i)))
+        return out
     S, T = term(tp[0]), term(tp[1])
     assert S and T, (net, tp)
-    for (l, j, i) in S + T: free[LAY[l]][j, i] = True  # the pad centre itself
     tj, ti = T[0][1], T[0][2]
     h = lambda j, i: G * math.hypot(j - tj, i - ti)
     dist = {}; prev = {}; pq = []
@@ -118,7 +125,9 @@ def route(net):
         for dj, di in D8:
             jj, ii = j + dj, i + di
             if not (0 <= jj < NY and 0 <= ii < NX) or not fl[jj, ii]: continue
-            if dj and di and not (fl[j, ii] or fl[jj, i]): continue
+            # a diagonal step between two free cells needs a free corner cell too, unless DIAG=1 (narrow diagonal
+            # channels between balls; check.py verifies the exact clearance afterwards)
+            if dj and di and not (fl[j, ii] or fl[jj, i]) and not os.environ.get("DIAG"): continue
             c = G * (1.414 if dj and di else 1.0) * (1.0 if near[LAY[l]][jj, ii] or not pn else 1.6)
             ns = (l, jj, ii); nd = g_ + c
             if nd < dist.get(ns, 1e9): dist[ns] = nd; prev[ns] = s; heapq.heappush(pq, (nd + h(jj, ii), nd, ns))

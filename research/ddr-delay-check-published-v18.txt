@@ -1,0 +1,18 @@
+stackup: outer 0.11 mm: Er_eff 3.09, 5.87 ps/mm, Z0 55 ohm | inner3 0.11 mm: Er_eff 4.17, 6.81 ps/mm, Z0 52 ohm | 0.09 mm neck: outer 60 / inner 58 ohm
+FAIL  CK_a P/N skew 50.6 ps (limit 1.8 ps = 12 mil)
+PASS  CA_a to CK worst CA0_a: -32.0 ps (limit 74 ps = 500 mil)
+FAIL  DQS0_a P/N skew 6.2 ps (limit 1.8 ps)
+PASS  BYTE0_a DQ/DMI to DQS worst DMI0_a: +69.2 ps (limit 89 ps = 600 mil)
+PASS  DQS0_a to CK -0.9 ps (limit 179 ps = 1200 mil)
+FAIL  DQS1_a P/N skew 15.4 ps (limit 1.8 ps)
+PASS  BYTE1_a DQ/DMI to DQS worst DQ13_a: +68.4 ps (limit 89 ps = 600 mil)
+PASS  DQS1_a to CK +56.6 ps (limit 179 ps = 1200 mil)
+FAIL  CK_b P/N skew 40.6 ps (limit 1.8 ps = 12 mil)
+PASS  CA_b to CK worst CA0_b: -54.1 ps (limit 74 ps = 500 mil)
+PASS  DQS0_b P/N skew 0.1 ps (limit 1.8 ps)
+PASS  BYTE0_b DQ/DMI to DQS worst DMI0_b: +62.6 ps (limit 89 ps = 600 mil)
+PASS  DQS0_b to CK -9.8 ps (limit 179 ps = 1200 mil)
+FAIL  DQS1_b P/N skew 15.0 ps (limit 1.8 ps)
+PASS  BYTE1_b DQ/DMI to DQS worst DQ12_b: -39.3 ps (limit 89 ps = 600 mil)
+PASS  DQS1_b to CK +31.5 ps (limit 179 ps = 1200 mil)
+RESULT: FAIL

@@ -1,0 +1,65 @@
+stages: 12,55
+preloaded 202 frozen traces
+grid 749x609 @0.05mm, 0 single nets, 6 pairs, lane 1.90mm (3 bumps, 1 pair bumps)
+  pair DQS0_t_a+DQS0_c_a: leaves {"x":0,"y":-1} at (4.01,-8.07), arrives from {"x":-1,"y":0} at (11.06,-8.57)
+  pair DQS1_t_a+DQS1_c_a: leaves {"x":0,"y":-1} at (2.01,-8.52), arrives from {"x":-1,"y":0} at (11.06,-9.27)
+  pair DQS0_t_b+DQS0_c_b: leaves {"x":1,"y":0} at (7.51,-2.77), arrives from {"x":0,"y":1} at (13.81,3.98)
+  pair DQS1_t_b+DQS1_c_b: leaves {"x":1,"y":0} at (7.51,-0.97), arrives from {"x":0,"y":1} at (19.41,3.98)
+  pair CK_t_a+CK_c_a: leaves {"x":1,"y":0} at (7.51,-5.77), arrives from {"x":-1,"y":0} at (17.11,-5.62)
+  pair CK_t_b+CK_c_b: leaves {"x":1,"y":0} at (7.51,-4.97), arrives from {"x":-1,"y":0} at (17.11,-2.37)
+  iter 4 [1s] pres=1.2 conflicts=2 nets=2 DQS0_t_a+DQS0_c_a,DQS1_t_a+DQS1_c_a vias=22
+BEVEL fat DQS1_t_b+DQS1_c_b@10.710,1.585 vs DQS0_t_b+DQS0_c_b L0 0.1803
+  iter 7 [1s] pres=2.4 conflicts=0 nets=0  vias=22 | ok=false over= CK_t_a+CK_c_a pair cannot be tuned (trims 2.04/0.00); DQS1_t_b+DQS1_c_b bevels a corner at 10.5650,1.7299
+  iter 8 [1s] pres=2.5 conflicts=0 nets=0  vias=22 | ok=true over= 
+SOLVED in 1s
+[1s] stage 0 (12 nets, order 0): SOLVED in 1s
+preloaded 214 frozen traces
+grid 749x609 @0.05mm, 55 single nets, 0 pairs, lane 1.90mm (3 bumps, 1 pair bumps)
+  iter 4 [57s] pres=1.2 conflicts=374 nets=29 CA0_a,CA0_b,CA1_a,CA1_b,CA2_a,CA3_a,CA3_b,CA4_a vias=96
+  iter 9 [103s] pres=3.7 conflicts=119 nets=15 CA0_a,CA1_a,CA1_b,CA4_a,CA4_b,CA5_a,CKE0_a,CKE0_b vias=100
+  iter 14 [127s] pres=11.4 conflicts=56 nets=9 CA0_a,CA1_a,CA1_b,CKE0_a,CKE0_b,CS0_a,DMI0_a,DQ1_a vias=100
+  iter 18 [138s] pres=27.8 conflicts=0 nets=0  vias=102 | ok=false over=DQ4_a:38.92>27.79,CA0_a:46.18>25.93,CA3_a:36.69>25.93,CA3_b:30.39>27.21,CA4_b:33.32>27.21,CS0_b:44.09>27.21 CA0_a strip 18->0; CA0_b strip 16->21; CA1_a strip 18->0
+  iter 19 [140s] pres=2.0 conflicts=258 nets=18 CA0_a,CA0_b,CA1_a,CA1_b,CA2_a,CA3_a,CA3_b,CA5_a vias=100 | ok=false over=CA4_b:28.19>26.28 CA0_a strip 0->6; CA0_b strip 21->22; CA1_a strip 0->6
+  iter 24 [166s] pres=6.1 conflicts=112 nets=14 CA0_a,CA1_a,CA1_b,CA2_b,CA3_b,CA5_a,CA5_b,CKE0_a vias=100
+  iter 29 [184s] pres=18.6 conflicts=48 nets=8 CA1_a,CA1_b,CKE0_a,CKE0_b,DQ0_b,DQ3_b,DQ4_b,ODT_b vias=102
+  endgame: 14 nets (4 in conflict) re-placed in order 135
+  iter 32 [440s] pres=29.1 conflicts=0 nets=0  vias=110 | ok=false over=CA0_a:46.01>25.93,CA4_a:38.82>25.93,DQ3_b:30.46>26.36,CA2_b:36.95>27.21,CA3_b:30.81>27.21,CA4_b:28.25>27.21,CS0_b:38.70>27.21 CA1_a strip 0->14; CA1_b strip 0->10; CA2_b strip 6->0
+  iter 34 [455s] pres=2.5 conflicts=271 nets=23 CA0_a,CA0_b,CA1_a,CA1_b,CA2_a,CA2_b,CA3_a,CA4_a vias=100
+  iter 39 [484s] pres=7.6 conflicts=21 nets=4 CA0_a,CA2_a,CA4_b,CS0_a vias=104 | ok=false over=DQ14_a:40.78>36.81,CS0_a:42.72>21.65,DQ4_b:33.45>25.84,CKE0_b:38.29>23.55 CA0_a strip 0->3; CA0_b strip 0->10; CA1_a strip 0->5
+  iter 41 [486s] pres=11.9 conflicts=0 nets=0  vias=104 | ok=false over=DQ14_a:40.78>36.81,DQ15_a:37.39>36.81,CA2_a:39.23>25.29,DQ4_b:33.45>25.84,CKE0_b:38.29>23.26 CA0_a strip 3->14; CA1_a strip 5->16; CKE0_a strip 5->15
+  iter 44 [493s] pres=3.1 conflicts=92 nets=13 CA0_a,CA0_b,CA2_a,CA2_b,CA3_a,CKE0_b,DMI0_a,DQ0_a vias=102
+  endgame: 14 nets (8 in conflict) re-placed in order 15
+  iter 46 [528s] pres=3.9 conflicts=0 nets=0  vias=106 | ok=false over=DQ6_a:46.13>25.57,CA3_a:37.23>25.29,CKE0_b:34.85>23.26 CA0_a strip 4->16; CA0_b strip 0->9; CA1_a strip 5->16
+  iter 49 [533s] pres=3.1 conflicts=120 nets=12 CA1_a,CA1_b,CA3_a,CA3_b,CA4_b,CA5_a,CKE0_b,CS0_a vias=104
+  iter 54 [540s] pres=9.5 conflicts=29 nets=4 CA4_b,CKE0_b,CS0_a,DQ6_a vias=104
+  endgame: 14 nets (3 in conflict) re-placed in order 17
+  iter 59 [572s] pres=23.3 conflicts=0 nets=0  vias=106 | ok=false over=CA3_a:37.55>25.93,CA5_a:34.54>25.93,CKE0_b:42.58>27.21,CS0_b:36.18>27.21 CA0_a strip 6->17; CA0_b strip 11->0; CA1_a strip 5->18
+  iter 64 [591s] pres=4.9 conflicts=133 nets=13 CA0_a,CA1_a,CA2_a,CA3_b,CA5_a,CKE0_b,CS0_a,DQ11_b vias=104
+  iter 69 [601s] pres=14.9 conflicts=15 nets=2 DQ1_b,DQ3_b vias=108
+  endgame: no order fits 14 nets (best 12) in 300 tries
+  iter 74 [784s] pres=30.0 conflicts=13 nets=2 DQ1_b,DQ3_b vias=108
+  iter 79 [790s] pres=30.0 conflicts=13 nets=2 DQ1_b,DQ3_b vias=108 | ok=false over=CA2_a:38.19>21.85,DQ5_b:28.79>27.90,CA2_b:28.07>22.22 CKE0_a strip 5->1; DQ2_a strip 0->5
+  endgame: no order fits 14 nets (best 13) in 300 tries
+  iter 84 [974s] pres=30.0 conflicts=15 nets=2 DQ1_b,DQ3_b vias=108
+  iter 89 [979s] pres=30.0 conflicts=14 nets=2 DQ1_b,DQ3_b vias=108
+  iter 94 [985s] pres=30.0 conflicts=13 nets=2 DQ1_b,DQ3_b vias=108
+  endgame: no order fits 14 nets (best 13) in 300 tries
+  iter 99 [1183s] pres=30.0 conflicts=14 nets=2 DQ1_b,DQ3_b vias=108 | ok=false over=CA2_a:38.19>21.85,DQ5_b:28.79>27.90,CA2_b:28.07>22.22 CKE0_a strip 1->4; DQ2_a strip 5->0
+  iter 104 [1189s] pres=30.0 conflicts=15 nets=2 DQ2_b,DQ3_b vias=108
+  iter 105 [1189s] pres=30.0 conflicts=0 nets=0  vias=108 | ok=false over=CA2_a:38.19>21.85,DQ5_b:28.79>27.90,CA2_b:28.07>22.22 CKE0_a strip 1->4; DQ2_a strip 5->0; DQ3_b strip 15->16
+  iter 109 [1192s] pres=3.9 conflicts=30 nets=6 CA2_a,CA2_b,CA4_a,DQ0_b,DQ12_b,DQ1_b vias=106
+  endgame: 14 nets (6 in conflict) re-placed in order 16
+  iter 111 [1212s] pres=4.9 conflicts=0 nets=0  vias=104 | ok=false over=DQ6_a:43.71>25.57,CA4_a:38.46>21.92,DQ1_b:28.36>27.68,CA2_b:39.69>22.18 CA0_a strip 0->5; CA0_b strip 0->5; CA1_a strip 0->3
+  iter 114 [1215s] pres=3.1 conflicts=84 nets=8 CA1_b,CA2_a,CA2_b,CA3_b,CA4_b,CS0_a,DQ3_a,DQ6_a vias=104
+  iter 119 [1221s] pres=9.5 conflicts=70 nets=7 CA1_b,CA2_b,CA4_b,CS0_b,DQ0_b,DQ3_a,DQ6_a vias=104 | ok=false over=DQ4_b:27.66>27.51 DQ0_b strip 3->9; DQ2_b strip 6->11; DQ5_b strip 4->6
+  endgame: 14 nets (6 in conflict) re-placed in order 105
+  iter 124 [1292s] pres=23.3 conflicts=0 nets=0  vias=106 | ok=false over=DQ1_a:47.72>27.79,DQ6_a:43.53>27.79,DQ4_b:27.66>26.43,CS0_b:36.66>27.21 CA0_b strip 0->22; CKE0_b strip 0->12; DQ0_a strip 0->10
+  iter 129 [1299s] pres=4.9 conflicts=116 nets=14 CA1_b,CA2_b,CA3_b,CA4_b,CKE0_b,CS0_b,DQ0_a,DQ12_b vias=102
+  iter 134 [1302s] pres=14.9 conflicts=51 nets=7 CA2_b,CA3_b,CA4_b,CKE0_b,CS0_b,DQ2_a,DQ3_a vias=104
+  endgame: 14 nets (4 in conflict) re-placed in order 220
+  iter 137 [1519s] pres=23.3 conflicts=0 nets=0  vias=106 | ok=false over=DQ0_a:47.68>27.79,DQ0_b:26.85>25.41,CA3_b:32.96>27.21,CS0_b:30.12>27.21 CA0_b strip 0->20; CKE0_b strip 0->13; DQ1_a strip 2->9
+  iter 139 [1524s] pres=2.5 conflicts=156 nets=14 CA0_b,CA2_b,CA3_b,CA4_b,CA5_b,CKE0_b,CS0_b,DQ0_a vias=104 | ok=true over= CA0_b strip 20->0; CKE0_b strip 13->0; DQ1_a strip 9->0
+  iter 144 [1525s] pres=7.6 conflicts=0 nets=0  vias=104 | ok=true over= 
+SOLVED in 1525s
+[1526s] stage 1 (55 nets, order 0): SOLVED in 1525s
+solved true error null 1526s
