@@ -25,17 +25,20 @@ FIXT = {tk(t) for t in fx["traces"]}
 # differential pairs (same rule as pairs.py) never move either: a jog would change P/N skew
 import re
 _names = {t["net"] for t in cu["traces"]} | {v["net"] for v in cu["vias"]}
-PAIR_NETS = set()
+PAIR_NETS = set(); PARTNER = {}
 for n in _names:
     m = re.match(r"(.*?)(P|_P|DP)(_C)?$", n or "")
     if m:
         neg = m.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[m.group(2)] + (m.group(3) or "")
-        if neg in _names: PAIR_NETS |= {n, neg}
+        if neg in _names: PAIR_NETS |= {n, neg}; PARTNER[n] = neg; PARTNER[neg] = n
 fixed_net = lambda n: n is None or n.startswith("DDR_") or n in PAIR_NETS
 vias = cu["vias"] + [dict(v, net="GND", _fp=1) for v in P["footprintVias"]]
 traces = [t for t in cu["traces"] if len(t["pts"]) > 1]
 for v in vias: v["_mov"] = not v.get("_fp") and vk(v) not in FIXV and not fixed_net(v["net"])
 for t in traces: t["_mov"] = tk(t) not in FIXT and not fixed_net(t["net"])
+# PAIR_PUSH=1: a pair trace may get a jog only together with its partner, both by the same trapezoid (equal length)
+PAIR_PUSH = bool(os.environ.get("PAIR_PUSH"))
+for t in traces: t["_pair"] = PAIR_PUSH and tk(t) not in FIXT and t["net"] in PAIR_NETS and not t["net"].startswith("DDR_")
 padg = lambda p: Point(p["x"], p["y"]).buffer(p["w"] / 2, 16) if p["shape"] == "circle" else box(p["x"] - p["w"] / 2, p["y"] - p["h"] / 2, p["x"] + p["w"] / 2, p["y"] + p["h"] / 2)
 PADG = [padg(p) for p in pads]
 line = lambda t: LineString([(p["x"], p["y"]) for p in t["pts"]])
@@ -179,6 +182,64 @@ def push_via(vi, ox, oy, need):
         if try_move(ch, [("v", vi)] + [("t", tj) for tj, _ in att]): return True
     return False
 
+def seg_at(pts, s):
+    """(segment index, position) of arc length s along pts"""
+    acc = 0.0
+    for k in range(len(pts) - 1):
+        L = math.hypot(pts[k + 1]["x"] - pts[k]["x"], pts[k + 1]["y"] - pts[k]["y"])
+        if acc + L >= s - 1e-9: return k, s - acc, L
+        acc += L
+    return None
+
+def trapezoid(pts, s, half, ramp, ox, oy):
+    """copy of pts with a jog centred at arc length s: flat 2*half long, ramps of length ramp, offset (ox, oy);
+    None unless the whole jog lies inside one straight segment"""
+    a = seg_at(pts, s - half - ramp); b = seg_at(pts, s + half + ramp)
+    if not a or not b or a[0] != b[0] or a[1] < 0.02 or b[2] - b[1] < 0.02: return None
+    k = a[0]; P0, P1 = pts[k], pts[k + 1]; L = a[2]
+    ux, uy = (P1["x"] - P0["x"]) / L, (P1["y"] - P0["y"]) / L
+    at = lambda d, off: {"x": round(P0["x"] + ux * d + (ox if off else 0), 4), "y": round(P0["y"] + uy * d + (oy if off else 0), 4)}
+    d0 = a[1]
+    new = [at(d0, 0), at(d0 + ramp, 1), at(d0 + ramp + 2 * half, 1), at(d0 + 2 * ramp + 2 * half, 0)]
+    return pts[:k + 1] + new + pts[k + 1:]
+
+def plen(pts): return sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for a, b in zip(pts, pts[1:]))
+
+def push_pair(ti, vx, vy, need):
+    """jog pair trace ti and its partner's parallel trace by the same trapezoid, away from (vx, vy)"""
+    t = traces[ti]; g = TG[ti]; mate = PARTNER.get(t["net"])
+    if not mate: return False
+    s = g.project(Point(vx, vy)); p = g.interpolate(s)
+    hit = seg_at(t["pts"], s)
+    if not hit: return False
+    k = hit[0]; P0, P1 = t["pts"][k], t["pts"][k + 1]; L = hit[2]
+    if L < 1e-6: return False
+    ux, uy = (P1["x"] - P0["x"]) / L, (P1["y"] - P0["y"]) / L; nx, ny = -uy, ux
+    if (p.x - vx) * nx + (p.y - vy) * ny < 0: nx, ny = -nx, -ny
+    # partner: same layer, parallel, 0.15 - 0.6 mm away at this point
+    best = None
+    for kk, j in objs_near(p.x, p.y, 0.7):
+        if kk != "t" or traces[j]["net"] != mate or traces[j]["layer"] != t["layer"] or not traces[j]["_pair"]: continue
+        sj = TG[j].project(p); q = TG[j].interpolate(sj); dq = q.distance(p)
+        h = seg_at(traces[j]["pts"], sj)
+        if not h or not (0.12 < dq < 0.6) or h[2] < 1e-6: continue
+        Q0, Q1 = traces[j]["pts"][h[0]], traces[j]["pts"][h[0] + 1]
+        vx2, vy2 = (Q1["x"] - Q0["x"]) / h[2], (Q1["y"] - Q0["y"]) / h[2]
+        if abs(vx2 * uy - vy2 * ux) > 0.02: continue  # not parallel
+        if best is None or dq < best[0]: best = (dq, j, sj)
+    if not best: return False
+    _, j, sj = best; m = traces[j]
+    for half in (0.3, 0.2, 0.4):
+        for ramp in (0.15, 0.25, 0.1):
+            for f in (1.0, 1.5):
+                d = min(STEP_MAX, need * f)
+                a = trapezoid(t["pts"], s, half, ramp, nx * d, ny * d); b = trapezoid(m["pts"], sj, half, ramp, nx * d, ny * d)
+                if not a or not b: continue
+                # equal added length on both members (skew unchanged), to 1 um
+                if abs((plen(a) - plen(t["pts"])) - (plen(b) - plen(m["pts"]))) > 1e-3: continue
+                if try_move([(t, {"pts": a}), (m, {"pts": b})], [("t", ti), ("t", j)]): return True
+    return False
+
 rebuild()
 v0 = violations(); print(f"start: {len({i for _, i, _, _ in v0})} vias below {HOLE} mm, {len(v0)} pairs, min {HOLE - v0[0][0]:.3f}" if v0 else "start: clean")
 for rnd in range(ROUNDS):
@@ -188,6 +249,7 @@ for rnd in range(ROUNDS):
     for need, i, k2, j in vs:
         need += EPS; v = vias[i]
         if k2 == "t" and traces[j]["_mov"] and push_trace(j, v["x"], v["y"], need): moved += 1; continue
+        if k2 == "t" and traces[j]["_pair"] and push_pair(j, v["x"], v["y"], need): moved += 1; continue
         o = (traces[j] if k2 == "t" else vias[j] if k2 == "v" else pads[j])
         if v["_mov"]:
             if k2 == "t": c = TG[j].interpolate(TG[j].project(Point(v["x"], v["y"]))); ox, oy = c.x, c.y
