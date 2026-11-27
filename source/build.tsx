@@ -25,7 +25,8 @@ circuit.add(
 )
 await circuit.renderUntilSettled()
 const raw: any[] = circuit.getCircuitJson()
-// the netlist lives in design/netlist.json; tscircuit sees no traces, so its "floating pin" notices are dropped
+// the netlist lives in design/netlist.json; tscircuit sees no traces, so its "floating pin" notices are dropped here and
+// the nets are written into the circuit JSON below (export.ts fails if any copper is left without a net)
 const cj: any[] = raw.filter((e) => e.type !== "source_pin_must_be_connected_error")
 // ---------- pads with their nets ----------
 const srcName = Object.fromEntries(cj.filter((e) => e.type === "source_component").map((e) => [e.source_component_id, e.name]))

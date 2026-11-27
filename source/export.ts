@@ -33,3 +33,16 @@ const top = net.components.filter((c: any) => place[c.ref].layer === "top").leng
 console.log(`bom: ${groups.size} lines, ${net.components.length} parts (${top} top, ${net.components.length - top} bottom)`)
 // rotations checked against JLCPCB's footprints (writes pin-1 metadata into the circuit JSON, rewrites cpl.csv)
 if (!process.env.NO_PNP_FIX) { const r = Bun.spawnSync(["bun", S + "/fix-pnp.ts"], { env: { ...process.env, CPL: OUT + "/cpl.csv" }, stdout: "inherit", stderr: "inherit" }); if (r.exitCode) throw new Error("fix-pnp: unverified rotations") }
+// connectivity in the circuit JSON itself (what the viewer and tscircuit's own checks read): every routed trace, via
+// and copper pour must point to a net, and `tsci check shorts` must find no shorts. Fails the export otherwise.
+{
+  const cj: any[] = await Bun.file(S + "/../index.circuit.json").json()
+  const loose = cj.filter((e) => (e.type === "pcb_trace" && !e.source_trace_id) || (e.type === "pcb_via" && !e.source_net_id) || (e.type === "pcb_copper_pour" && !e.source_net_id))
+  const nets = cj.filter((e) => e.type === "source_net").length
+  console.log(`circuit JSON nets: ${nets}, traces/vias/pours without a net: ${loose.length}`)
+  if (!nets || loose.length) throw new Error(`circuit JSON: ${loose.length} copper elements without a net (${nets} nets)`)
+  const sh = Bun.spawnSync(["npx", "tsci", "check", "shorts", S + "/../index.circuit.json"], { cwd: S + "/.." })
+  const txt = sh.stdout.toString() + sh.stderr.toString()
+  if (!/No shorts detected/.test(txt)) throw new Error("tsci check shorts: " + (txt.split("\n").find((l) => /short/i.test(l)) ?? "failed"))
+  console.log("tsci check shorts: no shorts")
+}
