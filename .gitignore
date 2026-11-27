@@ -15,3 +15,4 @@ source/route/ddr_timing.json
 .tscircuit/
 source/route/run_*.log
 source/route/__pycache__/
+checks/

@@ -75,6 +75,39 @@ const planes = (await Bun.file(PL).exists()) ? await Bun.file(PL).json() : []
 for (const p of [...planes].sort((a: any, b: any) => b.area - a.area))
   cj.push({ type: "pcb_copper_pour", pcb_copper_pour_id: `r_pour_${n++}`, shape: "brep", layer: p.layer, net_name: p.net, covered_with_solder_mask: true,
     brep_shape: { outer_ring: { vertices: p.outer.map((q: any) => ({ x: q.x - CX, y: q.y - CY })) }, inner_rings: p.holes.map((h: any[]) => ({ vertices: h.map((q) => ({ x: q.x - CX, y: q.y - CY })) })) } })
+// ---------- connectivity: the nets of design/netlist.json as circuit-json nets ----------
+// one source_net + one source_trace per net (listing every source_port on it); every port, routed trace, via and
+// copper pour points to its net, so the viewer highlights a net as one piece and `tsci check shorts` knows which
+// copper belongs together. The routed copper carries its net in route/copper.json (`net` below).
+const portNet: Record<string, string> = {}
+for (const sp of cj.filter((e) => e.type === "source_port")) {
+  const ref = srcName[sp.source_component_id], names = [...new Set([sp.name, ...(sp.port_hints ?? [])].filter(Boolean))] as string[]
+  const nn = ref ? netOf(ref, names) : null
+  if (nn) portNet[sp.source_port_id] = nn
+}
+const subId = cj.find((e) => e.type === "source_port" && e.subcircuit_id)?.subcircuit_id
+const netIds: Record<string, { net: string; trace: string; key: string }> = {}
+const netNames = [...new Set([...Object.values(portNet), ...copper.traces.map((t: any) => t.net), ...copper.vias.map((v: any) => v.net), ...planes.map((p: any) => p.net)].filter(Boolean))] as string[]
+netNames.forEach((name, i) => {
+  const ids = { net: `source_net_${i}`, trace: `source_trace_net_${i}`, key: `net_${name}` }; netIds[name] = ids
+  cj.push({ type: "source_net", source_net_id: ids.net, name, member_source_group_ids: [], subcircuit_id: subId, subcircuit_connectivity_map_key: ids.key,
+    is_ground: name === "GND", is_power: /^(VCC|VDD)/.test(name) })
+  cj.push({ type: "source_trace", source_trace_id: ids.trace, connected_source_port_ids: Object.keys(portNet).filter((k) => portNet[k] === name),
+    connected_source_net_ids: [ids.net], subcircuit_id: subId, subcircuit_connectivity_map_key: ids.key, display_name: name })
+})
+for (const e of cj) {
+  if (e.type === "source_port" && portNet[e.source_port_id]) e.subcircuit_connectivity_map_key = netIds[portNet[e.source_port_id]].key
+  if (e.type === "pcb_trace" && e.net_name && netIds[e.net_name]) { e.source_trace_id = netIds[e.net_name].trace; delete e.net_name }
+  if (e.type === "pcb_via") {
+    // routed vias carry net_name; part footprint vias (thermal-pad vias) are ground
+    const nm = e.net_name ?? (e.pcb_component_id || e.pcb_port_ids ? "GND" : null)
+    if (nm && netIds[nm]) { e.source_trace_id = netIds[nm].trace; e.source_net_id = netIds[nm].net; e.subcircuit_connectivity_map_key = netIds[nm].key }
+    delete e.net_name
+  }
+  if (e.type === "pcb_copper_pour" && e.net_name && netIds[e.net_name]) { e.source_net_id = netIds[e.net_name].net; delete e.net_name }
+}
+// tscircuit flagged every pin as unrouted because it saw no traces; the nets above connect them
+for (let i = cj.length - 1; i >= 0; i--) if (cj[i].type === "source_pin_missing_trace_warning") cj.splice(i, 1)
 // JLCPCB silkscreen minimums: line width 0.15 mm, text 1.0 mm high. Reference designators at a legible 1 mm do not
 // fit on this board, so silk text smaller than that is dropped (assembly is placed from the CPL; the designators stay
 // on the fab layer), and silk lines are drawn at least 0.15 mm wide
