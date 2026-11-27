@@ -281,6 +281,8 @@ const pop = () => { lastKey = heapK[0]; const v = heapV[0], lk = heapK.pop()!, l
 const PAIR_PITCH = 0.28, attract = ALL_L.map(() => new Uint8Array(NN)), attractV = new Uint8Array(NN)
 const ring = (r0: number, r1: number) => { const o: number[] = []; const k = Math.ceil(r1 / P); for (let dj = -k; dj <= k; dj++) for (let di = -k; di <= k; di++) { const d = Math.hypot(di, dj) * P; if (d >= r0 && d <= r1) o.push(di, dj) } return o }
 const RING_T = ring(PAIR_PITCH - 0.06, PAIR_PITCH + 0.06), RING_V = ring(0.36, 0.55)
+// where the follower may place a via under PAIR_VIA: beside a lead via, up to one BGA ball pitch (0.65 / 0.8 mm) away
+const RING_PV = ring(0.3, 0.95), pairViaOK = new Uint8Array(NN)
 let attractOn = false
 // pair coupling: the follower may only use cells within FOLLOW_R of the lead's path (same layer; around the lead's
 // vias on every layer) or within FOLLOW_T of its own terminals. A follower that cannot fit there routes freely but
@@ -328,7 +330,8 @@ function setAttract(lead: Net | undefined, on: boolean) {
   for (const p of lead.path) for (const id of p) { const l = (id / NN) | 0, c = id - l * NN, i = c % NX, j = (c / NX) | 0
     for (let k = 0; k < RING_T.length; k += 2) { const ii = i + RING_T[k], jj = j + RING_T[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attract[l][jj * NX + ii] = v } }
   for (const c of lead.vias ?? []) { const i = c % NX, j = (c / NX) | 0
-    for (let k = 0; k < RING_V.length; k += 2) { const ii = i + RING_V[k], jj = j + RING_V[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attractV[jj * NX + ii] = v } }
+    for (let k = 0; k < RING_V.length; k += 2) { const ii = i + RING_V[k], jj = j + RING_V[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) attractV[jj * NX + ii] = v }
+    for (let k = 0; k < RING_PV.length; k += 2) { const ii = i + RING_PV[k], jj = j + RING_PV[k + 1]; if (ii >= 0 && jj >= 0 && ii < NX && jj < NY) pairViaOK[jj * NX + ii] = v } }
   if (on) {
     // never attract the follower into the lead's own clearance: no follower via within via-to-trace distance of the
     // lead's path, no follower trace within trace-to-via distance of the lead's vias
@@ -422,7 +425,7 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
       if (followOn && ((!followM[l2][c] && !(NECK_FREE && neck[c])) || leadKOV[c] || leadKO[l2][c])) continue
       // the follower changes layer only beside one of the lead's vias, so P and N get the same vias (PAIR_VIA=0: off)
-      if (followOn && PAIR_VIA && !attractV[c]) continue
+      if (followOn && PAIR_VIA && !pairViaOK[c]) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
