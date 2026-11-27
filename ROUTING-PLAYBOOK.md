@@ -305,3 +305,15 @@ Afterwards:
 - **Starting point for fixes:** don't renegotiate from a finished routing (see §8). Use the strict rerouter
   for the last few nets.
 - **Cheapest congestion fix:** drop unneeded interfaces before routing.
+
+## Differential pairs: same vias on P and N (rule)
+
+P and N of a differential pair must change layers together, side by side, with the **same number of vias**.
+Matching lengths with different via counts only works for one via model (see ISSUES-AND-FIXES P1/P2: the delay
+check said 0 ps, ngspice with via pad capacitance said 4-19 ps).
+- `route.ts` enforces it by default (the follower may place a via only beside one of the lead's vias; `PAIR_VIA=0`
+  turns it off).
+- `check.py` fails (exit 1) and prints `WARNING pair vias` for any pair with unequal P/N via counts
+  (`ALLOW_PAIR_VIA_MISMATCH=1` downgrades it to a warning); `pairs.py` prints the same warning per pair.
+- Pair lengths are matched in time (`tune_pairs.py DELAY=1`, `pairs.py`), and `route/pair_delay.py` /
+  `route/pair_sim.py` (ngspice) verify the final copper.

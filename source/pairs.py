@@ -29,11 +29,13 @@ for n in names:
     neg = base + {"P": "N", "_P": "_N", "DP": "DM"}[suf] + c
     if neg in rt: pairs.append((n, neg))
 LIMIT = {"HDMI": 0.13, "MIPI": 0.13, "PCIE": 0.13, "USB": 0.25}  # mm (about 5 mil; USB 2.0 is lenient)
-worst = 0
+worst = 0; via_bad = []
 for p, q in pairs:
     lp, lq = length(p), length(q)
     if lp is None or lq is None: continue
     sk = abs(lp - lq); lim = next((v for k, v in LIMIT.items() if p.startswith(k)), 0.13)
     worst = max(worst, sk / lim)
-    print(f"{p:22} {lp:6.2f} mm  {q:22} {lq:6.2f} mm  skew {sk:5.2f} mm {'OK' if sk <= lim else 'TOO LONG'}")
-print(f"{len(pairs)} pairs; worst skew / limit = {worst:.1f}")
+    vp, vq = len(rt[p]["vias"]), len(rt[q]["vias"])
+    print(f"{p:22} {lp:6.2f} mm  {q:22} {lq:6.2f} mm  skew {sk:5.2f} mm {'OK' if sk <= lim else 'TOO LONG'}" + (f"  WARNING: vias {vp}/{vq} (P and N must use the same number of vias)" if vp != vq else ""))
+    if vp != vq: via_bad.append(p)
+print(f"{len(pairs)} pairs; worst skew / limit = {worst:.1f}" + (f"; WARNING: {len(via_bad)} pairs with unequal P/N via counts: {via_bad}" if via_bad else ""))

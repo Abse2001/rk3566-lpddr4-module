@@ -128,4 +128,17 @@ for v in edge_v[:5]: print("   edge", v)
 print(f"Via hole to other-net copper (>= {HOLE_CU} mm, JLCPCB DFM 'Danger' below 0.18; fails the check only with HOLE_RULE=1): {len(holecu_v)} issues (+{holecu_ddr} inside the frozen DDR block)", holecu_v[:5])
 print(f"Connectivity: {len(pad_items) - len(open_nets)}/{len(pad_items)} nets complete")
 for o in open_nets[:40]: print("   open", o)
-sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v or (holecu_v and os.environ.get("HOLE_RULE")) else 0)
+# differential pairs: P and N must use the same number of vias (else their delays only match for one via model);
+# ALLOW_PAIR_VIA_MISMATCH=1 turns the failure into a warning
+import re as _re
+from collections import Counter as _C
+_vc = _C(v["net"] for v in cu["vias"]); _tn = {t["net"] for t in cu["traces"]}
+pairvia_v = []
+for _n in sorted(_tn):
+    _m = _re.match(r"(.*?)(P|_P|DP)(_C)?$", _n or "")
+    if not _m or _n.startswith("DDR_"): continue
+    _q = _m.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[_m.group(2)] + (_m.group(3) or "")
+    if _q in _tn and _vc[_n] != _vc[_q]: pairvia_v.append((_n, _vc[_n], _q, _vc[_q]))
+print(f"Differential pairs: {len(pairvia_v)} with unequal P/N via counts" + (" -- WARNING: P and N must use the same number of vias" if pairvia_v else ""))
+for _x in pairvia_v: print("   WARNING pair vias", _x)
+sys.exit(1 if viol or edge_v or open_nets or hole_v or pad_v or ref_v or (holecu_v and os.environ.get("HOLE_RULE")) or (pairvia_v and not os.environ.get("ALLOW_PAIR_VIA_MISMATCH")) else 0)

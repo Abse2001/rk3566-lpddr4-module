@@ -302,7 +302,7 @@ function setOwn(n: Net | null) {
 const leadKO = ALL_L.map(() => new Uint8Array(NN)), leadKOV = new Uint8Array(NN), koMarked: number[] = []
 let followOn = false
 let D_FOL = disk(+(process.env.FOLLOW_R ?? 0.6)), D_FOLT = disk(+(process.env.FOLLOW_T ?? 2.0)), DECOUPLE = 25
-const NECK_FREE = process.env.NECK_FREE === "1"
+const NECK_FREE = process.env.NECK_FREE === "1", PAIR_VIA = process.env.PAIR_VIA !== "0"  // default on: P and N always share vias
 function setFollow(lead: Net, f: Net, on: boolean) {
   if (!on) {
     for (const id of followMarked) followM[(id / NN) | 0][id % NN] = 0; followMarked.length = 0
@@ -421,6 +421,8 @@ function searchIn(n: Net, sources: number[], goals: Int32Array | null, gx0: numb
     if (!blockV[c] && corrOk(c)) for (let l2 = 0; l2 < NL; l2++) {
       if (l2 === l || (l2 === 3 && !n.inner2) || (l2 >= 4 && !n.gnd)) continue
       if (followOn && ((!followM[l2][c] && !(NECK_FREE && neck[c])) || leadKOV[c] || leadKO[l2][c])) continue
+      // the follower changes layer only beside one of the lead's vias, so P and N get the same vias (PAIR_VIA=0: off)
+      if (followOn && PAIR_VIA && !attractV[c]) continue
       if (hard && occV[c]) continue
       const nid = l2 * NN + c
       if ((neck[c] ? blockT : bT)[l2][c] && isGoal[nid] !== goalStamp) continue
