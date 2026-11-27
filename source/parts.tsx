@@ -47,11 +47,20 @@ export function wlcsp20Footprint() {
   return <footprint>{pads}<courtyardoutline outline={[{ x: -1.25, y: -1.05 }, { x: 1.25, y: -1.05 }, { x: 1.25, y: 1.05 }, { x: -1.25, y: 1.05 }, { x: -1.25, y: -1.05 }]} /></footprint>
 }
 
+/** JLCPCB/EasyEDA 3D model of the DF40C-100DP-0.4V header (C6021443 and C531031 share EasyEDA model
+ *  ce99aa9c...). The model's length runs along x; our footprint runs along y, hence the 90 degree offset. */
+const DF40_MODEL = {
+  objUrl: "https://modelcdn.tscircuit.com/easyeda_models/assets/C531031.obj?uuid=ce99aa9c9b99479886406c51319c4718",
+  stepUrl: "https://modelcdn.tscircuit.com/easyeda_models/assets/C531031.step?uuid=ce99aa9c9b99479886406c51319c4718",
+  pcbRotationOffset: 90,
+  modelOriginPosition: { x: 0, y: 0, z: 0 },
+}
+
 export function makePart(c: { ref: string; role: string; value: string }, place: any) {
   const r: any = (roles as any)[c.role]
   const common: any = { name: c.ref, schX: place.schX ?? 0, schY: place.schY ?? 0, pcbX: place.x, pcbY: place.y, pcbRotation: place.rot ?? 0, layer: place.layer ?? "top", supplierPartNumbers: { jlcpcb: [r.lcsc] } }
   if (c.role === "DF40_HEADER")
-    return <chip key={c.ref} {...common} manufacturerPartNumber="DF40C-100DP-0.4V(51)" footprint={cm4HeaderFootprint(place.oddSide ?? -1)} pinLabels={Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`pin${i + 1}`, [String(i + 1)]]))} />
+    return <chip key={c.ref} {...common} manufacturerPartNumber="DF40C-100DP-0.4V(58)" footprint={cm4HeaderFootprint(place.oddSide ?? -1)} cadModel={DF40_MODEL} pinLabels={Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`pin${i + 1}`, [String(i + 1)]]))} />
   if (r.import) {
     const C = IMPORTS[r.import]
     const extra: any = c.role === "XTAL_24M" ? { loadCapacitance: "12pF" } : c.role === "XTAL_32K" ? { loadCapacitance: "12.5pF" } : c.role === "BUCK_CPU" ? { footprint: wlcsp20Footprint() } : {}
