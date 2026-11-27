@@ -136,12 +136,13 @@ from collections import Counter as _C, defaultdict as _dd
 _tm = json.load(open(D + "/route/ddr_timing.json"))["ps_per_mm"]; _po, _pi = _tm["outer_0.11"], _tm["inner3_0.11"]
 _vcal = json.load(open(D + "/route/via_cal.json")) if os.path.exists(D + "/route/via_cal.json") else None
 _Z = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.457, "bottom": 1.548}
-_vc = _C(v["net"] for v in cu["vias"]); _tn = {t["net"] for t in cu["traces"]}
+_uv = {(v["net"], round(v["x"], 3), round(v["y"], 3)): v for v in cu["vias"]}  # a via counted once per position
+_vc = _C(k[0] for k in _uv); _tn = {t["net"] for t in cu["traces"]}
 _dl = _dd(float); _ends = _dd(set)
 for t in cu["traces"]:
     _dl[t["net"]] += sum(_m.hypot(b["x"] - a["x"], b["y"] - a["y"]) for a, b in zip(t["pts"], t["pts"][1:])) * (_po if t["layer"] in ("top", "bottom") else _pi)
     for q in (t["pts"][0], t["pts"][-1]): _ends[(t["net"], round(q["x"], 3), round(q["y"], 3))].add(t["layer"])
-for v in cu["vias"]:
+for v in _uv.values():
     _ls = set(_ends.get((v["net"], round(v["x"], 3), round(v["y"], 3)), set()))
     _ls |= {p["layer"] for p in pads if p["net"] == v["net"] and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2}
     if len(_ls) >= 2:

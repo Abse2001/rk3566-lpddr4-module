@@ -4,7 +4,7 @@
 # Usage: DIR=costdown/pf python3 costdown/pair_fix.py   (DIR holds routes.json + copper.json, rewritten)
 import json, os, re, shutil, subprocess, collections, math
 S = os.path.dirname(os.path.abspath(__file__)) + "/.."; F = os.path.abspath(os.environ["DIR"])
-def vias(cu, n): return sum(1 for v in cu["vias"] if v["net"] == n)
+def vias(cu, n): return len({(round(v["x"], 3), round(v["y"], 3)) for v in cu["vias"] if v["net"] == n})
 def plen(cu, n): return sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for t in cu["traces"] if t["net"] == n for a, b in zip(t["pts"], t["pts"][1:]))
 cu = json.load(open(F + "/copper.json")); names = {t["net"] for t in cu["traces"]}
 pairs = []

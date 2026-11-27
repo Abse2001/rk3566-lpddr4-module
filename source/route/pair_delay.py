@@ -22,7 +22,7 @@ ends = collections.defaultdict(set)
 for t in cu["traces"]:
     for q in (t["pts"][0], t["pts"][-1]): ends[(t["net"], round(q["x"], 3), round(q["y"], 3))].add(t["layer"])
 VD = collections.defaultdict(float)
-for v in cu["vias"]:
+for v in {(v["net"], round(v["x"], 3), round(v["y"], 3)): v for v in cu["vias"]}.values():
     V[v["net"]] += 1
     ls = set(ends.get((v["net"], round(v["x"], 3), round(v["y"], 3)), set()))
     for p in P_:

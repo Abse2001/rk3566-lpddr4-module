@@ -145,7 +145,9 @@ def route(net):
             c = G * (1.414 if dj and di else 1.0) * (1.0 if near[LAY[l]][jj, ii] or not pn else 1.6)
             ns = (l, jj, ii, k); nd = g_ + c
             if nd < dist.get(ns, 1e9): dist[ns] = nd; prev[ns] = s; heapq.heappush(pq, (nd + h(jj, ii), nd, ns))
-        if viaok[j, i] and (target is None or k < target):
+        # no second layer change on the cell of the previous one (that is one through via, not two)
+        pv = prev.get(s)
+        if viaok[j, i] and (target is None or k < target) and not (pv is not None and pv[1] == j and pv[2] == i and pv[0] != l):
             for l2 in range(len(LAY)):
                 if l2 != l and free[LAY[l2]][j, i]:
                     ns = (l2, j, i, k + 1 if target is not None else 0); nd = g_ + VIA_COST
@@ -186,7 +188,10 @@ def route(net):
             for e in (0, -1):
                 q = s["pts"][e]
                 if s["layer"] == p["layer"] and abs(q["x"] - p["x"]) < G and abs(q["y"] - p["y"]) < G: s["pts"][e] = {"x": p["x"], "y": p["y"]}
-    rv = [{"x": round(x0 + v[2] * G, 4), "y": round(y0 + v[1] * G, 4), "d": VD, "hole": 0.15, "net": net} for v in vias]
+    rv = []
+    for v in vias:
+        q = {"x": round(x0 + v[2] * G, 4), "y": round(y0 + v[1] * G, 4), "d": VD, "hole": 0.15, "net": net}
+        if not any(abs(q["x"] - r["x"]) < 1e-6 and abs(q["y"] - r["y"]) < 1e-6 for r in rv): rv.append(q)
     rt["nets"][net] = {"segs": rsegs, "vias": rv}
     cu["traces"] += [dict(s, net=net) for s in rsegs]; cu["vias"] += rv
     Lm = sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for s in rsegs for a, b in zip(s["pts"], s["pts"][1:])) + 0.6 * len(rv)
