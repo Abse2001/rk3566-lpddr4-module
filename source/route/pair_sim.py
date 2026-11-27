@@ -27,6 +27,23 @@ def lane(net):
         a, b = min(ls, key=lambda l: Z[l]), max(ls, key=lambda l: Z[l])
         out.append({"connection_name": net, "route": [{"route_type": "wire", "x": v["x"], "y": v["y"], "layer": a}, {"route_type": "via", "x": v["x"], "y": v["y"], "from_layer": a, "to_layer": b}]})
     return out
+# vias here are listed after the wires (copper has no route order): consecutive via pieces are merged into one line
+# carrying their total delay and total pad capacitance, else ngspice crawls through the reflections between
+# back-to-back short lines. Total delay and load are unchanged; only their position along the net is lumped.
+def channel(prefix, name, src, rx):
+    lines, node, k = [], src, 0
+    vt, vn = 0.0, 0
+    def flush_vias():
+        nonlocal node, k, vt, vn
+        if vn:
+            nxt = f"{prefix}{k}"; lines.append(f"T{prefix}{k} {node} 0 {nxt} 0 Z0=45.0 TD={vt:.3f}p"); lines.append(f"C{prefix}v{k} {nxt} 0 {0.3 * vn:.2f}p")
+            node = nxt; k += 1; vt, vn = 0.0, 0
+    for z0, td, kind in S.merged(name):
+        if kind == "via": vt += td; vn += 1; continue
+        flush_vias(); nxt = f"{prefix}{k}"; lines.append(f"T{prefix}{k} {node} 0 {nxt} 0 Z0={z0:.1f} TD={td:.3f}p"); node = nxt; k += 1
+    flush_vias(); lines.append(f"R{prefix}j {node} {rx} 0.01")
+    return lines
+S.channel = channel
 RATE = {"HDMI": 3400, "MIPI": 1500, "PCIE": 5000, "USB": 480}
 names = {t["net"] for t in cu["traces"]}
 pairs = []
@@ -46,9 +63,10 @@ for p, nn in pairs:
             if (x[k - 1] - th) * (x[k] - th) < 0: c.append(t[k - 1] + (th - x[k - 1]) / (x[k] - x[k - 1]) * (t[k] - t[k - 1]))
         return c
     cp, cn = cross(v[0]), cross(v[1])
-    sk = [min(abs(a - b) for b in cn) for a in cp[10:60]] if cn else [0]
+    sk = [min(abs(a - b) for b in cn) for a in cp[10:60]] if cn else []
+    if not sk: print(f"{p:20s} no crossings found"); continue
     delay = sum(td for _, td, _ in S.pieces(p))
     h, w, _ = S.eye(t, [a - b for a, b in zip(v[0], v[1])], pat, delay)
     skew = sum(sk) / len(sk); worst = max(worst, skew)
-    print(f"{p:20s} {rate:5d} Mb/s  P/N crossing skew {skew:5.2f} ps  diff eye {h * 1000:5.0f} mV x {w:4.0f} ps of {S.UI:.0f} ps")
+    print(f"{p:20s} {rate:5d} Mb/s  vias {sum(1 for x in S.pieces(p) if x[2] == 'via')}/{sum(1 for x in S.pieces(nn) if x[2] == 'via')}  P/N crossing skew {skew:5.2f} ps  diff eye {h * 1000:5.0f} mV x {w:4.0f} ps of {S.UI:.0f} ps")
 print(f"{len(pairs)} pairs; worst P/N crossing skew {worst:.2f} ps")

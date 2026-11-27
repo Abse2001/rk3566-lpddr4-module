@@ -1,0 +1,7 @@
+HDMI_TX_CLKP          3400 Mb/s  vias 3/5  P/N crossing skew  8.87 ps  diff eye  1208 mV x  171 ps of 294 ps
+HDMI_TX_D0P           3400 Mb/s  vias 1/1  P/N crossing skew  0.00 ps  diff eye  1320 mV x  194 ps of 294 ps
+HDMI_TX_D1P           3400 Mb/s  vias 2/2  P/N crossing skew  0.00 ps  diff eye  1319 mV x  182 ps of 294 ps
+HDMI_TX_D2P           3400 Mb/s  vias 1/1  P/N crossing skew  0.18 ps  diff eye  1320 mV x  194 ps of 294 ps
+MIPI_CSI_RX_CLK1P     1500 Mb/s  vias 2/3  P/N crossing skew  4.21 ps  diff eye  1320 mV x  560 ps of 667 ps
+MIPI_CSI_RX_D2P      no crossings found
+MIPI_CSI_RX_D3P       1500 Mb/s  vias 2/6  P/N crossing skew 19.04 ps  diff eye  1319 mV x  547 ps of 667 ps
