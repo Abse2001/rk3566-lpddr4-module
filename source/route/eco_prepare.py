@@ -34,7 +34,10 @@ for p in npads:
     o = op.get(key(p))
     if o is None or abs(o["x"] - p["x"]) > 1e-4 or abs(o["y"] - p["y"]) > 1e-4 or o["layer"] != p["layer"] or o["net"] != p["net"]:
         mark(p["net"], f"pad {key(p)} moved")
-        if o is not None and p["net"] in PLANE: moved_old.append((o["layer"], padg(o).buffer(0.01), p["net"]))
+        if o is not None and p["net"] in PLANE:
+            # plane-net copper at the old AND the new place of a moved pad goes: a remnant at the new place would make
+            # the router take the pad for connected
+            moved_old.append((o["layer"], padg(o).buffer(0.05), p["net"])); moved_old.append((p["layer"], padg(p).buffer(0.05), p["net"]))
 # 2. old copper of a routed net vs the new fixed copper and new pads (all other nets)
 obs = {l: [] for l in L}
 for t in fx["traces"]:
@@ -90,6 +93,24 @@ for n in list(rip):
     q = partner(n)
     if q: mark(q, f"partner of {n}")
 keep = [n for n in orr if n not in rip]
+# a kept plane-net trace must still end on its net's copper at both ends (a pad of the new placement, a kept via or
+# another kept trace); remove dangling remnants until none is left
+padset = {}
+for p in npads: padset.setdefault(p["net"], []).append(padg(p))
+def _ends_ok(k, t):
+    n = t["net"]
+    for e in (t["pts"][0], t["pts"][-1]):
+        pt = Point(e["x"], e["y"])
+        if any(g.distance(pt) < 1e-3 for g in padset.get(n, [])): continue
+        if any(("v", j) not in drop_piece and v["net"] == n and math.hypot(v["x"] - e["x"], v["y"] - e["y"]) < v["d"] / 2 for j, v in enumerate(oc["vias"])): continue
+        if any(j != k and ("t", j) not in drop_piece and u["net"] == n and u["layer"] == t["layer"] and LineString([(q["x"], q["y"]) for q in u["pts"]]).distance(pt) < 1e-3 for j, u in enumerate(oc["traces"])): continue
+        return False
+    return True
+import math
+for _ in range(5):
+    gone = [k for k, t in enumerate(oc["traces"]) if t["net"] in PLANE and ("t", k) not in drop_piece and not _ends_ok(k, t)]
+    if not gone: break
+    for k in gone: drop_piece.add(("t", k))
 frozen = {"traces": [t for k, t in enumerate(oc["traces"]) if t["net"] in keep and ("t", k) not in drop_piece],
           "vias": [v for k, v in enumerate(oc["vias"]) if v["net"] in keep and ("v", k) not in drop_piece]}
 json.dump(frozen, open(os.environ["FROZEN"], "w"))

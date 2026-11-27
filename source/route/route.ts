@@ -142,7 +142,8 @@ if (GND_SIG) {
   const RR = W_SIG / 2 + 3 * 0.0764 + W_SIG / 2 + GAP
   let n = 0
   for (const t of fixed.traces) {
-    if (!t.net.startsWith("DDR_") || (t.layer !== "top" && t.layer !== "bottom")) continue
+    // fixed copper of a fast net (the DDR block, and kept fast traces of an ECO) needs its reference plane too
+    if (!(t.net.startsWith("DDR_") || /^(HDMI_TX_[CD]|MIPI_|PCIE20_|USB_OTG0_D|EMMC_|CM4_SD_)/.test(t.net)) || (t.layer !== "top" && t.layer !== "bottom")) continue
     const l = t.layer === "top" ? 4 : 5
     for (let i = 1; i < t.pts.length; i++) for (const c of cellsWithin({ kind: "seg", x: t.pts[i - 1].x, y: t.pts[i - 1].y, x2: t.pts[i].x, y2: t.pts[i].y, r: t.w / 2 }, RR)) { blk(l, c); n++ }
   }
