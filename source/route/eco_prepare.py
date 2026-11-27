@@ -67,6 +67,20 @@ for k, v in enumerate(oc["vias"]):
     if n in PLANE:
         if h or any(pn == n and g.intersects(pg) for l, pg, pn in moved_old): drop_piece.add(("v", k))
     elif h: mark(n, "via " + h)
+# 2b. grow the change region: kept nets whose copper lies within GROW_R of the conflict spots a previous ECO run
+#     could not clear (GROW=routes_xxx.best.json) are re-routed too, so they can negotiate with the changed nets
+if os.environ.get("GROW"):
+    R = float(os.environ.get("GROW_R", 0.8))
+    spots = json.load(open(os.environ["GROW"])).get("spots", [])
+    from shapely.ops import unary_union
+    hot = unary_union([Point(sx, sy).buffer(R) for sx, sy, *_ in spots]) if spots else None
+    if hot is not None:
+        for t in oc["traces"]:
+            if t["net"] in orr and t["net"] not in PLANE and t["net"] not in rip and LineString([(q["x"], q["y"]) for q in t["pts"]]).intersects(hot):
+                mark(t["net"], "near an unresolved conflict")
+        for v in oc["vias"]:
+            if v["net"] in orr and v["net"] not in PLANE and v["net"] not in rip and hot.contains(Point(v["x"], v["y"])):
+                mark(v["net"], "near an unresolved conflict")
 # 3. pairs together
 def partner(n):
     for a, b in (("P", "N"), ("N", "P"), ("DP", "DM"), ("DM", "DP")):
