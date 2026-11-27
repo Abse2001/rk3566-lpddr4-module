@@ -96,12 +96,15 @@ def route(net):
             near[l] = shapely.contains_xy(pl.buffer(0.26), X, Y)
         else: near[l] = np.zeros_like(outside)
     # PAIR_VIA=1: the second member of a pair may change layer only within 0.3 - 0.95 mm of one of its partner's
-    # vias (beside it, up to one BGA ball pitch), so P and N share their layer changes
+    # vias (beside it, up to one BGA ball pitch) or within PAIR_VIA_PIN of its own pads, so P and N share their
+    # layer changes; a result with a different via count than the partner is rejected (FAILED)
     pvias = [v for v in cu["vias"] if pn and v["net"] == pn]
     if os.environ.get("PAIR_VIA") and pvias:
         ring = np.zeros_like(outside)
         for v in pvias:
-            d = np.hypot(X - v["x"], Y - v["y"]); ring |= (d >= 0.3) & (d <= 0.95)
+            d = np.hypot(X - v["x"], Y - v["y"]); ring |= (d >= 0.3) & (d <= float(os.environ.get("PAIR_VIA_R", 0.95)))
+        for p in tp:  # a ball boxed in on its layer escapes through a via at (or beside) its own pad
+            ring |= np.hypot(X - p["x"], Y - p["y"]) <= float(os.environ.get("PAIR_VIA_PIN", 0.7))
         viaok &= ring
     gi = lambda x: int(round((x - x0) / G)); gj = lambda y: int(round((y - y0) / G))
     L = {l: k for k, l in enumerate(LAY)}
@@ -120,15 +123,18 @@ def route(net):
     assert S and T, (net, tp)
     tj, ti = T[0][1], T[0][2]
     h = lambda j, i: G * math.hypot(j - tj, i - ti)
+    # PAIR_VIA: the second member must use exactly as many vias as its partner: the search state carries the via
+    # count k and a goal counts only at k == target (without PAIR_VIA, k stays 0 and the search is the plain A*)
+    target = len(pvias) if (os.environ.get("PAIR_VIA") and pvias) else None
     dist = {}; prev = {}; pq = []
-    for s in S: dist[s] = 0.0; heapq.heappush(pq, (h(s[1], s[2]), 0.0, s))
+    for s in S: s = s + (0,); dist[s] = 0.0; heapq.heappush(pq, (h(s[1], s[2]), 0.0, s))
     goal = set(T); D8 = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
     found = None
     while pq:
         f_, g_, s = heapq.heappop(pq)
         if g_ > dist.get(s, 1e9): continue
-        if s in goal: found = s; break
-        l, j, i = s
+        l, j, i, k = s
+        if (l, j, i) in goal and (target is None or k == target): found = s; break
         fl = free[LAY[l]]
         for dj, di in D8:
             jj, ii = j + dj, i + di
@@ -137,16 +143,16 @@ def route(net):
             # channels between balls; check.py verifies the exact clearance afterwards)
             if dj and di and not (fl[j, ii] or fl[jj, i]) and not os.environ.get("DIAG"): continue
             c = G * (1.414 if dj and di else 1.0) * (1.0 if near[LAY[l]][jj, ii] or not pn else 1.6)
-            ns = (l, jj, ii); nd = g_ + c
+            ns = (l, jj, ii, k); nd = g_ + c
             if nd < dist.get(ns, 1e9): dist[ns] = nd; prev[ns] = s; heapq.heappush(pq, (nd + h(jj, ii), nd, ns))
-        if viaok[j, i]:
+        if viaok[j, i] and (target is None or k < target):
             for l2 in range(len(LAY)):
                 if l2 != l and free[LAY[l2]][j, i]:
-                    ns = (l2, j, i); nd = g_ + VIA_COST
+                    ns = (l2, j, i, k + 1 if target is not None else 0); nd = g_ + VIA_COST
                     if nd < dist.get(ns, 1e9): dist[ns] = nd; prev[ns] = s; heapq.heappush(pq, (nd + h(j, i), nd, ns))
     if not found:
         reach = {}
-        for (l_, j_, i_) in dist: reach[LAY[l_]] = reach.get(LAY[l_], 0) + 1
+        for (l_, j_, i_, k_) in dist: reach[LAY[l_]] = reach.get(LAY[l_], 0) + 1
         print("FAILED", net, "reached cells per layer:", reach, "start free:", [bool(free[LAY[s_[0]]][s_[1], s_[2]]) for s_ in S], "goal via ok:", [bool(viaok[t_[1], t_[2]]) for t_ in T]); return False
     path = [found]
     while path[-1] in prev: path.append(prev[path[-1]])
