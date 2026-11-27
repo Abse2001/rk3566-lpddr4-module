@@ -1,0 +1,94 @@
+From 68a16e80d9aa8bbdc0749486c2e5fb51afc7d826 Mon Sep 17 00:00:00 2001
+From: Abse2001 <absesoftwaredev@gmail.com>
+Date: Thu, 26 Nov 2026 19:04:15 +0000
+Subject: [PATCH 1/3] Negotiated lanes: delay-aware lengths (per-layer delay,
+ via barrels) for pair trims and bus windows
+
+A pair whose rear member passes under its partner's ball matched in plane length while one member carried
+two to four extra via barrels (RK3566 LPDDR4: CK P/N 50 ps apart with 0.0 mil length skew). Lengths now count
+a layer's delay per mm (layerDelay) and each via's barrel (layerZ, viaDelayFactor); defaults keep the old
+plane-length behaviour.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PiJ1d1hbMSzT6ivoyP7Xap
+---
+ lib/negotiated-lane-router.ts | 34 ++++++++++++++++++++++++++++------
+ 1 file changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/lib/negotiated-lane-router.ts b/lib/negotiated-lane-router.ts
+index d41cab2..a26a47f 100644
+--- a/lib/negotiated-lane-router.ts
++++ b/lib/negotiated-lane-router.ts
+@@ -34,6 +34,15 @@ export function routeNegotiatedLanes(
+     zone: [0, 0] as [number, number],
+     zoneRows: null as null | [number, number],
+     layers: null as null | string[],
++    // Delay-aware lengths. All matching (pair trims, bus windows) compares electrical length in mm of
++    // top-layer trace: a millimetre on layer L counts layerDelay[L] (its delay per mm relative to the
++    // top layer: a stripline is slower than a microstrip), and a via counts its barrel between the two
++    // layers it joins, |layerZ[a] - layerZ[b]| * viaDelayFactor * (delay of the slowest layer). Without
++    // these, a pair whose rear member dips under its partner's ball matches in plane length while one
++    // member is a via barrel or two longer in time.
++    layerZ: null as null | Record<string, number>,
++    layerDelay: null as null | Record<string, number>,
++    viaDelayFactor: 1.2,
+     w: 0.102,
+     pairGap: 0.18,
+     viaD: 0.3,
+@@ -140,6 +149,13 @@ export function routeNegotiatedLanes(
+     NL = LAYERS.length
+   const layerOf = (id: number) => (id / NN) | 0
+   const perLayer = <T,>(f: (l: number) => T): T[] => LAYERS.map((_, l) => f(l))
++  const LD = LAYERS.map((l) => cfg.layerDelay?.[l] ?? 1)
++  const LZ = LAYERS.map((l) => cfg.layerZ?.[l])
++  /** electrical length of a via between layer indices a and b, in mm of top-layer trace */
++  const viaEq = (a: number, b: number) =>
++    a === b || LZ[a] === undefined || LZ[b] === undefined
++      ? 0
++      : Math.abs(LZ[a]! - LZ[b]!) * cfg.viaDelayFactor * Math.max(...LD)
+   const allPts = [
+     ...srj.obstacles.map((o: any) => o.center),
+     ...origProblem.connections.flatMap((c: any) => c.pointsToConnect),
+@@ -1829,8 +1845,11 @@ export function routeNegotiatedLanes(
+     let s = 0
+     for (let k = 1; k < ids.length; k++) {
+       const u = xy(ids[k - 1]),
+-        v = xy(ids[k])
+-      s += Math.hypot(u.x - v.x, u.y - v.y)
++        v = xy(ids[k]),
++        lu = (ids[k - 1] / NN) | 0,
++        lv = (ids[k] / NN) | 0
++      // a layer change at one site is a via: its barrel, not a planar step
++      s += lu === lv ? Math.hypot(u.x - v.x, u.y - v.y) * LD[lu] : Math.hypot(u.x - v.x, u.y - v.y) * LD[lu] + viaEq(lu, lv)
+     }
+     return s
+   }
+@@ -2102,9 +2121,10 @@ export function routeNegotiatedLanes(
+       eb = xy(b.at(-1)!)
+     const len =
+       pathLen(a) +
+-      Math.hypot(ea.x - mem[0].x, ea.y - mem[0].y) +
+-      plen(mem) +
+-      Math.hypot(eb.x - mem.at(-1)!.x, eb.y - mem.at(-1)!.y) +
++      (Math.hypot(ea.x - mem[0].x, ea.y - mem[0].y) +
++        plen(mem) +
++        Math.hypot(eb.x - mem.at(-1)!.x, eb.y - mem.at(-1)!.y)) *
++        LD[n.fatLayer ?? 0] +
+       pathLen(b) +
+       fixedOf(pr.conns[k].name)
+     return { a, mem, b, len }
+@@ -2137,8 +2157,10 @@ export function routeNegotiatedLanes(
+       }
+       ec = lo
+     }
++    // a trim is plane length on the pair's layer; `need` is electrical length
+     const r = need(ec),
+-      trims: [number, number] = [Math.max(0, r[0]), Math.max(0, r[1])]
++      ld = LD[n.fatLayer ?? 0],
++      trims: [number, number] = [Math.max(0, r[0] / ld), Math.max(0, r[1] / ld)]
+     const k =
+       ec > 0
+         ? Math.max(1, Math.min(kPair, Math.round(ec / bumpExtra(0.9, PCH))))
+-- 
+2.43.0
+

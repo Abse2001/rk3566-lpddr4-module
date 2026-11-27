@@ -1,0 +1,33 @@
+From 883b0b3ecaf29e3e1904b80d1ac2aeea2f9f091c Mon Sep 17 00:00:00 2001
+From: Abse2001 <absesoftwaredev@gmail.com>
+Date: Thu, 26 Nov 2026 20:38:15 +0000
+Subject: [PATCH 3/3] Negotiated lanes: only package pads (componentId) bound
+ the tuning zone, not reserved fixed copper
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PiJ1d1hbMSzT6ivoyP7Xap
+---
+ lib/negotiated-lane-solver.ts | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/lib/negotiated-lane-solver.ts b/lib/negotiated-lane-solver.ts
+index 4b48691..c556564 100644
+--- a/lib/negotiated-lane-solver.ts
++++ b/lib/negotiated-lane-solver.ts
+@@ -106,9 +106,12 @@ export class NegotiatedLaneSolver extends BaseSolver {
+       pairGap?: number
+       pairLead?: number
+     }
+-    const balls = this.working.obstacles.filter(
++    // package balls bound the zone; other fixed copper (reserved escape stubs, keep-outs) does not
++    const pads = this.working.obstacles.filter(
+       (o) => !(o as { isCopperPour?: boolean }).isCopperPour,
+     )
++    const owned = pads.filter((o) => (o as { componentId?: string }).componentId)
++    const balls = owned.length ? owned : pads
+     const mid = (gapStart + gapEnd) / 2
+     const rim = (o: (typeof balls)[number], side: 1 | -1) =>
+       o.center.x + (side * Math.abs(o.width)) / 2
+-- 
+2.43.0
+

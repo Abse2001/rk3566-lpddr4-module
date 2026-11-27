@@ -1,0 +1,91 @@
+From e66db7ef9fcb2f37811d1a0ec024aab8475adc9d Mon Sep 17 00:00:00 2001
+From: Abse2001 <absesoftwaredev@gmail.com>
+Date: Thu, 26 Nov 2026 19:45:31 +0000
+Subject: [PATCH 2/3] Negotiated lanes: pairs with unequal member vias move off
+ the terminal layer; a pair counts as tuned by the lengths its trims achieve;
+ emitted-copper pair skew self-check in the log
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01PiJ1d1hbMSzT6ivoyP7Xap
+---
+ lib/negotiated-lane-router.ts | 44 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 42 insertions(+), 2 deletions(-)
+
+diff --git a/lib/negotiated-lane-router.ts b/lib/negotiated-lane-router.ts
+index a26a47f..161f6cd 100644
+--- a/lib/negotiated-lane-router.ts
++++ b/lib/negotiated-lane-router.ts
+@@ -2171,11 +2171,14 @@ export function routeNegotiatedLanes(
+     const sane = mem.pts.every((pl) =>
+       pl.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y)),
+     )
++    // judge the copper the trims actually produce, not the trims asked for: a trim the run cannot hold
++    // comes out shorter, and the pair would pass as tuned while its members still differ
++    const got = sane ? [0, 1].map((k) => joinMember(n, k, mem.pts[k]).len) : [0, Infinity]
+     return {
+       ec,
+       trims,
+       amp,
+-      ok: sane && r[0] > -0.01 && r[1] > -0.01 && mem.ok,
++      ok: sane && r[0] > -0.01 && r[1] > -0.01 && mem.ok && Math.abs(got[0] - got[1]) <= 0.05,
+     }
+   }
+ 
+@@ -2717,6 +2720,21 @@ export function routeNegotiatedLanes(
+         // short way with rising priority and the nets in their way are renegotiated.
+         for (const n of ev.untunable) {
+           dirty.add(n)
++          // Delay-aware matching: members whose stubs carry different via counts (the rear member
++          // passing under its partner's ball) differ by whole via barrels, more than a trim can absorb.
++          // Such a pair moves off its terminals' layer, so each member changes layer once at each end:
++          // equal vias, equal barrels, and the rear member no longer needs to pass under its partner.
++          if (cfg.layerZ && n.exactVias !== 2) {
++            const vias = (st: Net) =>
++              (st.path ?? []).filter((id, k, a) => k > 0 && ((id / NN) | 0) !== ((a[k - 1] / NN) | 0)).length
++            const st = n.pair!.stubs,
++              v0 = vias(st[0]) + vias(st[1]),
++              v1 = vias(st[2]) + vias(st[3])
++            if (v0 !== v1) {
++              n.exactVias = 2
++              log(`  ${n.label}: member vias ${v0}/${v1} -> pair moves off the terminal layer (symmetric vias)`)
++            }
++          }
+           for (const st of n.pair!.stubs) {
+             st.lenWeight = Math.min(
+               st.lenWeight * cfg.stubBoost,
+@@ -2901,9 +2919,31 @@ export function routeNegotiatedLanes(
+   const success = negotiate()
+   if (success) {
+     log(`SOLVED in ${((performance.now() - t0) / 1e3).toFixed(0)}s`)
++    const out = emit()
++    // Self-check on the emitted copper, with the same delay model the matching used: each pair's
++    // member skew, against the model's own value, so a gap between the two shows up here.
++    const emittedLen = (name: string) => {
++      let s = 0
++      for (const t of out.filter((t: any) => t.connection_name === name)) {
++        const r = t.route
++        for (let k = 1; k < r.length; k++) {
++          const a = r[k - 1], b = r[k]
++          if (a.route_type === "wire" && b.route_type === "wire" && a.layer === b.layer)
++            s += Math.hypot(b.x - a.x, b.y - a.y) * LD[Math.max(0, LAYERS.indexOf(a.layer))]
++          if (b.route_type === "via") s += viaEq(LAYERS.indexOf(b.from_layer), LAYERS.indexOf(b.to_layer))
++        }
++      }
++      return s + fixedOf(name)
++    }
++    for (const pr of pairs) {
++      const [a, b] = pr.conns.map((c: any) => emittedLen(c.name))
++      const mdl = pairTune(pr.fat, pr.fat.target)
++      const mm = [0, 1].map((k) => joinMember(pr.fat, k, pairMembers(pr.fat, mdl.ec, mdl.trims).pts[k]).len)
++      log(`  pair ${pr.fat.label}: emitted skew ${(a - b).toFixed(3)} mm (model ${(mm[0] - mm[1]).toFixed(3)} mm)`)
++    }
+     return {
+       solved: true,
+-      traces: emit(),
++      traces: out,
+       stuck: [],
+       log: logLines,
+       iterations,
+-- 
+2.43.0
+
