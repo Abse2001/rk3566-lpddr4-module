@@ -1,0 +1,18 @@
+HDMI_TX_CLKP          3400 Mb/s  vias 3/5  P/N crossing skew  9.04 ps  diff eye  1317 mV x  176 ps of 294 ps
+HDMI_TX_D0P           3400 Mb/s  vias 1/1  P/N crossing skew  0.00 ps  diff eye  1316 mV x  188 ps of 294 ps
+HDMI_TX_D1P           3400 Mb/s  vias 2/2  P/N crossing skew  0.00 ps  diff eye  1318 mV x  188 ps of 294 ps
+HDMI_TX_D2P           3400 Mb/s  vias 1/1  P/N crossing skew  0.19 ps  diff eye  1319 mV x  194 ps of 294 ps
+MIPI_CSI_RX_CLK1P     1500 Mb/s  vias 2/3  P/N crossing skew  2.78 ps  diff eye  1319 mV x  560 ps of 667 ps
+MIPI_CSI_RX_D2P       1500 Mb/s  vias 2/6  P/N crossing skew 18.55 ps  diff eye  1319 mV x  547 ps of 667 ps
+MIPI_CSI_RX_D3P       1500 Mb/s  vias 2/6  P/N crossing skew 19.07 ps  diff eye  1319 mV x  547 ps of 667 ps
+MIPI_DSI_TX1_CLKP     1500 Mb/s  vias 4/2  P/N crossing skew  9.97 ps  diff eye  1319 mV x  547 ps of 667 ps
+MIPI_DSI_TX1_D0P      1500 Mb/s  vias 2/3  P/N crossing skew  1.97 ps  diff eye  1320 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_D1P      1500 Mb/s  vias 3/4  P/N crossing skew  5.84 ps  diff eye  1320 mV x  547 ps of 667 ps
+MIPI_DSI_TX1_D2P      1500 Mb/s  vias 2/2  P/N crossing skew  0.06 ps  diff eye  1320 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_D3P      1500 Mb/s  vias 4/6  P/N crossing skew  8.44 ps  diff eye  1319 mV x  547 ps of 667 ps
+PCIE20_REFCLKP        5000 Mb/s  vias 4/5  P/N crossing skew  2.74 ps  diff eye  1303 mV x   84 ps of 200 ps
+PCIE20_RXP            5000 Mb/s  vias 2/2  P/N crossing skew  0.05 ps  diff eye  1303 mV x   96 ps of 200 ps
+PCIE20_TXP            5000 Mb/s  vias 2/1  P/N crossing skew  4.94 ps  diff eye  1272 mV x  100 ps of 200 ps
+PCIE20_TXP_C          5000 Mb/s  vias 2/2  P/N crossing skew  0.00 ps  diff eye  1303 mV x  100 ps of 200 ps
+USB_OTG0_DP            480 Mb/s  vias 1/1  P/N crossing skew  0.01 ps  diff eye  1320 mV x 2000 ps of 2083 ps
+17 pairs; worst P/N crossing skew 19.07 ps
