@@ -6,6 +6,7 @@
     "**/__pycache__/**",
     "source/route/**/*.json",
     "source/route/*.png",
-    "**/*.pyc"
+    "**/*.pyc",
+    "research/**/*.json"
   ]
 }
