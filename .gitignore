@@ -13,3 +13,4 @@ source/route/p9*.json
 dist
 source/route/ddr_timing.json
 .tscircuit/
+source/route/run_*.log
