@@ -95,6 +95,14 @@ def route(net):
             pl = unary_union([LineString([(q["x"], q["y"]) for q in t["pts"]]) for t in segs])
             near[l] = shapely.contains_xy(pl.buffer(0.26), X, Y)
         else: near[l] = np.zeros_like(outside)
+    # PAIR_VIA=1: the second member of a pair may change layer only within 0.3 - 0.95 mm of one of its partner's
+    # vias (beside it, up to one BGA ball pitch), so P and N share their layer changes
+    pvias = [v for v in cu["vias"] if pn and v["net"] == pn]
+    if os.environ.get("PAIR_VIA") and pvias:
+        ring = np.zeros_like(outside)
+        for v in pvias:
+            d = np.hypot(X - v["x"], Y - v["y"]); ring |= (d >= 0.3) & (d <= 0.95)
+        viaok &= ring
     gi = lambda x: int(round((x - x0) / G)); gj = lambda y: int(round((y - y0) / G))
     L = {l: k for k, l in enumerate(LAY)}
     def term(p):
@@ -177,6 +185,8 @@ def route(net):
     cu["traces"] += [dict(s, net=net) for s in rsegs]; cu["vias"] += rv
     Lm = sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for s in rsegs for a, b in zip(s["pts"], s["pts"][1:])) + 0.6 * len(rv)
     print(f"routed {net}: {Lm:.2f} mm, {len(rv)} vias, layers {[s['layer'] for s in rsegs]}")
+    if os.environ.get("PAIR_VIA") and pvias and len(rv) != len(pvias):
+        print(f"FAILED {net}: {len(rv)} vias, partner {pn} has {len(pvias)}"); return False
     return True
 
 # rip every listed net first, so the first one routed does not detour around the old copper of the others
