@@ -4,7 +4,7 @@
 #   - common-mode noise: transmitter dVCMTX(HF) <= 15 mVrms above 450 MHz (MIPI; strictest budget our board's skew
 #     adds to), receiver tolerates dVCMRX(HF) 100 mV, dVCMRX(LF) +-50 mV
 #   - data-to-clock: +-0.15 UI above 1 Gb/s (the whole link's budget; the module's share is reported)
-# Model: per line 50 ohm source around VCM 200 mV, VOD 200 mV, 0.3 UI 20-80 % edges; the channel from the copper
+# Model: per line 50 ohm source around VCM 200 mV, 200 mV differential into the 100 ohm load (400 mV open circuit), 0.3 UI 20-80 % edges; the channel from the copper
 # (pair_sim.py: per-layer lines, vias as lumped L-C with 0.3 pF pad); receiver 2 x 50 ohm to a centre tap with
 # 10 pF to ground, 1 pF pad per line. PRBS7 at 1.5 Gb/s (RK3566 D-PHY maximum). Usage: COPPER=... python3 dphy_check.py
 import os, sys, json, math, re, subprocess, tempfile
@@ -12,7 +12,8 @@ import numpy as np
 R = os.path.dirname(os.path.abspath(__file__)) + "/../route"; sys.path.insert(0, R); os.chdir(R); sys.argv = ["x"]
 g = {"__name__": "ps", "__file__": R + "/pair_sim.py"}; exec(open(R + "/pair_sim.py").read().split("RATE = {")[0], g)
 S, lane, channel = g["S"], g["lane"], g["channel"]
-RATE = 1500e6; UI = 1e12 / RATE; VCM, VOD = 0.2, 0.2; TR = 0.3 * UI / 0.6  # 0-100 % edge for 0.3 UI 20-80 %
+RATE = 1500e6; UI = 1e12 / RATE; VCM, VOD = 0.2, 0.4;  # VOD here is the open-circuit swing: D-PHY's 200 mV is specified into the 100 ohm load (50 ohm source per line halves it)
+TR = 0.3 * UI / 0.6  # 0-100 % edge for 0.3 UI 20-80 %
 def pwl(bits, sign):
     pts, t = [], 0.0; v0 = VCM + sign * (VOD / 2 if bits[0] else -VOD / 2); pts.append(f"0p {v0:.4f}")
     for b in bits:

@@ -1,0 +1,133 @@
+{
+ "limits": {
+  "vid_min_mV": 70,
+  "cm_hf_rms_mV_tx": 15,
+  "cm_hf_peak_mV_rx": 100,
+  "cm_lf_peak_mV_rx": 50,
+  "data_to_clock_UI": 0.15
+ },
+ "pairs": {
+  "MIPI_CSI_RX_CLK1": {
+   "vid_min_mV": 113.6,
+   "eye_width_ps": 400,
+   "eye_width_UI": 0.6,
+   "cm_hf_rms_mV": 0.33,
+   "cm_hf_peak_mV": 1.3,
+   "cm_lf_peak_mV": 0.2,
+   "vias": [
+    2,
+    3
+   ]
+  },
+  "MIPI_CSI_RX_D2": {
+   "vid_min_mV": 88.2,
+   "eye_width_ps": 380,
+   "eye_width_UI": 0.57,
+   "cm_hf_rms_mV": 0.23,
+   "cm_hf_peak_mV": 1.0,
+   "cm_lf_peak_mV": 0.1,
+   "vias": [
+    5,
+    5
+   ]
+  },
+  "MIPI_CSI_RX_D3": {
+   "vid_min_mV": 114.8,
+   "eye_width_ps": 400,
+   "eye_width_UI": 0.6,
+   "cm_hf_rms_mV": 1.13,
+   "cm_hf_peak_mV": 3.9,
+   "cm_lf_peak_mV": 0.9,
+   "vias": [
+    2,
+    6
+   ]
+  },
+  "MIPI_DSI_TX1_CLK": {
+   "vid_min_mV": 93.6,
+   "eye_width_ps": 387,
+   "eye_width_UI": 0.58,
+   "cm_hf_rms_mV": 0.65,
+   "cm_hf_peak_mV": 2.5,
+   "cm_lf_peak_mV": 0.5,
+   "vias": [
+    4,
+    2
+   ]
+  },
+  "MIPI_DSI_TX1_D0": {
+   "vid_min_mV": 113.7,
+   "eye_width_ps": 400,
+   "eye_width_UI": 0.6,
+   "cm_hf_rms_mV": 0.33,
+   "cm_hf_peak_mV": 1.4,
+   "cm_lf_peak_mV": 0.2,
+   "vias": [
+    2,
+    3
+   ]
+  },
+  "MIPI_DSI_TX1_D1": {
+   "vid_min_mV": 105.1,
+   "eye_width_ps": 393,
+   "eye_width_UI": 0.59,
+   "cm_hf_rms_mV": 0.27,
+   "cm_hf_peak_mV": 0.9,
+   "cm_lf_peak_mV": 0.1,
+   "vias": [
+    3,
+    4
+   ]
+  },
+  "MIPI_DSI_TX1_D2": {
+   "vid_min_mV": 113.4,
+   "eye_width_ps": 400,
+   "eye_width_UI": 0.6,
+   "cm_hf_rms_mV": 0.01,
+   "cm_hf_peak_mV": 0.0,
+   "cm_lf_peak_mV": 0.0,
+   "vias": [
+    2,
+    2
+   ]
+  },
+  "MIPI_DSI_TX1_D3": {
+   "vid_min_mV": 96.2,
+   "eye_width_ps": 387,
+   "eye_width_UI": 0.58,
+   "cm_hf_rms_mV": 0.67,
+   "cm_hf_peak_mV": 2.4,
+   "cm_lf_peak_mV": 0.5,
+   "vias": [
+    4,
+    6
+   ]
+  }
+ },
+ "lanes": {
+  "MIPI_CSI_RX_D2": {
+   "to_clock_ps": 45.2,
+   "to_clock_UI": 0.068
+  },
+  "MIPI_CSI_RX_D3": {
+   "to_clock_ps": 52.2,
+   "to_clock_UI": 0.078
+  },
+  "MIPI_DSI_TX1_D0": {
+   "to_clock_ps": -73.2,
+   "to_clock_UI": -0.11
+  },
+  "MIPI_DSI_TX1_D1": {
+   "to_clock_ps": -46.4,
+   "to_clock_UI": -0.07
+  },
+  "MIPI_DSI_TX1_D2": {
+   "to_clock_ps": -59.8,
+   "to_clock_UI": -0.09
+  },
+  "MIPI_DSI_TX1_D3": {
+   "to_clock_ps": 44.5,
+   "to_clock_UI": 0.067
+  }
+ }
+}
