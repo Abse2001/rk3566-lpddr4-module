@@ -3,7 +3,8 @@
 import { NegotiatedLaneSolver } from "/home/user/bus-lanes-solver/lib/negotiated-lane-solver.ts"
 const D = "/tmp/claude-0/-home-user/b9d79f2d-030e-532c-84b5-c3a79e3230d3/scratchpad/rk/"
 const TAG = process.env.TAG ?? "v3", CK = `${D}${TAG}.checkpoint.json`
-const srj = await Bun.file(D + (process.env.IN ?? "v3.withpower.json")).json()
+// the DDR problem: the project file (current power fanout) unless IN names another one in the scratch dir
+const srj = await Bun.file(process.env.IN ? D + process.env.IN : import.meta.dir + "/ddr.input.json").json()
 const solver: any = new NegotiatedLaneSolver(srj, { router: { w: 0.11, gap: 0.1, pairGap: 0.18, viaD: 0.25, viaHole: 0.15, allowViaInPad: process.env.VIP !== "0",
   // delay-aware matching on the JLC06161H-1080A stackup (same model as ddr_timing.py): layer depth in mm, delay
   // per mm relative to the outer layers (inner3 stripline 6.81 vs 5.87 ps/mm), via barrel x1.2 for its pads
