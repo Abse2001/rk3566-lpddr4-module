@@ -37,7 +37,10 @@ def channel(prefix, name, src, rx):
     for k in range(n):
         nxt = f"{prefix}w{k}"; lines.append(f"T{prefix}w{k} {node} 0 {nxt} 0 Z0={zavg:.1f} TD={tot / n:.3f}p"); node = nxt
         if k < len(vias):
-            nxt = f"{prefix}v{k}"; lines.append(f"T{prefix}v{k} {node} 0 {nxt} 0 Z0=45.0 TD={vias[k]:.3f}p"); lines.append(f"C{prefix}v{k} {nxt} 0 0.3p"); node = nxt
+            # a via is electrically short: lumped L-C with the barrel line's L = Z0*TD and C = TD/Z0 (plus the 0.3 pF
+            # pad), same delay and load as the 45 ohm line, without the tiny time steps a 5 ps line forces on ngspice
+            nxt = f"{prefix}v{k}"; td = vias[k] * 1e-12
+            lines.append(f"L{prefix}v{k} {node} {nxt} {45.0 * td * 1e9:.4f}n"); lines.append(f"C{prefix}v{k} {nxt} 0 {(td / 45.0) * 1e12 + 0.3:.4f}p"); node = nxt
     lines.append(f"R{prefix}j {node} {rx} 0.01")
     return lines
 S.channel = channel

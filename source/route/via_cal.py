@@ -10,7 +10,7 @@ Z = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.45
 def cross_time(via_span):
     net = ["* via cal", "V0 s 0 PWL(0p 0 100p 0 180p 1.1 3000p 1.1)", "Rs s d 40", "T1 d 0 a 0 Z0=52 TD=60p"]
     if via_span is None: net += ["Rv a b 0.001"]
-    else: net += [f"Tv a 0 b 0 Z0=45 TD={via_span * PSI:.3f}p", "Cv b 0 0.3p"]
+    else: net += [f"Lv a b {45 * via_span * PSI * 1e-3:.5f}n", f"Cv b 0 {via_span * PSI / 45 + 0.3:.4f}p"]  # lumped, as pair_sim.py
     net += ["T2 b 0 r 0 Z0=52 TD=60p", "Rt r 0 60", "Ct r 0 0.8p", ".tran 0.5p 1500p", ".control", "run"]
     out = tempfile.mktemp(suffix=".txt"); net += [f"wrdata {out} v(r)", ".endc", ".end"]
     cir = tempfile.mktemp(suffix=".cir"); open(cir, "w").write("\n".join(net))

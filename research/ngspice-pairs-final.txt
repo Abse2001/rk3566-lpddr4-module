@@ -1,5 +1,18 @@
-HDMI_TX_CLKP         no crossings found
-HDMI_TX_D0P           3400 Mb/s  vias 1/1  P/N crossing skew  0.00 ps  diff eye  1319 mV x  188 ps of 294 ps
+HDMI_TX_CLKP          3400 Mb/s  vias 3/5  P/N crossing skew  5.38 ps  diff eye  1317 mV x  182 ps of 294 ps
+HDMI_TX_D0P           3400 Mb/s  vias 1/1  P/N crossing skew  0.00 ps  diff eye  1316 mV x  188 ps of 294 ps
 HDMI_TX_D1P           3400 Mb/s  vias 2/2  P/N crossing skew  0.00 ps  diff eye  1318 mV x  188 ps of 294 ps
-HDMI_TX_D2P           3400 Mb/s  vias 1/1  P/N crossing skew  0.19 ps  diff eye  1320 mV x  194 ps of 294 ps
-MIPI_CSI_RX_CLK1P     1500 Mb/s  vias 2/3  P/N crossing skew  3.58 ps  diff eye  1320 mV x  560 ps of 667 ps
+HDMI_TX_D2P           3400 Mb/s  vias 1/1  P/N crossing skew  0.19 ps  diff eye  1319 mV x  194 ps of 294 ps
+MIPI_CSI_RX_CLK1P     1500 Mb/s  vias 2/3  P/N crossing skew  3.21 ps  diff eye  1319 mV x  560 ps of 667 ps
+MIPI_CSI_RX_D2P       1500 Mb/s  vias 5/5  P/N crossing skew  1.30 ps  diff eye  1319 mV x  547 ps of 667 ps
+MIPI_CSI_RX_D3P       1500 Mb/s  vias 2/6  P/N crossing skew  8.40 ps  diff eye  1318 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_CLKP     1500 Mb/s  vias 4/2  P/N crossing skew  3.96 ps  diff eye  1320 mV x  547 ps of 667 ps
+MIPI_DSI_TX1_D0P      1500 Mb/s  vias 2/3  P/N crossing skew  3.88 ps  diff eye  1320 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_D1P      1500 Mb/s  vias 3/4  P/N crossing skew  2.64 ps  diff eye  1319 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_D2P      1500 Mb/s  vias 2/2  P/N crossing skew  0.06 ps  diff eye  1320 mV x  560 ps of 667 ps
+MIPI_DSI_TX1_D3P      1500 Mb/s  vias 4/6  P/N crossing skew  5.71 ps  diff eye  1320 mV x  547 ps of 667 ps
+PCIE20_REFCLKP        5000 Mb/s  vias 4/5  P/N crossing skew  3.21 ps  diff eye  1306 mV x   84 ps of 200 ps
+PCIE20_RXP            5000 Mb/s  vias 2/2  P/N crossing skew  0.05 ps  diff eye  1303 mV x   96 ps of 200 ps
+PCIE20_TXP            5000 Mb/s  vias 2/2  P/N crossing skew  0.30 ps  diff eye  1249 mV x  100 ps of 200 ps
+PCIE20_TXP_C          5000 Mb/s  vias 2/2  P/N crossing skew  0.00 ps  diff eye  1303 mV x  100 ps of 200 ps
+USB_OTG0_DP            480 Mb/s  vias 1/1  P/N crossing skew  0.00 ps  diff eye  1320 mV x 2000 ps of 2083 ps
+17 pairs; worst P/N crossing skew 8.40 ps
