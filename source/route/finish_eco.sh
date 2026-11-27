@@ -19,7 +19,7 @@ for n in keep:
 json.dump(dict(new, nets=nets), open(sys.argv[4], "w"))
 EOF
 cd $SRC
-TUNE="AMPS=1.2,0.9,0.7,0.55,0.45,0.35,0.25,0.15,0.1,0.07 MIN_L=0.25"
+TUNE="DELAY=1 AMPS=1.2,0.9,0.7,0.55,0.45,0.35,0.25,0.15,0.1,0.07 MIN_L=0.25"
 env $TUNE ROUTES=$F/routes.json COPPER=$F/copper.json python3 route/tune_pairs.py > /dev/null
 for line in $(python3 pairs.py $F/routes.json | grep "TOO" | awk '{print $1","$4}'); do
   P=${line%,*}; N=${line#*,}; best=99
