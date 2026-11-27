@@ -11,6 +11,9 @@
     "source/costdown/**/*.json",
     ".tscircuit-build-history/**",
     ".tscircuit/**",
-    "checks/**"
+    "checks/**",
+    "source/si/out/**",
+    "source/costdown/**",
+    "source/route/candidates/**"
   ]
 }
