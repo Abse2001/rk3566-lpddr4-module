@@ -88,7 +88,7 @@ ul { margin: 0; padding-left: 20px; max-width: 68ch; } li { margin: 2px 0; }
     <p>A via is a plated hole that carries a signal between layers. It is short, but it is not free: the barrel adds delay, and its pad adds capacitance that slows the edge. The old length-matching rule counted every via as 0.6 mm of trace. Simulating a via with its pad capacitance showed it costs about twice that, which is why pairs with an extra via came out skewed.</p>
     <figure><h3>Extra delay of one via, by the layers it joins</h3><div id="vias"></div>
       <div class="legend"><span style="--c:var(--ink-2)">old rule (barrel only)</span><span style="--c:var(--s1)">ngspice, barrel + 0.3 pF pad</span><span style="--c:var(--s2)" id="oems-legend" hidden>openEMS 3D field solver</span></div>
-      <figcaption id="via-cap">Spans in mm of board depth. The ngspice values follow 7.1 ps per mm of barrel plus 7.7 ps for the pad; the tuner and the checks now use this.</figcaption></figure>
+      <figcaption id="via-cap">Spans in mm of board depth. The ngspice values follow 7.1 ps per mm of barrel plus 7.7 ps for an assumed 0.3 pF pad; the tuner and the checks use this. The openEMS 3D field simulation of our actual via (top to inner3, with its antipads and the 0.7 mm stub below inner3) gives about 8.5 ps, between the two models, which suggests the 0.3 pF pad is too high. This openEMS value is preliminary: its simple 50 ohm test ports add their own delay, which is removed by subtracting half of a plain top trace and half of a plain inner3 trace simulated the same way.</figcaption></figure>
   </div></section>
 
   <section class="check"><span class="num">5</span><div>
@@ -104,7 +104,7 @@ ul { margin: 0; padding-left: 20px; max-width: 68ch; } li { margin: 2px 0; }
     <ul>
       <li><b>Proven by checks on the copper:</b> every net connected, 0.1 mm clearances, reference planes under fast lines, RAM routing identical to the verified solver output, all RAM timing rules, JLC assembly spacing, all 219 part rotations.</li>
       <li><b>Simulated with generic models:</b> RAM eyes and pair skew. Real numbers need the RK3566 and LPDDR4X IBIS buffer models, which Rockchip and the RAM vendor provide on request.</li>
-      <li><b>In progress:</b> a 3D field simulation of our via (openEMS) to replace the assumed 0.3 pF pad, then lossy eye diagrams with crosstalk from neighbouring lines.</li>
+      <li><b>First field-solver result:</b> openEMS puts our top-to-inner3 via at about 8.5 ps, below the 13.6 ps ngspice model. Length compensation tuned with the ngspice number may therefore over-correct the eight unequal-via pairs; routing them with equal vias avoids depending on either number. Next: proper de-embedded ports, the other via spans, and lossy eye diagrams with crosstalk.</li>
       <li><b>Open:</b> eight pairs with unequal P/N via counts (2.6 to 8.4 ps).</li>
       <li><b>Final proof is the hardware:</b> the Rockchip DDR loader prints read/write training margins at boot; run memtester and stressapptest at 1056 MHz, then 1560 MHz.</li>
     </ul>
