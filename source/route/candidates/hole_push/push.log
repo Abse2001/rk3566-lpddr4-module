@@ -1,0 +1,27 @@
+start: 1021 vias below 0.2 mm, 2223 pairs, min 0.151
+round 1: 1172 moves, 859 vias below 0.2 mm, 1833 pairs, min 0.152
+round 2: 781 moves, 793 vias below 0.2 mm, 1670 pairs, min 0.152
+round 3: 596 moves, 757 vias below 0.2 mm, 1584 pairs, min 0.152
+round 4: 471 moves, 726 vias below 0.2 mm, 1530 pairs, min 0.152
+round 5: 376 moves, 691 vias below 0.2 mm, 1437 pairs, min 0.152
+round 6: 237 moves, 669 vias below 0.2 mm, 1379 pairs, min 0.152
+round 7: 155 moves, 658 vias below 0.2 mm, 1346 pairs, min 0.152
+round 8: 95 moves, 658 vias below 0.2 mm, 1338 pairs, min 0.152
+round 9: 69 moves, 650 vias below 0.2 mm, 1317 pairs, min 0.152
+round 10: 38 moves, 645 vias below 0.2 mm, 1308 pairs, min 0.152
+round 11: 25 moves, 644 vias below 0.2 mm, 1300 pairs, min 0.152
+round 12: 14 moves, 643 vias below 0.2 mm, 1295 pairs, min 0.152
+round 13: 9 moves, 642 vias below 0.2 mm, 1293 pairs, min 0.152
+round 14: 8 moves, 641 vias below 0.2 mm, 1291 pairs, min 0.152
+round 15: 7 moves, 641 vias below 0.2 mm, 1291 pairs, min 0.152
+round 16: 8 moves, 640 vias below 0.2 mm, 1290 pairs, min 0.152
+round 17: 5 moves, 639 vias below 0.2 mm, 1289 pairs, min 0.152
+round 18: 4 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 19: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 20: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 21: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 22: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 23: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 24: 3 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+round 25: 2 moves, 638 vias below 0.2 mm, 1288 pairs, min 0.152
+done: 638 vias below 0.2 mm (577 pairs between fixed copper only)
