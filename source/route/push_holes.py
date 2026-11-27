@@ -191,17 +191,25 @@ def seg_at(pts, s):
         acc += L
     return None
 
+def point_at(pts, s):
+    h = seg_at(pts, s)
+    if not h: return None
+    k, d, L = h; P0, P1 = pts[k], pts[k + 1]
+    return k, {"x": P0["x"] + (P1["x"] - P0["x"]) * d / L, "y": P0["y"] + (P1["y"] - P0["y"]) * d / L}
+
 def trapezoid(pts, s, half, ramp, ox, oy):
-    """copy of pts with a jog centred at arc length s: flat 2*half long, ramps of length ramp, offset (ox, oy);
-    None unless the whole jog lies inside one straight segment"""
-    a = seg_at(pts, s - half - ramp); b = seg_at(pts, s + half + ramp)
-    if not a or not b or a[0] != b[0] or a[1] < 0.02 or b[2] - b[1] < 0.02: return None
-    k = a[0]; P0, P1 = pts[k], pts[k + 1]; L = a[2]
-    ux, uy = (P1["x"] - P0["x"]) / L, (P1["y"] - P0["y"]) / L
-    at = lambda d, off: {"x": round(P0["x"] + ux * d + (ox if off else 0), 4), "y": round(P0["y"] + uy * d + (oy if off else 0), 4)}
-    d0 = a[1]
-    new = [at(d0, 0), at(d0 + ramp, 1), at(d0 + ramp + 2 * half, 1), at(d0 + 2 * ramp + 2 * half, 0)]
-    return pts[:k + 1] + new + pts[k + 1:]
+    """copy of pts with the section [s - half, s + half] shifted by (ox, oy) (all its vertices), joined back by
+    straight ramps to the points at s -/+ (half + ramp). The section may span several segments and bends; the
+    caller checks that both pair members gain the same length."""
+    total = plen(pts)
+    s0, s1, s2, s3 = s - half - ramp, s - half, s + half, s + half + ramp
+    if s0 < 0.02 or s3 > total - 0.02: return None
+    A, B, C, D_ = point_at(pts, s0), point_at(pts, s1), point_at(pts, s2), point_at(pts, s3)
+    if not (A and B and C and D_): return None
+    sh = lambda q: {"x": round(q["x"] + ox, 4), "y": round(q["y"] + oy, 4)}
+    rd = lambda q: {"x": round(q["x"], 4), "y": round(q["y"], 4)}
+    mid = [sh(B[1])] + [sh(pts[k]) for k in range(B[0] + 1, C[0] + 1)] + [sh(C[1])]
+    return pts[:A[0] + 1] + [rd(A[1])] + mid + [rd(D_[1])] + pts[D_[0] + 1:]
 
 def plen(pts): return sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for a, b in zip(pts, pts[1:]))
 
@@ -236,7 +244,7 @@ def push_pair(ti, vx, vy, need):
                 a = trapezoid(t["pts"], s, half, ramp, nx * d, ny * d); b = trapezoid(m["pts"], sj, half, ramp, nx * d, ny * d)
                 if not a or not b: continue
                 # equal added length on both members (skew unchanged), to 1 um
-                if abs((plen(a) - plen(t["pts"])) - (plen(b) - plen(m["pts"]))) > 1e-3: continue
+                if abs((plen(a) - plen(t["pts"])) - (plen(b) - plen(m["pts"]))) > float(os.environ.get("SKEW_TOL", 0.001)): continue
                 if try_move([(t, {"pts": a}), (m, {"pts": b})], [("t", ti), ("t", j)]): return True
     return False
 
