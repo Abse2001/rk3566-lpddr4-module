@@ -16,3 +16,10 @@ BOM total: $114.63 per board. Biggest lines: RAM $63.42, eMMC $24.35, RK3566 $13
 Rejected: DDR4 (2x K4A8G165WG $36.76 = $73.52, dearer and a full DDR redesign); 1 GB LPDDR4 (must be >= 2 GB);
 RK809-9/-5A (cheaper by $0.13-0.86, different factory voltage presets); RK3566 (single source);
 basic-library passives (no basic 0201 MLCCs or matching values found).
+
+## Applied (branch local/cost-down, now the main board)
+
+RAM -> Samsung K4U6E3S4AA-MGCL (LPDDR4X), eMMC -> Samsung KLM8G1GETF-B041, headers -> XYECONN XY-100DP-DF40C,
+plus a TLV75801 0.6 V LDO (C2877852, $0.12) and 5 passives for VDDQ. BOM $114.63 -> $92.81 per board (-$21.83).
+Stock at the time: RAM 37, eMMC 441, headers 4950. ngspice at 0.6 V swing: `ngspice-ddr-lpddr4x-*.txt`
+(timing unchanged: worst eye 360 ps of 473 ps at 2112 MT/s, 205 ps of 321 ps at 3120 MT/s).

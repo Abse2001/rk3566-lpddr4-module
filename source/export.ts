@@ -14,6 +14,7 @@ console.log("gerber files:", Object.entries(files).map(([n, t]) => `${n} (${((t 
 const CX = 16.5, CY = -24
 const desc = (c: any) => {
   const r = roles[c.role]
+  if (r.mpn) return r.mpn
   if (r.import) return r.import.replace(/_/g, "-")
   return `${c.value} ${r.fp}`
 }

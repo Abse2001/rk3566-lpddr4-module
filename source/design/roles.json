@@ -6,7 +6,8 @@
  },
  "LPDDR4": {
   "lcsc": "C2920249",
-  "import": "H9HCNNNBKUMLXR_NEE"
+  "import": "H9HCNNNBKUMLXR_NEE",
+  "mpn": "K4U6E3S4AA-MGCL"
  },
  "RK809": {
   "lcsc": "C2939628",
@@ -22,7 +23,8 @@
  },
  "EMMC": {
   "lcsc": "C499918",
-  "import": "THGBMUG6C1LBAIL"
+  "import": "THGBMUG6C1LBAIL",
+  "mpn": "KLM8G1GETF-B041"
  },
  "XTAL_24M": {
   "lcsc": "C5444545",
@@ -54,7 +56,8 @@
  },
  "DF40_HEADER": {
   "lcsc": "C53200820",
-  "import": "DF40C_100DP_0_4V_51_"
+  "import": "DF40C_100DP_0_4V_51_",
+  "mpn": "XY-100DP-DF40C"
  },
  "C_100N_0201": {
   "lcsc": "C2903663",

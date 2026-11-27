@@ -65,6 +65,7 @@ export function makePart(c: { ref: string; role: string; value: string }, place:
   if (r.import) {
     const C = IMPORTS[r.import]
     const extra: any = c.role === "XTAL_24M" ? { loadCapacitance: "12pF" } : c.role === "XTAL_32K" ? { loadCapacitance: "12.5pF" } : c.role === "BUCK_CPU" ? { footprint: wlcsp20Footprint() } : {}
+    if (r.mpn) extra.manufacturerPartNumber = r.mpn  // the LCSC part differs from the imported footprint's part (same footprint)
     return <C key={c.ref} {...common} {...extra} />
   }
   if (r.kind === "C") return <capacitor key={c.ref} {...common} capacitance={c.value} footprint={r.fp} />

@@ -1,10 +1,12 @@
 # RK3566 + LPDDR4 compute module (CM4 compatible)
 
-A 6-layer compute module built around the Rockchip RK3566 (U1, LCSC C2943786) and 2 GB of SK hynix
-H9HCNNNBKUMLXR-NEE LPDDR4 (U2, LCSC C21912322).
+A 6-layer compute module built around the Rockchip RK3566 (U1, LCSC C2943786) and 2 GB of Samsung
+K4U6E3S4AA-MGCL LPDDR4X (U2, LCSC C2920249; VDDQ 0.6 V from a TLV75801 LDO, U7). eMMC: Samsung KLM8G1GETF-B041
+8 GB (U6, C499918). BOM: $92.81 per board at JLC quantity-1 prices (was $114.63 with the LPDDR4 / Kioxia / Hirose
+parts; see `research/cost-down.md`).
 
 ****Status: fully routed, fab files generated** (`fab/`, also `fab/tsci/` from `tsci export -f gerbers`).
-CM4-compatible: two Hirose DF40C-100DP-0.4V (LCSC C6021443, the (58) reel; C531031 is out of stock) on the bottom at the CM4 positions; CAM0, DSI0 and Ethernet
+CM4-compatible: two DF40C-100DP-0.4V-compatible headers (XYECONN XY-100DP-DF40C, LCSC C53200820; check the fit with a CM4 IO board before a large order. Genuine Hirose: C6021443) on the bottom at the CM4 positions; CAM0, DSI0 and Ethernet
 are not populated (networking over USB). How it was routed: `ROUTING-PLAYBOOK.md`; issue log: `ISSUES-AND-FIXES.md`.
 
 Full-board checks (`source/check.py`, `source/pairs.py` on `source/route/final/`):

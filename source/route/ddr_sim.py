@@ -8,6 +8,7 @@
 import json, math, os, subprocess, sys, tempfile
 D = os.path.dirname(os.path.abspath(__file__))
 R = json.load(open(sys.argv[1] if len(sys.argv) > 1 else D + "/ddr.lane.routed.json"))
+VDDQ = float(os.environ.get("VDDQ", 1.1))  # 0.6 for LPDDR4X
 RATE = float(sys.argv[2]) if len(sys.argv) > 2 else 1560.0  # MT/s
 T = json.load(open(D + "/ddr_timing.json"))
 UI = 1e6 / RATE  # ps
@@ -37,7 +38,7 @@ def prbs7(n):
 def pwl(bits, invert=False, tr=80):
     pts = [(0, 0)]; v0 = None; t = 0.0
     for b in bits:
-        v = 1.1 if (b ^ invert) else 0.0
+        v = VDDQ if (b ^ invert) else 0.0
         if v0 is None: pts = [(0, v)]
         elif v != v0: pts += [(t, v0), (t + tr / 0.6, v)]
         v0 = v; t += UI
