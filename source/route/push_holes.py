@@ -5,7 +5,8 @@
 #   - a routed via too close to a pad / via / trace end is moved away, its own trace ends follow it.
 # A move is kept only if, around the moved copper, no copper-to-copper gap drops below GAP (0.1 mm), no hole gets
 # closer than before, and the hole deficit goes down. Fixed copper never moves: the LPDDR4 block, the power-ball
-# fanout, via-in-pad (fixed.json, bga_vias.json, footprint vias) and DDR_* nets.
+# fanout, via-in-pad (fixed.json, bga_vias.json, footprint vias), DDR_* nets and every differential-pair net
+# (P and N), so no length or skew changes on any matched net.
 # Usage: COPPER=final/copper.json [HOLE=0.2] [ROUNDS=30] python3 push_holes.py   (rewrites COPPER in place)
 import json, os, math
 from shapely.geometry import Point, LineString, box
@@ -21,7 +22,16 @@ vk = lambda v: (v["net"], round(v["x"], 3), round(v["y"], 3))
 tk = lambda t: (t["net"], t["layer"], tuple((round(p["x"], 3), round(p["y"], 3)) for p in t["pts"]))
 FIXV = {vk(v) for v in fx["vias"] + bv} | {vk(dict(v, net="GND")) for v in P["footprintVias"]}
 FIXT = {tk(t) for t in fx["traces"]}
-fixed_net = lambda n: n is None or n.startswith("DDR_")
+# differential pairs (same rule as pairs.py) never move either: a jog would change P/N skew
+import re
+_names = {t["net"] for t in cu["traces"]} | {v["net"] for v in cu["vias"]}
+PAIR_NETS = set()
+for n in _names:
+    m = re.match(r"(.*?)(P|_P|DP)(_C)?$", n or "")
+    if m:
+        neg = m.group(1) + {"P": "N", "_P": "_N", "DP": "DM"}[m.group(2)] + (m.group(3) or "")
+        if neg in _names: PAIR_NETS |= {n, neg}
+fixed_net = lambda n: n is None or n.startswith("DDR_") or n in PAIR_NETS
 vias = cu["vias"] + [dict(v, net="GND", _fp=1) for v in P["footprintVias"]]
 traces = [t for t in cu["traces"] if len(t["pts"]) > 1]
 for v in vias: v["_mov"] = not v.get("_fp") and vk(v) not in FIXV and not fixed_net(v["net"])
