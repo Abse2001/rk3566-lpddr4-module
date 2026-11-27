@@ -23,7 +23,7 @@ fixed_nets = {t["net"] for t in fx["traces"]} | {v["net"] for v in fx["vias"]}
 rip, why = set(), {}
 # plane nets (ground and the inner2 islands) are many independent pad-to-via drops: keep each drop that is still
 # valid and drop only the pieces at moved pads or in conflict; route.ts then routes just their open pads
-PLANE = {"GND", "VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"}
+PLANE = {"GND", "VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC0V6_DDR"}
 drop_piece = set()  # ("t", index) / ("v", index) of plane-net copper to remove
 def mark(n, r):
     if n in PLANE: return

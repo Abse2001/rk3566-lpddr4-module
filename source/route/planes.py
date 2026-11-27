@@ -14,7 +14,7 @@ cu = json.load(open(os.environ.get("COPPER", D + "/copper.json")))
 BOARD = box(-3.5, -51.5, 36.5, 3.5)
 HOLES = [(0, 0), (33, 0), (0, -48), (33, -48)]
 CLR, EDGE, SPLIT = 0.15, 0.3, 0.25  # CLR: plane to foreign via pad = 0.2 mm from its 0.15 mm hole (JLCPCB inner layers)
-RAILS = ["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"]
+RAILS = ["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC0V6_DDR"]
 outline = BOARD.buffer(-EDGE).difference(unary_union([Point(h).buffer(1.35 + EDGE) for h in HOLES]))
 
 # every via on the board: routed and fixed (copper.json) plus the vias that come with part footprints (pads.json,

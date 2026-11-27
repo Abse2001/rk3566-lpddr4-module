@@ -1688,5 +1688,69 @@
 "layer": "bottom",
 "schX": 6,
 "schY": -60
+},
+"U7": {
+"x": 2.75,
+"y": -13.25,
+"rot": 90,
+"layer": "top",
+"schX": 0,
+"schY": 0
+},
+"C148": {
+"x": 3.4,
+"y": -14.55,
+"rot": 0,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"C147": {
+"x": 3.8,
+"y": -11.95,
+"rot": 90,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"R47": {
+"x": 1.8,
+"y": -14.45,
+"rot": 90,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"R48": {
+"x": 0.8,
+"y": -14.45,
+"rot": 90,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"C149": {
+"x": 7.525,
+"y": -2.7,
+"rot": 90,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"C150": {
+"x": 15.175,
+"y": -2.7,
+"rot": 90,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
+},
+"C151": {
+"x": 7.225,
+"y": 1.0,
+"rot": 0,
+"layer": "bottom",
+"schX": 0,
+"schY": 0
 }
 }

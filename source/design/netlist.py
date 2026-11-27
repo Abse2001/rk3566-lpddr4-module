@@ -76,8 +76,8 @@ for c in pmeta["powerConnections"]:
         b, n = c["name"][9:], c["netConnectionName"]
         u2[b] = "LPDDR4_ZQ0" if n == "ZQ0" else rails.LPDDR4[n]
 comp("U2", "LPDDR4", u2, group="soc")  # balls not listed are NC/DNU on this x32 2-channel part
-R("LPDDR4_ZQ0", "VCC_DDR", "240R", "R_240R_1%", "soc")  # LPDDR4 ZQ to VDDQ
-R("DDR_RZQ", "GND", "120R", "R_120R_1%", "soc")         # RK3566 DDR PHY calibration (SOQuartz sheet 9 R1)
+R("LPDDR4_ZQ0", "VCC0V6_DDR", "240R", "R_240R_1%", "soc")  # LPDDR4X ZQ to VDDQ
+R("DDR_RZQ", "VCC_DDR", "120R", "R_120R_1%", "soc")     # RK3566 DDR PHY calibration: "USE LP4/LP4X, R1 PULL UP TO VCC_DDR" (SOQuartz DDR sheet)
 R("HDMI_TX_REXT", "GND", "1.62k", "R_1K62_1%", "soc")    # SOQuartz R27
 
 # ---------------- clocks ----------------
@@ -181,7 +181,7 @@ for rail, caps in {"VDD_CPU": ["100nF", "100nF", "10uF", "10uF"], "VDD_LOGIC": [
         C(rail, "GND", v, "C_100N_0201" if v == "100nF" else "C_10U_0402", "decap")
 for g in sorted(set(pw.values())):
     net = rails.RK3566[g]
-    if net in ("GND", "VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"):
+    if net in ("GND", "VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC0V6_DDR"):
         continue
     C(net, "GND", "100nF", "C_100N_0201", "decap")  # one per supply group, at its balls
 for rail in ("VDDA_0V9", "VCCA_1V8", "VCC_1V8", "VCC_3V3", "VDDA0V9_PMU", "VCC3V3_PMU", "VCCIO6"):
@@ -209,6 +209,20 @@ R("USB_OTG0_VBUSDET", "VCC_3V3", "10k", "R_10K", "io")  # always report VBUS (CM
 # ---------------- connectors (CM4 pinout, pins 1-100 on J1, 101-200 on J2) ----------------
 for ref, lo in (("J1", 1), ("J2", 101)):
     comp(ref, "DF40_HEADER", {str(p - lo + 1): cm4[str(p)]["net"] for p in range(lo, lo + 100)}, group="conn")
+
+# ---------------- LPDDR4X VDDQ 0.6 V ----------------
+# Decaps that place.py put on VDDQ / DDR_VDDQL balls (their own via, no other load on it) move to the 0.6 V net.
+VDDQ_DECAPS = ("C88", "C89", "C92", "C94", "C95")
+for c in comps:
+    if c["ref"] in VDDQ_DECAPS:
+        assert c["pins"]["1"] == "VCC_DDR", c
+        c["pins"]["1"] = "VCC0V6_DDR"
+# TLV75801 (adj., 0.55 V ref): 0.55 V x (1 + 1.8k / 20k) = 0.5995 V. IN from VCC_1V8, EN on VCC_DDR (EN high
+# >= 1.0 V), so VDDQ ramps after VDD2 as LPDDR4X requires.
+comp("U7", "LDO_VDDQ", {"1": "VCC_1V8", "2": "GND", "3": "VCC_DDR", "4": "VDDQ_FB", "5": "VCC0V6_DDR"}, group="pmic")
+R("VCC0V6_DDR", "VDDQ_FB", "1.8k", "R_1K8", "pmic"); R("VDDQ_FB", "GND", "20k", "R_20K_1%", "pmic")
+C("VCC_1V8", "GND", "1uF", "C_1U_0201", "pmic"); C("VCC0V6_DDR", "GND", "10uF", "C_10U_0402", "pmic")
+for _ in range(3): C("VCC0V6_DDR", "GND", "100nF", "C_100N_0201", "decap")  # LPDDR4X VDDQ, at U2
 
 # ---------------- sanity ----------------
 nets = {}

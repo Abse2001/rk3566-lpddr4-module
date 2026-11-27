@@ -1,0 +1,10 @@
+copper0.json
+planes[0-9c]*.json
+planes_c.json
+corridors_*.json
+corridors.orig.json
+frozen.json
+vcc_ddr_pieces.json
+final/*.prejoin.json
+final/r.*
+final/c.*

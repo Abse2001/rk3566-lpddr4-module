@@ -40,7 +40,7 @@ const gx = (x: number) => Math.round((x - X0) / P), gy = (y: number) => Math.rou
 const wx = (i: number) => X0 + i * P, wy = (j: number) => Y0 + j * P
 const HOLES = [[0, 0], [33, 0], [0, -48], [33, -48]], HOLE_R = 1.35
 const PLANE_GND = new Set(["GND"])
-const PLANE_PWR = new Set(["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR"])
+const PLANE_PWR = new Set(["VDD_CPU", "VDD_LOGIC", "VDD_GPU", "VDD_NPU", "VCC_DDR", "VCC0V6_DDR"])
 const isPlane = (n: string) => PLANE_GND.has(n) || PLANE_PWR.has(n)
 const widthOf = (n: string) => (["VCC3V3_SYS", "VCC5V0_SYS"].includes(n) ? W_BIG : !isPlane(n) && /^(VCC|VDD)/.test(n) ? W_PWR : W_SIG)
 const SEED = +(process.env.SEED ?? 1), MAXIT = +(process.env.MAXIT ?? 60), VERB = !!process.env.VERB

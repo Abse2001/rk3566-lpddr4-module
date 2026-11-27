@@ -12,11 +12,12 @@ import { HCB1005KF_121T20 } from "../imports/HCB1005KF_121T20"
 import { WIP252012P_R47ML } from "../imports/WIP252012P_R47ML"
 import { TFM252012ALMAR22MTAA } from "../imports/TFM252012ALMAR22MTAA"
 import { XRIM404020S2R2MGCA } from "../imports/XRIM404020S2R2MGCA"
+import { TLV75801PDBVR } from "../imports/TLV75801PDBVR"
 import roles from "./design/roles.json"
 
 const IMPORTS: Record<string, any> = {
   RK3566, H9HCNNNBKUMLXR_NEE, RK809_5, SYR837PKC, SY8113BADC, THGBMUG6C1LBAIL, XL2EL89COI_111YLC_24M,
-  Q13FC13500004, BSS138DW_7_F, HCB1005KF_121T20, WIP252012P_R47ML, TFM252012ALMAR22MTAA, XRIM404020S2R2MGCA,
+  Q13FC13500004, BSS138DW_7_F, HCB1005KF_121T20, WIP252012P_R47ML, TFM252012ALMAR22MTAA, XRIM404020S2R2MGCA, TLV75801PDBVR,
 }
 
 /** Hirose DF40C-100DP-0.4V(51) header in the CM4 pin numbering: odd pins on one row, even on the other,
@@ -60,7 +61,7 @@ export function makePart(c: { ref: string; role: string; value: string }, place:
   const r: any = (roles as any)[c.role]
   const common: any = { name: c.ref, schX: place.schX ?? 0, schY: place.schY ?? 0, pcbX: place.x, pcbY: place.y, pcbRotation: place.rot ?? 0, layer: place.layer ?? "top", supplierPartNumbers: { jlcpcb: [r.lcsc] } }
   if (c.role === "DF40_HEADER")
-    return <chip key={c.ref} {...common} manufacturerPartNumber="DF40C-100DP-0.4V(58)" footprint={cm4HeaderFootprint(place.oddSide ?? -1)} cadModel={DF40_MODEL} pinLabels={Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`pin${i + 1}`, [String(i + 1)]]))} />
+    return <chip key={c.ref} {...common} manufacturerPartNumber="XY-100DP-DF40C" footprint={cm4HeaderFootprint(place.oddSide ?? -1)} cadModel={DF40_MODEL} pinLabels={Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`pin${i + 1}`, [String(i + 1)]]))} />
   if (r.import) {
     const C = IMPORTS[r.import]
     const extra: any = c.role === "XTAL_24M" ? { loadCapacitance: "12pF" } : c.role === "XTAL_32K" ? { loadCapacitance: "12.5pF" } : c.role === "BUCK_CPU" ? { footprint: wlcsp20Footprint() } : {}

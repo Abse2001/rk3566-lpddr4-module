@@ -1,4 +1,5 @@
-# Power rail assignment for the RK3566 module (SOQuartz power tree, LPDDR4 not LPDDR4X).
+# Power rail assignment for the RK3566 module (SOQuartz power tree, LPDDR4X).
+#   VCC0V6_DDR 0.6 V: TLV75801 LDO from VCC_1V8, enabled by VCC_DDR (VDDQ after VDD2) -> LPDDR4X VDDQ, RK3566 DDR_VDDQL
 #
 #   5 V (CM4 +5V pins)  VCC5V0_SYS
 #     SY8113B buck  ->  VCC3V3_SYS 3.3 V           feeds RK809 VCC1..9 and the VDD_CPU buck
@@ -13,7 +14,7 @@
 RK3566 = {
     "VDD_CPU": "VDD_CPU", "VDD_LOGIC": "VDD_LOGIC", "VDD_GPU": "VDD_GPU", "VDD_NPU": "VDD_NPU",
     "PMU_VDD_LOGIC_0V9": "VDDA0V9_PMU",
-    "DDRPHY_VDDQ": "VCC_DDR", "DDRPHY_VDDQL": "VCC_DDR",  # one DDR supply with LPDDR4 (RK3566 HW guide 2.1.9.4)
+    "DDRPHY_VDDQ": "VCC_DDR", "DDRPHY_VDDQL": "VCC0V6_DDR",  # LPDDR4X: DDR_VDDQL = 0.6 V (Radxa CM3 / SOQuartz DDR sheet)
     "VCCIO1": "VCC_3V3", "VCCIO2": "VCC_1V8", "VCCIO3": "VCCIO_SD", "VCCIO4": "VCC_1V8",
     "VCCIO5": "VCC_3V3", "VCCIO6": "VCCIO6", "VCCIO7": "VCC_3V3", "PMUIO1": "VCC3V3_PMU", "PMUIO2": "VCC3V3_PMU",
     "PMUPLL_AVDD_0V9": "VDDA0V9_PMU", "PMUPLL_AVDD_1V8": "VCCA1V8_PMU",
@@ -29,13 +30,13 @@ RK3566 = {
     "SARADC_AVDD_1V8": "VCCA_1V8", "OTP_VCC_1V8": "VCCA_1V8",
     "VSS": "GND", "AVSS1": "GND", "DDR_AVSS": "GND", "PMUPLL_VSS": "GND", "SYSPLL_VSS": "GND", "TVSS": "GND",
 }
-# LPDDR4 (H9HCNNNBKUMLXR-NEE: VDD1 1.8 V, VDD2 1.1 V, VDDQ 1.1 V)
-LPDDR4 = {"VDD1": "VCCA1V8_PMU", "VDD2": "VCC_DDR", "VDDQ": "VCC_DDR", "GND": "GND"}
+# LPDDR4X (Samsung K4U6E3S4AA-MGCL: VDD1 1.8 V, VDD2 1.1 V, VDDQ 0.6 V; same JEDEC ballout as the LPDDR4 part)
+LPDDR4 = {"VDD1": "VCCA1V8_PMU", "VDD2": "VCC_DDR", "VDDQ": "VCC0V6_DDR", "GND": "GND"}
 
 # nominal voltages, for the README and capacitor ratings
 VOLTS = {
     "VCC5V0_SYS": 5.0, "VCC3V3_SYS": 3.3, "VDD_CPU": 1.0, "VDD_LOGIC": 0.9, "VDD_GPU": 0.9, "VDD_NPU": 0.9,
-    "VCC_DDR": 1.1, "VCC_1V8": 1.8, "VDDA0V9_IMAGE": 0.9, "VDDA_0V9": 0.9, "VDDA0V9_PMU": 0.9, "VCCIO_ACODEC": 3.3,
+    "VCC_DDR": 1.1, "VCC0V6_DDR": 0.6, "VCC_1V8": 1.8, "VDDA0V9_IMAGE": 0.9, "VDDA_0V9": 0.9, "VDDA0V9_PMU": 0.9, "VCCIO_ACODEC": 3.3,
     "VCCIO_SD": 3.3, "VCC3V3_PMU": 3.3, "VCCA_1V8": 1.8, "VCCA1V8_PMU": 1.8, "VCCA1V8_IMAGE": 1.8,
     "VCC_3V3": 3.3, "VCC3V3_SD": 3.3, "VCCIO6": 3.3,
 }

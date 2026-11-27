@@ -242,11 +242,11 @@
 "1E4": "VCC_DDR",
 "1F4": "VCC_DDR",
 "1G4": "VCC_DDR",
-"1E6": "VCC_DDR",
-"1E7": "VCC_DDR",
-"1E9": "VCC_DDR",
-"1F5": "VCC_DDR",
-"1G5": "VCC_DDR",
+"1E6": "VCC0V6_DDR",
+"1E7": "VCC0V6_DDR",
+"1E9": "VCC0V6_DDR",
+"1F5": "VCC0V6_DDR",
+"1G5": "VCC0V6_DDR",
 "1P17": "VDDA0V9_PMU",
 "1N18": "VCCA1V8_PMU",
 "1H5": "VDDA_0V9",
@@ -650,31 +650,31 @@
 "A5": "LPDDR4_ZQ0",
 "A9": "VCC_DDR",
 "A10": "GND",
-"B3": "VCC_DDR",
-"B5": "VCC_DDR",
-"B8": "VCC_DDR",
-"B10": "VCC_DDR",
+"B3": "VCC0V6_DDR",
+"B5": "VCC0V6_DDR",
+"B8": "VCC0V6_DDR",
+"B10": "VCC0V6_DDR",
 "C1": "GND",
 "C5": "GND",
 "C8": "GND",
 "C12": "GND",
-"D1": "VCC_DDR",
+"D1": "VCC0V6_DDR",
 "D2": "GND",
 "D4": "GND",
-"D5": "VCC_DDR",
-"D8": "VCC_DDR",
+"D5": "VCC0V6_DDR",
+"D8": "VCC0V6_DDR",
 "D9": "GND",
 "D11": "GND",
-"D12": "VCC_DDR",
+"D12": "VCC0V6_DDR",
 "E1": "GND",
 "E5": "GND",
 "E8": "GND",
 "E12": "GND",
 "F1": "VCCA1V8_PMU",
-"F3": "VCC_DDR",
+"F3": "VCC0V6_DDR",
 "F5": "VCC_DDR",
 "F8": "VCC_DDR",
-"F10": "VCC_DDR",
+"F10": "VCC0V6_DDR",
 "F12": "VCCA1V8_PMU",
 "G1": "GND",
 "G3": "GND",
@@ -725,31 +725,31 @@
 "T10": "GND",
 "T12": "GND",
 "U1": "VCCA1V8_PMU",
-"U3": "VCC_DDR",
+"U3": "VCC0V6_DDR",
 "U5": "VCC_DDR",
 "U8": "VCC_DDR",
-"U10": "VCC_DDR",
+"U10": "VCC0V6_DDR",
 "U12": "VCCA1V8_PMU",
 "V1": "GND",
 "V5": "GND",
 "V8": "GND",
 "V12": "GND",
-"W1": "VCC_DDR",
+"W1": "VCC0V6_DDR",
 "W2": "GND",
 "W4": "GND",
-"W5": "VCC_DDR",
-"W8": "VCC_DDR",
+"W5": "VCC0V6_DDR",
+"W8": "VCC0V6_DDR",
 "W9": "GND",
 "W11": "GND",
-"W12": "VCC_DDR",
+"W12": "VCC0V6_DDR",
 "Y1": "GND",
 "Y5": "GND",
 "Y8": "GND",
 "Y12": "GND",
-"AA3": "VCC_DDR",
-"AA5": "VCC_DDR",
-"AA8": "VCC_DDR",
-"AA10": "VCC_DDR",
+"AA3": "VCC0V6_DDR",
+"AA5": "VCC0V6_DDR",
+"AA8": "VCC0V6_DDR",
+"AA10": "VCC0V6_DDR",
 "AB3": "GND",
 "AB4": "VCC_DDR",
 "AB5": "GND",
@@ -764,7 +764,7 @@
 "value": "240R",
 "pins": {
 "1": "LPDDR4_ZQ0",
-"2": "VCC_DDR"
+"2": "VCC0V6_DDR"
 },
 "group": "soc"
 },
@@ -774,7 +774,7 @@
 "value": "120R",
 "pins": {
 "1": "DDR_RZQ",
-"2": "GND"
+"2": "VCC_DDR"
 },
 "group": "soc"
 },
@@ -2168,7 +2168,7 @@
 "role": "C_100N_0201",
 "value": "100nF",
 "pins": {
-"1": "VCC_DDR",
+"1": "VCC0V6_DDR",
 "2": "GND"
 },
 "group": "decap"
@@ -2178,7 +2178,7 @@
 "role": "C_100N_0201",
 "value": "100nF",
 "pins": {
-"1": "VCC_DDR",
+"1": "VCC0V6_DDR",
 "2": "GND"
 },
 "group": "decap"
@@ -2208,7 +2208,7 @@
 "role": "C_100N_0201",
 "value": "100nF",
 "pins": {
-"1": "VCC_DDR",
+"1": "VCC0V6_DDR",
 "2": "GND"
 },
 "group": "decap"
@@ -2228,7 +2228,7 @@
 "role": "C_100N_0201",
 "value": "100nF",
 "pins": {
-"1": "VCC_DDR",
+"1": "VCC0V6_DDR",
 "2": "GND"
 },
 "group": "decap"
@@ -2238,7 +2238,7 @@
 "role": "C_100N_0201",
 "value": "100nF",
 "pins": {
-"1": "VCC_DDR",
+"1": "VCC0V6_DDR",
 "2": "GND"
 },
 "group": "decap"
@@ -3142,6 +3142,89 @@
 "100": "HDMI_SCL_PORT"
 },
 "group": "conn"
+},
+{
+"ref": "U7",
+"role": "LDO_VDDQ",
+"value": "",
+"pins": {
+"1": "VCC_1V8",
+"2": "GND",
+"3": "VCC_DDR",
+"4": "VDDQ_FB",
+"5": "VCC0V6_DDR"
+},
+"group": "pmic"
+},
+{
+"ref": "R47",
+"role": "R_1K8",
+"value": "1.8k",
+"pins": {
+"1": "VCC0V6_DDR",
+"2": "VDDQ_FB"
+},
+"group": "pmic"
+},
+{
+"ref": "R48",
+"role": "R_20K_1%",
+"value": "20k",
+"pins": {
+"1": "VDDQ_FB",
+"2": "GND"
+},
+"group": "pmic"
+},
+{
+"ref": "C147",
+"role": "C_1U_0201",
+"value": "1uF",
+"pins": {
+"1": "VCC_1V8",
+"2": "GND"
+},
+"group": "pmic"
+},
+{
+"ref": "C148",
+"role": "C_10U_0402",
+"value": "10uF",
+"pins": {
+"1": "VCC0V6_DDR",
+"2": "GND"
+},
+"group": "pmic"
+},
+{
+"ref": "C149",
+"role": "C_100N_0201",
+"value": "100nF",
+"pins": {
+"1": "VCC0V6_DDR",
+"2": "GND"
+},
+"group": "decap"
+},
+{
+"ref": "C150",
+"role": "C_100N_0201",
+"value": "100nF",
+"pins": {
+"1": "VCC0V6_DDR",
+"2": "GND"
+},
+"group": "decap"
+},
+{
+"ref": "C151",
+"role": "C_100N_0201",
+"value": "100nF",
+"pins": {
+"1": "VCC0V6_DDR",
+"2": "GND"
+},
+"group": "decap"
 }
 ],
 "nets": {
@@ -3391,7 +3474,6 @@
 "U2.AB3",
 "U2.AB5",
 "U2.AB10",
-"R2.2",
 "R3.2",
 "Y1.2",
 "Y1.4",
@@ -3603,7 +3685,14 @@
 "J2.91",
 "J2.92",
 "J2.97",
-"J2.98"
+"J2.98",
+"U7.2",
+"R48.2",
+"C147.2",
+"C148.2",
+"C149.2",
+"C150.2",
+"C151.2"
 ],
 "VDD_CPU": [
 "U1.1C12",
@@ -3738,7 +3827,9 @@
 "C128.1",
 "C134.1",
 "J1.88",
-"J1.90"
+"J1.90",
+"U7.1",
+"C147.1"
 ],
 "VCCIO_SD": [
 "U1.1F17",
@@ -3781,25 +3872,10 @@
 "U1.1E4",
 "U1.1F4",
 "U1.1G4",
-"U1.1E6",
-"U1.1E7",
-"U1.1E9",
-"U1.1F5",
-"U1.1G5",
 "U2.A4",
 "U2.A9",
-"U2.B3",
-"U2.B5",
-"U2.B8",
-"U2.B10",
-"U2.D1",
-"U2.D5",
-"U2.D8",
-"U2.D12",
-"U2.F3",
 "U2.F5",
 "U2.F8",
-"U2.F10",
 "U2.H1",
 "U2.H5",
 "U2.H8",
@@ -3816,9 +3892,44 @@
 "U2.R5",
 "U2.R8",
 "U2.R12",
-"U2.U3",
 "U2.U5",
 "U2.U8",
+"U2.AB4",
+"U2.AB9",
+"R2.2",
+"U3.VBUCK3",
+"L4.2",
+"C30.1",
+"C31.1",
+"R12.1",
+"C90.1",
+"C91.1",
+"C93.1",
+"C96.1",
+"C97.1",
+"C139.1",
+"C140.1",
+"C141.1",
+"C142.1",
+"U7.3"
+],
+"VCC0V6_DDR": [
+"U1.1E6",
+"U1.1E7",
+"U1.1E9",
+"U1.1F5",
+"U1.1G5",
+"U2.B3",
+"U2.B5",
+"U2.B8",
+"U2.B10",
+"U2.D1",
+"U2.D5",
+"U2.D8",
+"U2.D12",
+"U2.F3",
+"U2.F10",
+"U2.U3",
 "U2.U10",
 "U2.W1",
 "U2.W5",
@@ -3828,28 +3939,18 @@
 "U2.AA5",
 "U2.AA8",
 "U2.AA10",
-"U2.AB4",
-"U2.AB9",
 "R1.2",
-"U3.VBUCK3",
-"L4.2",
-"C30.1",
-"C31.1",
-"R12.1",
 "C88.1",
 "C89.1",
-"C90.1",
-"C91.1",
 "C92.1",
-"C93.1",
 "C94.1",
 "C95.1",
-"C96.1",
-"C97.1",
-"C139.1",
-"C140.1",
-"C141.1",
-"C142.1"
+"U7.5",
+"R47.1",
+"C148.1",
+"C149.1",
+"C150.1",
+"C151.1"
 ],
 "VCCA1V8_PMU": [
 "U1.1N18",
@@ -4876,6 +4977,11 @@
 "CM4_nRPIBOOT": [
 "R37.1",
 "J1.93"
+],
+"VDDQ_FB": [
+"U7.4",
+"R47.2",
+"R48.1"
 ]
 }
 }
