@@ -12,3 +12,4 @@ source/route/p9*.json
 .tscircuit-build-history
 dist
 source/route/ddr_timing.json
+.tscircuit/
