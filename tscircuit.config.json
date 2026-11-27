@@ -10,6 +10,7 @@
     "research/**/*.json",
     "source/costdown/**/*.json",
     ".tscircuit-build-history/**",
-    ".tscircuit/**"
+    ".tscircuit/**",
+    "checks/**"
   ]
 }

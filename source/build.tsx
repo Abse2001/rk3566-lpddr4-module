@@ -89,7 +89,8 @@ const subId = cj.find((e) => e.type === "source_port" && e.subcircuit_id)?.subci
 const netIds: Record<string, { net: string; trace: string; key: string }> = {}
 const netNames = [...new Set([...Object.values(portNet), ...copper.traces.map((t: any) => t.net), ...copper.vias.map((v: any) => v.net), ...planes.map((p: any) => p.net)].filter(Boolean))] as string[]
 netNames.forEach((name, i) => {
-  const ids = { net: `source_net_${i}`, trace: `source_trace_net_${i}`, key: `net_${name}` }; netIds[name] = ids
+  // short ids: the file must stay under the tscircuit.com upload limit
+  const ids = { net: `sn${i}`, trace: `st${i}`, key: name }; netIds[name] = ids
   cj.push({ type: "source_net", source_net_id: ids.net, name, member_source_group_ids: [], subcircuit_id: subId, subcircuit_connectivity_map_key: ids.key,
     is_ground: name === "GND", is_power: /^(VCC|VDD)/.test(name) })
   cj.push({ type: "source_trace", source_trace_id: ids.trace, connected_source_port_ids: Object.keys(portNet).filter((k) => portNet[k] === name),
@@ -101,7 +102,8 @@ for (const e of cj) {
   if (e.type === "pcb_via") {
     // routed vias carry net_name; part footprint vias (thermal-pad vias) are ground
     const nm = e.net_name ?? (e.pcb_component_id || e.pcb_port_ids ? "GND" : null)
-    if (nm && netIds[nm]) { e.source_trace_id = netIds[nm].trace; e.source_net_id = netIds[nm].net; e.subcircuit_connectivity_map_key = netIds[nm].key }
+    if (nm && netIds[nm]) { e.source_trace_id = netIds[nm].trace; e.source_net_id = netIds[nm].net }
+    if (String(e.pcb_via_id).startsWith("r_via_")) { delete e.from_layer; delete e.to_layer }  // deprecated; `layers` lists them
     delete e.net_name
   }
   if (e.type === "pcb_copper_pour" && e.net_name && netIds[e.net_name]) { e.source_net_id = netIds[e.net_name].net; delete e.net_name }
