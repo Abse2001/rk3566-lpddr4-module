@@ -1,9 +1,8 @@
 Reference planes: 0 slow traces under fast traces []
 DRC: 0 clearance violations (< 0.1 mm), 0 copper too close to edge/holes, 0 pours near edge, 0 via-hole spacing issues, 0 pad pairs < 0.15 mm
-Via hole to other-net copper (>= 0.2 mm, JLCPCB DFM 'Danger' below 0.18; fails the check only with HOLE_RULE=1): 6295 issues (+333 inside the frozen DDR block) [('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.17, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.171, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79)]
+Via hole to other-net copper (>= 0.2 mm, JLCPCB DFM 'Danger' below 0.18; fails the check only with HOLE_RULE=1): 6248 issues (+333 inside the frozen DDR block) [('top', 0.17, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.168, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79), ('top', 0.171, 'DDR_DMI0_b', 'trace', 'EMMC_CMD', 18.53, -11.79)]
 Connectivity: 236/236 nets complete
-Differential pairs: 1 over the P/N skew limit (ps, calibrated via delay), 8 with unequal P/N via counts -- WARNING: prefer the same number of vias on P and N
-   SKEW ('PCIE20_TXP', 2.65, 0.76)
+Differential pairs: 0 over the P/N skew limit (ps, calibrated via delay), 8 with unequal P/N via counts -- WARNING: prefer the same number of vias on P and N
    WARNING pair vias ('HDMI_TX_CLKP', 3, 'HDMI_TX_CLKN', 5)
    WARNING pair vias ('MIPI_CSI_RX_CLK1P', 2, 'MIPI_CSI_RX_CLK1N', 3)
    WARNING pair vias ('MIPI_CSI_RX_D3P', 2, 'MIPI_CSI_RX_D3N', 6)
