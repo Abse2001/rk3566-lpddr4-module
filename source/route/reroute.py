@@ -170,5 +170,9 @@ def route(net):
     print(f"routed {net}: {Lm:.2f} mm, {len(rv)} vias, layers {[s['layer'] for s in rsegs]}")
     return True
 
-for n in os.environ["NETS"].split(","): route(n)
+# rip every listed net first, so the first one routed does not detour around the old copper of the others
+NL_ = os.environ["NETS"].split(",")
+cu["traces"] = [t for t in cu["traces"] if t["net"] not in NL_]; cu["vias"] = [v for v in cu["vias"] if v["net"] not in NL_]
+ok_all = all([route(n) for n in NL_])
+if not ok_all: print("FAILED: not all nets routed")
 json.dump(rt, open(RP, "w")); json.dump(cu, open(CP, "w"))
