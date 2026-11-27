@@ -10,9 +10,25 @@ rt = json.load(open(RP)); cu = json.load(open(CP))
 pads = json.load(open(D + "/../design/pads.json"))["pads"]
 GAP, TOL, VIA_LEN = 0.1, 0.05, 0.6
 nets = rt["nets"]
+# DELAY=1: match P and N in time, not millimetres: each layer's length is weighted by its delay relative to the
+# outer layers (inner stripline is slower), and a via counts its barrel between the layers the net uses there
+# (same stackup model as ddr_timing.py / pair_delay.py). Lengths are in outer-layer-equivalent mm.
+DELAY = bool(os.environ.get("DELAY"))
+if DELAY:
+    _tm = json.load(open(D + "/ddr_timing.json"))["ps_per_mm"]
+    K = {l: (1.0 if l in ("top", "bottom") else _tm["inner3_0.11"] / _tm["outer_0.11"]) for l in ("top", "inner1", "inner2", "inner3", "inner4", "bottom")}
+    ZL = {"top": 0, "inner1": 0.111, "inner2": 0.727, "inner3": 0.841, "inner4": 1.457, "bottom": 1.548}
+    VK = _tm["inner3_0.11"] * 1.2 / _tm["outer_0.11"]
+else:
+    K = collections_K = None
+def via_len(n, v):
+    if not DELAY: return VIA_LEN
+    ls = {s["layer"] for s in nets[n]["segs"] for q in (s["pts"][0], s["pts"][-1]) if abs(q["x"] - v["x"]) < 1e-3 and abs(q["y"] - v["y"]) < 1e-3}
+    ls |= {p["layer"] for p in pads if p["net"] == n and abs(p["x"] - v["x"]) < p["w"] / 2 and abs(p["y"] - v["y"]) < p["h"] / 2}
+    return (max(ZL[l] for l in ls) - min(ZL[l] for l in ls)) * VK if len(ls) >= 2 else 0.0
 def length(n):
-    r = nets[n]
-    return sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for s in r["segs"] for a, b in zip(s["pts"], s["pts"][1:])) + VIA_LEN * len(r["vias"])
+    r = nets[n]; k = (lambda l: K[l]) if DELAY else (lambda l: 1.0)
+    return sum(k(s["layer"]) * math.hypot(b["x"] - a["x"], b["y"] - a["y"]) for s in r["segs"] for a, b in zip(s["pts"], s["pts"][1:])) + sum(via_len(n, v) for v in r["vias"])
 pairs = []
 for n in nets:
     m = re.match(r"(.*?)(P|_P|DP)(_C)?$", n)
@@ -63,7 +79,8 @@ for P_, N_ in pairs:
                 nx, ny = -nx, -ny  # first try bulging away from the partner
             nb = int((L - 0.3) / PITCH)
             if nb < 1: continue
-            rem = need - done
+            kl = K[s["layer"]] if DELAY else 1.0
+            rem = (need - done) / kl  # physical length still to add on this layer
             best = None
             for side in (1, -1):
                 for amp_max in AMPS:
@@ -80,7 +97,7 @@ for P_, N_ in pairs:
                     pts.append(b)
                     geom = LineString([(q["x"], q["y"]) for q in pts]).buffer(w / 2)
                     if any(obs[j].distance(geom) < GAP - 1e-6 for j in tree.query(geom.buffer(GAP))): continue
-                    best = (pts, 2 * amp * nb_use); break
+                    best = (pts, 2 * amp * nb_use * kl); break
                 if best: break
             if not best: continue
             pts, gain = best
