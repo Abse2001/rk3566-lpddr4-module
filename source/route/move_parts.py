@@ -28,7 +28,8 @@ KIND = {"U1": "BGA", "U2": "BGA", "U6": "BGA", "U4": "BGA", "U3": "QFN", "U5": "
 RULE = {("chip", "chip"): 0.15, ("chip", "BGA"): 1.0, ("chip", "QFN"): 1.0, ("chip", "SOT"): 0.2, ("BGA", "BGA"): 2.0,
         ("BGA", "QFN"): 1.5, ("BGA", "SOT"): 1.0, ("QFN", "SOT"): 1.0}
 def rule(a, b): return RULE.get((a, b), RULE.get((b, a), 0.3))
-def kind(r): return KIND.get(r, "chip" if fp(r) in BODY else "other")
+# power inductors and crystals have no row in JLCPCB's table: they count as chip parts of their size (as in place.py)
+def kind(r): return KIND.get(r, "chip" if fp(r) in BODY or r[0] in "LY" else "other")
 def padg(p, dx=0, dy=0):
     x, y = p["x"] + dx, p["y"] + dy
     return Point(x, y).buffer(p["w"] / 2, 16) if p["shape"] == "circle" else box(x - p["w"] / 2, y - p["h"] / 2, x + p["w"] / 2, y + p["h"] / 2)

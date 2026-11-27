@@ -14,6 +14,14 @@ const netlist = await Bun.file(dir + "/../design/netlist.json").json()
 const fixed = await Bun.file(dir + "/fixed.json").json()
 // via-in-pad on the SoC/eMMC supply and ground balls (fanout_bga.py): fixed copper too
 if (await Bun.file(dir + "/bga_vias.json").exists()) fixed.vias.push(...(await Bun.file(dir + "/bga_vias.json").json()))
+// ECO: FROZEN=frozen.json holds the finished copper of nets that a change did not touch; it is fixed copper here and
+// those nets are not routed again (eco_prepare.py decides which nets stay)
+const frozenNets = new Set<string>()
+if (process.env.FROZEN) {
+  const fz = await Bun.file(process.env.FROZEN).json()
+  fixed.traces.push(...fz.traces); fixed.vias.push(...fz.vias)
+  for (const t of [...fz.traces, ...fz.vias]) frozenNets.add(t.net)
+}
 
 // ---------------- rules ----------------
 const P = 0.05, GAP = 0.1 + 0.012, W_SIG = 0.1, W_PWR = 0.2, W_BIG = 0.4, VIA_D = 0.25, VIA_H = 0.15, EDGE = 0.3, EPS = 0.004
@@ -208,6 +216,7 @@ function padTouchesFixed(p: any): boolean {
 const nets: Net[] = []
 for (const [name, ps] of padsByNet) {
   if (name.startsWith("DDR_") && fixedNets.has(name)) continue // routed LPDDR4 block
+  if (frozenNets.has(name) && !isPlane(name)) continue // ECO: finished copper kept as it is (a plane net routes its open pads)
   const open = ps.filter((p) => !padTouchesFixed(p))
   if (isPlane(name)) {
     if (open.length) nets.push({ name, w: W_SIG, plane: true, terms: [], drops: open.map(padTerm), order: rand() })
