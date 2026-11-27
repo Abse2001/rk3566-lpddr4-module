@@ -121,7 +121,7 @@ for (const e of cj) if (e.type === "pcb_trace") e.route = e.route.filter((b: any
   if (!a || !c || [a, b, c].some((q) => q.route_type !== "wire") || a.layer !== b.layer || b.layer !== c.layer || a.width !== b.width || b.width !== c.width) return true
   return Math.abs((b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)) > 1e-9 || (b.x - a.x) * (c.x - b.x) + (b.y - a.y) * (c.y - b.y) < 0
 })
-// coordinates rounded to 0.1 um: keeps the file under the tscircuit.com upload limit
-await Bun.write(process.env.CIRCUIT ?? dir + "/../index.circuit.json", JSON.stringify(cj, (_k, v) => (typeof v === "number" && !Number.isInteger(v) ? Math.round(v * 1e4) / 1e4 : v)))
+// coordinates rounded to 1 um (far below fab resolution): keeps the file under the tscircuit.com upload limit
+await Bun.write(process.env.CIRCUIT ?? dir + "/../index.circuit.json", JSON.stringify(cj, (_k, v) => (typeof v === "number" && !Number.isInteger(v) ? Math.round(v * 1e3) / 1e3 : v)))
 const count = (k: string) => cj.filter((e) => e.type === k).length
 console.log(`components ${count("pcb_component")}, pads ${count("pcb_smtpad")}, traces ${count("pcb_trace")}, vias ${count("pcb_via")}, pours ${count("pcb_copper_pour")}`)
