@@ -7,6 +7,9 @@
     "source/route/**/*.json",
     "source/route/*.png",
     "**/*.pyc",
-    "research/**/*.json"
+    "research/**/*.json",
+    "source/costdown/**/*.json",
+    ".tscircuit-build-history/**",
+    ".tscircuit/**"
   ]
 }
